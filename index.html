@@ -162,7 +162,6 @@
         max-width: 100%;
         opacity: 0;
         transition: opacity 0.2s;
-        background-color: #f1efe9;
         margin: calc(var(--rh) * -1) auto 0;
         display: grid;
         grid-template-rows: repeat(3, 1fr);
@@ -184,7 +183,11 @@
       .stripe-row span {
         display: inline-block;
         width: calc(var(--sw) / var(--sn));
+        will-change: font-variation-settings;
+        transform: translateZ(0);
+        -webkit-font-smoothing: antialiased;
       }
+      .r-0 { background-color: #f1efe9; }
       .r-0, .r-1, .r-2 { color: var(--ink); }
       .stripe-row:nth-child(even) { text-align: right; }
 
@@ -214,10 +217,15 @@
         justify-content: center;
         gap: 0 1em;
       }
-      .bullets .sep { display: none; }
+      .bullets div {
+        display: flex;
+        align-items: center;
+        gap: 0.4em;
+      }
       .bullets div::before {
         content: '◼';
-        vertical-align: middle;
+        font-size: 0.75em;
+        flex-shrink: 0;
       }
       .seal {
         margin: 22px auto 0;
