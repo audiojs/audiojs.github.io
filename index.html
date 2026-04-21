@@ -70,19 +70,6 @@
         position: relative;
         padding: 0;
         min-height: calc(4 * var(--rh));
-        background-image:
-          radial-gradient(ellipse at 30% 40%, rgba(255,255,255,0.04), transparent 60%),
-          radial-gradient(ellipse at 80% 80%, rgba(255,255,255,0.025), transparent 50%),
-          repeating-linear-gradient(0deg, transparent 0 1px, rgba(255,255,255,0.012) 1px 2px),
-          repeating-linear-gradient(90deg, transparent 0 1px, rgba(255,255,255,0.012) 1px 2px);
-      }
-      .top::after {
-        content: '';
-        position: absolute; inset: 0;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.10 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-        opacity: 0.45;
-        mix-blend-mode: overlay;
-        pointer-events: none;
       }
 
       /* bottom half · transparent — shows root bg */
@@ -106,6 +93,18 @@
         height: auto;
       }
 
+      .gh-link {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 10px;
+        opacity: 0.6;
+        transition: opacity 0.15s;
+        line-height: 0;
+        z-index: 10;
+      }
+      .gh-link:hover { opacity: 1; }
+      .gh-link svg { width: 1.5rem; height: 1.5rem; }
       .pro {
         text-align: center;
         padding-top: 0;
@@ -113,7 +112,6 @@
         font-weight: 500;
         font-size: var(--fs-xs);
         color: var(--paper);
-        opacity: 0.75;
       }
 
       .wordmark {
@@ -174,6 +172,7 @@
         pointer-events: none;
         user-select: none;
         touch-action: none;
+        cursor: ew-resize;
       }
       .stripe-row {
         pointer-events: auto;
@@ -251,6 +250,11 @@
   <header>
     <article class="cover" aria-label="audiojs · modular web audio toolkit">
       <div class="top">
+        <a class="gh-link" href="https://github.com/audiojs" aria-label="audiojs on GitHub" target="_blank" rel="noopener">
+          <svg width="28" height="28" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z" fill="white"/>
+          </svg>
+        </a>
         <div class="inner">
           <div class="pro">For Professional Use</div>
           <h1 class="wordmark">
@@ -299,7 +303,7 @@
 
     </article>
   </header>
-  <main style="background:var(--ink);min-height:200px;"></main>
+  <main></main>
   <footer></footer>
   <script>
     const init = () => {
@@ -308,13 +312,13 @@
       if (!ss.length) { requestAnimationFrame(init); return; }
 
       const spans = ss.map(s => ({ s, ph: parseFloat(s.style.getPropertyValue('--phase')) || 0 }));
-      const wmax = 290, P = Math.PI;
+      const wmax = 400, P = Math.PI;
       let t = 0, last = null, dragging = false, dragX = 0, visible = true;
 
       const tick = now => {
         const dt = last ? (now - last) / 1000 : 0; last = now;
         if (visible && !dragging) {
-          t += dt * P;
+          t += dt * P * 0.5;
           spans.forEach(({ s, ph }) => {
             const wt = wmax / 2 * (1 + Math.sin(ph + t));
             s.style.fontVariationSettings = `'ROND' 0,'YELA' 0,'wght' ${Math.max(1, wt) | 0}`;
@@ -327,6 +331,8 @@
       document.addEventListener('visibilitychange', () => { visible = !document.hidden; last = null; });
       new IntersectionObserver(([e]) => { visible = e.isIntersecting; last = null; }).observe(el);
 
+      el.addEventListener('pointerenter', () => { visible = false; });
+      el.addEventListener('pointerleave', () => { if (!dragging) { visible = true; last = null; } });
       el.addEventListener('pointerdown', e => { dragging = true; dragX = e.clientX; el.setPointerCapture(e.pointerId); });
       el.addEventListener('pointermove', e => {
         if (!dragging) return;
