@@ -6,15 +6,39 @@
     <title>audiojs · modular web audio toolkit</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;700;800&family=IBM+Plex+Sans:wght@400;500;700&family=Instrument+Sans:wght@400;500;700&family=DM+Sans:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;700;800&family=Figtree:wght@400;500;700;800&family=Outfit:wght@400;500;700;800&family=Play:wght@400;700&family=Bebas+Neue&family=Space+Grotesk:wght@400;700&family=Orbitron:wght@400;700;900&family=Chakra+Petch:wght@400;700&family=Exo+2:wght@400;700;900&family=Russo+One&family=Wavefont:ROND,wght@0..100,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Play:wght@400;700&family=Wavefont:ROND,wght@0..100,100..900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/sprae" data-start></script>
     <style>
       :root {
-        --ink: #0d1014;
-        --paper: #edebe4;
-        --teal: #00a4b8;
-        --grot: 'Manrope', system-ui, sans-serif;
-        --logo: 'Play', sans-serif;
+        /* colors */
+        --c-ink:    #0d1014;
+        --c-paper:  #edebe4;
+        --c-bg:     #f1efe9;
+        --c-accent: #00a4b8;
+
+        /* fonts */
+        --f-body: 'Manrope', system-ui, sans-serif;
+        --f-logo: 'Play', sans-serif;
+        --f-wave: 'Wavefont', monospace;
+
+        /* font sizes */
+        --fs-xs:   clamp(10px, 1.5vw, 15px);
+        --fs-sm:   clamp(12px, 1.7vw, 17px);
+        --fs-md:   clamp(14px, 2vw, 20px);
+        --fs-lg: clamp(20px, 3vw, 30px);
+        --fs-xl:   clamp(54px, 8.1vw, 81px);
+        --fs-2xl:  clamp(72px, 10.8vw, 108px);
+
+        /* layout — rh scales with viewport; sw follows proportionally */
+        --rh: clamp(72px, 10.8vw, 108px);
+        --sw: calc(var(--rh) * 4);
+
+        /* aliases for legacy refs */
+        --ink:   var(--c-ink);
+        --paper: var(--c-paper);
+        --teal:  var(--c-accent);
+        --grot:  var(--f-body);
+        --logo:  var(--f-logo);
       }
       * { box-sizing: border-box; }
       body {
@@ -33,21 +57,10 @@
       /* ─── COVER ─── */
       .cover {
         width: 100%;
-        aspect-ratio: 1 / 1;
-        display: grid;
-        grid-template-rows: 4fr 5fr;
+        display: flex;
+        flex-direction: column;
         position: relative;
         overflow: hidden;
-      }
-
-      /* tablet → near-square */
-      @media (min-width: 480px) {
-        .cover { aspect-ratio: 768 / 800; }
-      }
-
-      /* wide → full width, height follows content */
-      @media (min-width: 1080px) {
-        .cover { aspect-ratio: unset; }
       }
 
       /* top dark half · canvas */
@@ -56,6 +69,7 @@
         color: var(--paper);
         position: relative;
         padding: 0;
+        min-height: calc(4 * var(--rh));
         background-image:
           radial-gradient(ellipse at 30% 40%, rgba(255,255,255,0.04), transparent 60%),
           radial-gradient(ellipse at 80% 80%, rgba(255,255,255,0.025), transparent 50%),
@@ -75,6 +89,7 @@
       .bot {
         position: relative;
         padding: 0;
+        min-height: calc(var(--rh) * 5);
       }
       .bot::after { display: none; }
 
@@ -82,7 +97,7 @@
       .inner {
         max-width: 1080px;
         margin: 0 auto;
-        padding: 12px 56px 0;
+        padding: 12px 56px 6.75rem;
         height: 100%;
         position: relative;
       }
@@ -96,7 +111,7 @@
         padding-top: 0;
         font-style: normal;
         font-weight: 500;
-        font-size: 17px;
+        font-size: var(--fs-xs);
         color: var(--paper);
         opacity: 0.75;
       }
@@ -111,7 +126,7 @@
       .wordmark .name {
         font-family: var(--logo);
         font-weight: 800;
-        font-size: clamp(72px, 11vw, 110px);
+        font-size: var(--fs-2xl);
         line-height: 0.72;
         letter-spacing: -0.064em;
         color: var(--paper);
@@ -120,15 +135,15 @@
         border: 3px solid var(--paper);
         padding: 8px;
         font-weight: 600;
-        font-size: clamp(48px, 5.4vw, 54px);
+        font-size: clamp(42px, 6.4vw, 64px);
         line-height: 0.81;
         letter-spacing: -0.02em;
         color: transparent;
-        -webkit-text-stroke: 4px var(--paper);
+        -webkit-text-stroke: .054em var(--paper);
       }
       .subtitle {
         font-weight: 500;
-        font-size: clamp(20px, 2.4vw, 26px);
+        font-size: var(--fs-lg);
         line-height: 1;
         color: var(--paper);
         margin-top: 2rem;
@@ -136,7 +151,7 @@
       }
       .freq {
         font-weight: 700;
-        font-size: clamp(48px, 8.1vw, 81px);
+        font-size: var(--fs-xl);
         line-height: 1;
         letter-spacing: -0.035em;
         color: var(--teal);
@@ -144,39 +159,33 @@
         text-align: center;
       }
 
-      @property --wt-anim {
-        syntax: '<number>';
-        inherits: true;
-        initial-value: 0;
-      }
-
-      /* wavefont stripe block — 1/3 height bleeds up into dark */
+      /* wavefont stripe block */
       .stripe-block {
-        --sw: 27rem;
         width: var(--sw);
+        max-width: 100%;
         opacity: 0;
         transition: opacity 0.2s;
         background-color: #f1efe9;
-        aspect-ratio: 4 / 3;
-        margin: -6.75rem auto 0;
+        margin: calc(var(--rh) * -1) auto 0;
         display: grid;
         grid-template-rows: repeat(3, 1fr);
         position: relative;
         z-index: 2;
         pointer-events: none;
+        user-select: none;
+        touch-action: none;
       }
       .stripe-row {
         pointer-events: auto;
         overflow: hidden;
-        font-family: 'Wavefont', monospace;
-        font-size: calc(var(--sw) / 4);
+        font-family: var(--f-wave);
+        font-size: var(--rh);
         line-height: 1;
         white-space: nowrap;
       }
       .stripe-row span {
         display: inline-block;
         width: calc(var(--sw) / var(--sn));
-        font-variation-settings: 'ROND' 0, 'YELA' 0, 'wght' var(--wt-base, 145);
       }
       .r-0, .r-1, .r-2 { color: var(--ink); }
       .stripe-row:nth-child(even) { text-align: right; }
@@ -189,7 +198,7 @@
       }
       .feats div {
         font-weight: 700;
-        font-size: clamp(22px, 3vw, 30px);
+        font-size: var(--fs-lg);
         letter-spacing: -0.012em;
         color: var(--ink);
         line-height: 1.55;
@@ -198,7 +207,7 @@
         margin-top: 20px;
         text-align: center;
         font-weight: 500;
-        font-size: clamp(13px, 1.5vw, 15px);
+        font-size: var(--fs-xs);
         color: var(--ink);
         position: relative;
         z-index: 3;
@@ -226,7 +235,7 @@
         text-align: center;
         margin-top: 10px;
         font-weight: 500;
-        font-size: clamp(13px, 1.5vw, 15px);
+        font-size: var(--fs-sm);
         color: var(--ink);
         position: relative;
         z-index: 3;
@@ -234,7 +243,7 @@
 
       @media (max-width: 479px) {
         .inner { padding-left: 24px; padding-right: 24px; }
-        .stripe-block { --sw: 20rem; margin-top: -5rem; }
+        .bot .inner { padding-left: 24px; padding-right: 24px; }
       }
     </style>
 </head>
@@ -248,23 +257,26 @@
             <span class="name">audio</span>
             <span class="js">JS</span>
           </h1>
-          <div class="subtitle">Modular Web Audio Toolkit</div>
+          <div class="subtitle">Open Audio Modules</div>
           <div class="freq">20-20k</div>
         </div>
       </div>
       <div class="bot">
         <div class="stripe-block" id="stripeBlock"
-          :scope="(()=>{const wmax=290,N=40,P=Math.PI;return{wmax,N,rows:[P*1.5,P*0.5,P*1.5].map(off=>Array.from({length:N},(_,i)=>{const ph=+(off+i/(N-1)*P).toFixed(4);return{ph,wt:Math.round(wmax/2*(1+Math.sin(ph)))||1}}))}})()"
-          :style="`--wmax:${wmax};--sn:${N}`"
+          :scope="{
+            N:40,
+            rows:[Math.PI*1.5,Math.PI*0.5,Math.PI*1.5].map(off=>Array.from({length:40},(_,i)=>({ph:+(off+i/39*Math.PI).toFixed(4)})))
+          }"
+          :style="`--sn:${N}`"
           aria-hidden="true">
           <div class="stripe-row r-0">
-            <template :each="bar in rows[0]"><span :style="`--phase:${bar.ph};font-variation-settings:'ROND' 0,'YELA' 0,'wght' ${bar.wt}`">Z</span></template>
+            <template :each="bar in rows[0]"><span :style="`--phase:${bar.ph}`">Z</span></template>
           </div>
           <div class="stripe-row r-1">
-            <template :each="bar in rows[1]"><span :style="`--phase:${bar.ph};font-variation-settings:'ROND' 0,'YELA' 0,'wght' ${bar.wt}`">Z</span></template>
+            <template :each="bar in rows[1]"><span :style="`--phase:${bar.ph}`">Z</span></template>
           </div>
           <div class="stripe-row r-2">
-            <template :each="bar in rows[2]"><span :style="`--phase:${bar.ph};font-variation-settings:'ROND' 0,'YELA' 0,'wght' ${bar.wt}`">Z</span></template>
+            <template :each="bar in rows[2]"><span :style="`--phase:${bar.ph}`">Z</span></template>
           </div>
         </div>
         <div class="inner">
@@ -289,76 +301,47 @@
   </header>
   <main style="background:var(--ink);min-height:200px;"></main>
   <footer></footer>
-  <div id="fontPicker" style="position:fixed;bottom:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-    <select id="logoSelect" style="font-size:13px;padding:5px 8px;border:1px solid #ccc;border-radius:6px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer">
-      <optgroup label="Logo font">
-        <option value="Play">Play</option>
-        <option value="Bebas Neue">Bebas Neue</option>
-        <option value="Space Grotesk">Space Grotesk</option>
-        <option value="Orbitron">Orbitron</option>
-        <option value="Chakra Petch">Chakra Petch (Eurostile)</option>
-        <option value="Exo 2">Exo 2</option>
-        <option value="Russo One">Russo One</option>
-      </optgroup>
-    </select>
-    <select id="fontSelect" style="font-size:13px;padding:5px 8px;border:1px solid #ccc;border-radius:6px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer">
-      <optgroup label="Body font">
-        <option value="Manrope">Manrope</option>
-        <option value="Inter">Inter</option>
-        <option value="IBM Plex Sans">IBM Plex Sans</option>
-        <option value="Instrument Sans">Instrument Sans</option>
-        <option value="DM Sans">DM Sans</option>
-        <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
-        <option value="Figtree">Figtree</option>
-        <option value="Outfit">Outfit</option>
-      </optgroup>
-    </select>
-  </div>
   <script>
-    window.addEventListener('load', () => {
-      const block = document.getElementById('stripeBlock');
-      const wmax = parseFloat(block.style.getPropertyValue('--wmax')) || 290;
+    const init = () => {
+      const el = document.getElementById('stripeBlock');
+      const ss = [...el.querySelectorAll('.stripe-row span')];
+      if (!ss.length) { requestAnimationFrame(init); return; }
 
-      const rows = [...document.querySelectorAll('.stripe-row')].map(row => ({
-        row,
-        spans: [...row.querySelectorAll('span')].map(el => ({
-          el,
-          phase: parseFloat(el.style.getPropertyValue('--phase')) || 0
-        }))
-      }));
+      const spans = ss.map(s => ({ s, ph: parseFloat(s.style.getPropertyValue('--phase')) || 0 }));
+      const wmax = 290, P = Math.PI;
+      let t = 0, last = null, dragging = false, dragX = 0, visible = true;
 
-      let t = 0, last = null, paused = false;
-
-      const tick = (now) => {
-        const dt = last ? (now - last) / 1000 : 0;
-        last = now;
-        if (!paused) t += dt * Math.PI; // half rotation per second
-
-        rows.forEach(({spans}) => spans.forEach(({el, phase}) => {
-          const wt = Math.max(1, Math.min(wmax, wmax / 2 * (1 + Math.sin(phase + t))));
-          el.style.fontVariationSettings = `'ROND' 0, 'YELA' 0, 'wght' ${wt | 0}`;
-        }));
-
+      const tick = now => {
+        const dt = last ? (now - last) / 1000 : 0; last = now;
+        if (visible && !dragging) {
+          t += dt * P;
+          spans.forEach(({ s, ph }) => {
+            const wt = wmax / 2 * (1 + Math.sin(ph + t));
+            s.style.fontVariationSettings = `'ROND' 0,'YELA' 0,'wght' ${Math.max(1, wt) | 0}`;
+          });
+        }
         requestAnimationFrame(tick);
       };
 
-      block.addEventListener('mouseenter', () => { paused = true; });
-      block.addEventListener('mouseleave', () => { paused = false; });
+      // pause when tab hidden or block scrolled off-screen
+      document.addEventListener('visibilitychange', () => { visible = !document.hidden; last = null; });
+      new IntersectionObserver(([e]) => { visible = e.isIntersecting; last = null; }).observe(el);
 
-      // initial render: one frame at t=0
+      el.addEventListener('pointerdown', e => { dragging = true; dragX = e.clientX; el.setPointerCapture(e.pointerId); });
+      el.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        t -= (e.clientX - dragX) / el.getBoundingClientRect().width * P * 2;
+        dragX = e.clientX;
+        spans.forEach(({ s, ph }) => {
+          const wt = wmax / 2 * (1 + Math.sin(ph + t));
+          s.style.fontVariationSettings = `'ROND' 0,'YELA' 0,'wght' ${Math.max(1, wt) | 0}`;
+        });
+      });
+      el.addEventListener('pointerup', () => { dragging = false; last = null; });
+
+      document.fonts.ready.then(() => el.style.opacity = 1);
       tick(performance.now());
-
-      // show after font ready to avoid FOUC
-      document.fonts.load('1em Wavefont').then(() => { block.style.opacity = 1; });
-
-      // font pickers
-      document.getElementById('fontSelect').addEventListener('change', e => {
-        document.documentElement.style.setProperty('--grot', `'${e.target.value}', system-ui, sans-serif`);
-      });
-      document.getElementById('logoSelect').addEventListener('change', e => {
-        document.documentElement.style.setProperty('--logo', `'${e.target.value}', sans-serif`);
-      });
-    });
+    };
+    requestAnimationFrame(init);
   </script>
-</body>
 </html>

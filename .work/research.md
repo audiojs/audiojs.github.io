@@ -52,3 +52,7 @@ IDEA: make openly available JS packages have classified analogs compiled with JZ
 | **Individual devs** | Frontend devs, DSP hobbyists, music tech builders, podcasting tool makers | GitHub Sponsors + Open Collective; sponsor wall; "fund the next package" campaigns |
 | **Pro audio** | Ableton, Steinberg, PreSonus, Dolby, BBC R&D | Consulting contracts — "we build the open-source primitive, you fund the work" |
 | **Academic/research** | Stanford CCRMA, MIT Media Lab, IRCAM | Interactive demos as teaching tools; algorithm paper citations; research partnerships |
+
+## Refs
+
+* https://github.com/webprofusion/OpenAudio
