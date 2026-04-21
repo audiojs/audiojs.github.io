@@ -6,7 +6,7 @@
     <title>audiojs · modular web audio toolkit</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Play:wght@400;700&family=Wavefont:ROND,YELA,wght@0..100,-100..100,1..1000&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;700;800&family=IBM+Plex+Sans:wght@400;500;700&family=Instrument+Sans:wght@400;500;700&family=DM+Sans:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;700;800&family=Figtree:wght@400;500;700;800&family=Outfit:wght@400;500;700;800&family=Play:wght@400;700&family=Bebas+Neue&family=Space+Grotesk:wght@400;700&family=Orbitron:wght@400;700;900&family=Chakra+Petch:wght@400;700&family=Exo+2:wght@400;700;900&family=Russo+One&family=Wavefont:ROND,wght@0..100,100..900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/sprae" data-start></script>
     <style>
       :root {
@@ -14,6 +14,7 @@
         --paper: #edebe4;
         --teal: #00a4b8;
         --grot: 'Manrope', system-ui, sans-serif;
+        --logo: 'Play', sans-serif;
       }
       * { box-sizing: border-box; }
       body {
@@ -34,7 +35,7 @@
         width: 100%;
         aspect-ratio: 1 / 1;
         display: grid;
-        grid-template-rows: 44fr 56fr;
+        grid-template-rows: 4fr 5fr;
         position: relative;
         overflow: hidden;
       }
@@ -81,7 +82,7 @@
       .inner {
         max-width: 1080px;
         margin: 0 auto;
-        padding: 26px 56px 0;
+        padding: 12px 56px 0;
         height: 100%;
         position: relative;
       }
@@ -92,52 +93,54 @@
 
       .pro {
         text-align: center;
-        padding-top: 14px;
+        padding-top: 0;
         font-style: normal;
         font-weight: 500;
-        font-size: 13px;
+        font-size: 17px;
         color: var(--paper);
         opacity: 0.75;
       }
 
       .wordmark {
         display: flex;
-        align-items: center;
+        align-items: flex-end;
         justify-content: center;
         gap: 18px;
-        margin-top: 20px;
+        margin-top: 48px;
       }
       .wordmark .name {
-        font-family: 'Play', sans-serif;
+        font-family: var(--logo);
         font-weight: 800;
         font-size: clamp(72px, 11vw, 110px);
-        line-height: 0.85;
-        letter-spacing: -0.045em;
+        line-height: 0.72;
+        letter-spacing: -0.064em;
         color: var(--paper);
       }
       .wordmark .js {
         border: 3px solid var(--paper);
-        padding: 6px 18px 8px;
-        font-weight: 800;
-        font-size: clamp(48px, 7.5vw, 76px);
-        line-height: 0.9;
+        padding: 8px;
+        font-weight: 600;
+        font-size: clamp(48px, 5.4vw, 54px);
+        line-height: 0.81;
         letter-spacing: -0.02em;
-        color: var(--paper);
+        color: transparent;
+        -webkit-text-stroke: 4px var(--paper);
       }
       .subtitle {
         font-weight: 500;
-        font-size: clamp(15px, 1.7vw, 18px);
+        font-size: clamp(20px, 2.4vw, 26px);
+        line-height: 1;
         color: var(--paper);
-        margin-top: 6px;
+        margin-top: 2rem;
         text-align: center;
       }
       .freq {
         font-weight: 700;
-        font-size: clamp(48px, 7vw, 72px);
+        font-size: clamp(48px, 8.1vw, 81px);
         line-height: 1;
         letter-spacing: -0.035em;
         color: var(--teal);
-        margin-top: 10px;
+        margin-top: 4px;
         text-align: center;
       }
 
@@ -151,6 +154,8 @@
       .stripe-block {
         --sw: 27rem;
         width: var(--sw);
+        opacity: 0;
+        transition: opacity 0.2s;
         background-color: #f1efe9;
         aspect-ratio: 4 / 3;
         margin: -6.75rem auto 0;
@@ -164,7 +169,7 @@
         pointer-events: auto;
         overflow: hidden;
         font-family: 'Wavefont', monospace;
-        font-size: 9rem;
+        font-size: calc(var(--sw) / 4);
         line-height: 1;
         white-space: nowrap;
       }
@@ -197,14 +202,15 @@
         color: var(--ink);
         position: relative;
         z-index: 3;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0 20px;
       }
-      .bullets .sep { margin: 0 8px; opacity: 0.5; }
-      .bullets .blk {
-        display: inline-block;
-        width: 8px; height: 8px;
-        background: var(--ink);
-        margin-right: 6px;
-        transform: translateY(-1px);
+      .bullets .sep { display: none; }
+      .bullets div::before {
+        content: '◼';
+        vertical-align: middle;
       }
       .seal {
         margin: 22px auto 0;
@@ -268,10 +274,7 @@
           <div>Modular Design</div>
         </div>
         <div class="bullets">
-          <span><span class="blk"></span>ES Modules</span>
-          <span class="sep">·</span><span>Web Audio API</span>
-          <span class="sep">·</span><span>Sample-accurate timing</span>
-          <span class="sep">·</span><span>No dependencies</span>
+          <div>ES Modules</div><div>Web Audio API</div><div>Sample-accurate timing</div><div>No dependencies</div>
         </div>
         <div class="seal" aria-hidden="true">
           <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3">
@@ -284,8 +287,33 @@
 
     </article>
   </header>
-  <main></main>
+  <main style="background:var(--ink);min-height:200px;"></main>
   <footer></footer>
+  <div id="fontPicker" style="position:fixed;bottom:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+    <select id="logoSelect" style="font-size:13px;padding:5px 8px;border:1px solid #ccc;border-radius:6px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer">
+      <optgroup label="Logo font">
+        <option value="Play">Play</option>
+        <option value="Bebas Neue">Bebas Neue</option>
+        <option value="Space Grotesk">Space Grotesk</option>
+        <option value="Orbitron">Orbitron</option>
+        <option value="Chakra Petch">Chakra Petch (Eurostile)</option>
+        <option value="Exo 2">Exo 2</option>
+        <option value="Russo One">Russo One</option>
+      </optgroup>
+    </select>
+    <select id="fontSelect" style="font-size:13px;padding:5px 8px;border:1px solid #ccc;border-radius:6px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer">
+      <optgroup label="Body font">
+        <option value="Manrope">Manrope</option>
+        <option value="Inter">Inter</option>
+        <option value="IBM Plex Sans">IBM Plex Sans</option>
+        <option value="Instrument Sans">Instrument Sans</option>
+        <option value="DM Sans">DM Sans</option>
+        <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+        <option value="Figtree">Figtree</option>
+        <option value="Outfit">Outfit</option>
+      </optgroup>
+    </select>
+  </div>
   <script>
     window.addEventListener('load', () => {
       const block = document.getElementById('stripeBlock');
@@ -299,30 +327,37 @@
         }))
       }));
 
-      let t = 0, last = null, raf = null, active = false;
+      let t = 0, last = null, paused = false;
 
       const tick = (now) => {
         const dt = last ? (now - last) / 1000 : 0;
         last = now;
-        t += dt * Math.PI; // half rotation per second
+        if (!paused) t += dt * Math.PI; // half rotation per second
 
         rows.forEach(({spans}) => spans.forEach(({el, phase}) => {
           const wt = Math.max(1, Math.min(wmax, wmax / 2 * (1 + Math.sin(phase + t))));
           el.style.fontVariationSettings = `'ROND' 0, 'YELA' 0, 'wght' ${wt | 0}`;
         }));
 
-        if (active) raf = requestAnimationFrame(tick);
-        else { raf = null; last = null; }
+        requestAnimationFrame(tick);
       };
 
-      block.addEventListener('mouseenter', () => {
-        active = true;
-        if (!raf) raf = requestAnimationFrame(tick);
-      });
-      block.addEventListener('mouseleave', () => { active = false; });
+      block.addEventListener('mouseenter', () => { paused = true; });
+      block.addEventListener('mouseleave', () => { paused = false; });
 
       // initial render: one frame at t=0
       tick(performance.now());
+
+      // show after font ready to avoid FOUC
+      document.fonts.load('1em Wavefont').then(() => { block.style.opacity = 1; });
+
+      // font pickers
+      document.getElementById('fontSelect').addEventListener('change', e => {
+        document.documentElement.style.setProperty('--grot', `'${e.target.value}', system-ui, sans-serif`);
+      });
+      document.getElementById('logoSelect').addEventListener('change', e => {
+        document.documentElement.style.setProperty('--logo', `'${e.target.value}', sans-serif`);
+      });
     });
   </script>
 </body>
