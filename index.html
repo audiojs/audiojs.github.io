@@ -98,7 +98,6 @@
         top: 8px;
         right: 8px;
         padding: 10px;
-        opacity: 0.6;
         transition: opacity 0.15s;
         line-height: 0;
         z-index: 10;
@@ -130,7 +129,7 @@
         color: var(--paper);
       }
       .wordmark .js {
-        border: 3px solid var(--paper);
+        border: 0.036em solid var(--paper);
         padding: 8px;
         font-weight: 600;
         font-size: clamp(42px, 6.4vw, 64px);
@@ -312,7 +311,7 @@
       if (!ss.length) { requestAnimationFrame(init); return; }
 
       const spans = ss.map(s => ({ s, ph: parseFloat(s.style.getPropertyValue('--phase')) || 0 }));
-      const wmax = 400, P = Math.PI;
+      const wmax = 380, P = Math.PI;
       let t = 0, last = null, dragging = false, dragX = 0, visible = true;
 
       const tick = now => {
