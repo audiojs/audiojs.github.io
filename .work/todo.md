@@ -9,25 +9,30 @@
 
 ## [ ] Website
 
-* [ ] Demos before the website.
+* [ ] `npm i audio`
+* [ ] live demos
+  * File converter (with sample rate / meta / etc choice) - with packages used info etc
   * A BPM detector you can drop a track into.
   * A filter lab you can hear in real time.
   * A spectrogram you bookmark.
+  - [ ] audio-buffer demo
+    - [ ] load any-waveform into buffer like wavearea, edit/trim/crom (no history, direct buffer), play/save
+  - [ ] web-audio-api demo
+    - [ ] write any code (repl), play, open examples
+    - [ ] graph view
+  - [ ] digital-filters demo
+    - [ ] collection of filters with shown characteristics
+  - [ ] audio demo
+    - [ ] real waveform editing expirience?
+  - [ ] concept packages demos
+    - [ ] as audio plugins: open or stream audio/mic
+* [ ] Catalog with module dossiers (need architecture beforehead)
+  - [ ] status, downloads, runtime support, pro version (wasm) - compile to VST/AU/etc
+  - [ ] Interactive demo per package (doubles as useful tool)
+* [ ] Github stars
+* [ ] Sponsorship strip
+* [ ] Roadmap
 
-- [ ] Package catalog with status, downloads, runtime support
-- [ ] Interactive demo per package (doubles as useful tool)
-
-- [ ] audio-buffer demo
-  - [ ] load any-waveform into buffer like wavearea, edit/trim/crom (no history, direct buffer), play/save
-- [ ] web-audio-api demo
-  - [ ] write any code (repl), play, open examples
-  - [ ] graph view
-- [ ] digital-filters demo
-  - [ ] collection of filters with shown characteristics
-- [ ] audio demo
-  - [ ] real waveform editing expirience?
-- [ ] concept packages demos
-  - [ ] as audio plugins: open or stream audio/mic
 
 ## [ ] WASM
 
