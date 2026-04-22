@@ -76,6 +76,7 @@
         /* layout — rh scales with viewport; sw follows proportionally */
         --rh: clamp(72px, 10.8vw, 108px);
         --sw: calc(var(--rh) * 4);
+        --dot-cell: calc(var(--rh)/4);
 
         /* aliases for legacy refs */
         --ink:   var(--c-ink);
@@ -114,6 +115,14 @@
         position: relative;
         padding: 0;
         min-height: calc(4 * var(--rh));
+      }
+      .top::before {
+        content: '';
+        position: absolute; inset: 0;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+        background-size: var(--dot-cell) var(--dot-cell);
+        background-position: center;
+        pointer-events: none;
       }
 
       /* bottom half · transparent — shows root bg */
