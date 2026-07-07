@@ -1,37 +1,23 @@
 
-## Priority
+## Now (ordered)
 
-### Ship what's already built (audit 2026-07: done locally, invisible publicly)
+1. [ ] **Publish `@audio` scope** — full plan: [.work/publish.md](publish.md). Preflight (`file:`→semver swaps, GH repos for new umbrellas, pack dry-runs) → waves A/B/C `publish:all` → deprecate 11 unscoped names.
+2. [ ] `audio`: publish pending commits past v2.2.0; after scope publish, wire plugin registry/docs to `@audio/*` names.
+3. [ ] Website: resolve homepage direction (index-v2/3/4, undecided since Apr) → ship **Mix Analyser** first (`@audio/loudness` + `@audio/spectral` now real) → FUNDING.yml/OSC/Sponsors plumbing → **Speech Enhancer** (`@audio/denoise` + `@audio/dynamics`).
+4. [ ] **audio-module pilot** (compressor per CONTRACT.md) → migrate families one-by-one → defeedback realtime leg (mic→Dante→speakers; offline MVP done).
+5. [ ] Funding now-actions (see Funding): GitHub Secure OSS Fund application, Open Source Collective host, Tidelift, STR audit request, thanks.dev/Pledge query, corporate outreach.
 
-- [ ] `@audio/effect`: publish — exciter + frequency-shifter committed 2026-07 (auto-panner moved to `@audio/spatial`); 39/39 tests
-- [ ] `@audio/denoise`: publish — ~2261 lines, 41/41 tests, never on npm; the Speech Enhancer engine
-- [x] `~/projects/@audio/{denoise,effect,eq,filter}`: `git init` + commit 45 stub packages — done 2026-07: scaffolds absorbed as `packages/` workspaces into the real repos (committed); `@audio/eq` git-initted
-- [x] reconcile draft atoms with canonical repo-root DSP — done 2026-07: full atomization across pitch/beat/dynamics/denoise/effect/filter/eq (+ weighting/auditory/spatial/mir/synth extracted); 724 tests green, every pre-restructure test preserved
-- [ ] publish newly atomized families + umbrellas (pitch, beat, dynamics, denoise, effect, filter+speech, eq, weighting, auditory, spatial, mir, synth) and deprecate unscoped npm names
-- [ ] create GitHub repos for new umbrellas (weighting, auditory, eq, spatial, mir, synth, spectral, loudness, vocals, primitives)
+## Next
 
-### Restructure follow-ups (2026-07)
-
-- [ ] READMEs: rewrite per repo for atomized structure (before publish) — `filter/readme.md` especially (families moved out; `test/readme.js` disabled in orchestrator until then)
-- [ ] `filter/plot/generate.js`: prune to remaining families; move family plots with their repos
-- [ ] types: `filter/test/types.ts` update; per-atom `.d.ts` split (umbrella-level `.d.ts` shipped for filter/weighting/auditory/eq; atom-level only speech/crossfeed/pink-noise)
-- [ ] merge gate/deesser variants (dynamics hold-gate ↔ denoise lookahead-gate; broadband ↔ dynamic-EQ deesser) at audio-module migration, behind differential tests
-- [ ] `@audio/{stft,window,biquad}` primitives: extract + swap family-core copies behind differential tests (scaffolded at `primitives/`)
-- [x] baseline gaps wave 1 — done 2026-07: resample (sinc+linear), vocals, all spectral atoms (+mfcc/ltas/edit), loudness-lufs (EBU 3341 ±0.1), dynamics-multiband, eq-fir, reverb family (schroeder+freeverb+dattorro+convolution), mir tonnetz/melody/tempogram — 785 tests green; matrix statuses flipped
-- [x] baseline gaps wave 2 — done 2026-07: reverb family complete (fdn/spring/shimmer + partitioned FFT convolution), saturate family (sinc-oversampled, alias-verified), loudness complete (truepeak/lra/replaygain/dr), dynamics character models (opto/fet/vca/varimu) + leveler, eq-dynamic, tune-snap — 812 tests green
-- [ ] baseline wave 3: `@audio/amp` (compose saturate-tube + tone stack; cabinet = convolution wrapper, pairs with measure-ir); mir heavy tail (structure/fingerprint first); frontier stubs by demand
-- [ ] publish prep: swap `file:` atom links to semver (loudness-lufs→weighting-k, dynamics-multiband→eq-crossover, mir-melody→pitch-yin, mir-tempogram→beat-core; effect/module dev links)
-- [ ] frontier classes scaffolded 2026-07 (measure, voice, midi, neural, defeedback + bytebeat/note implemented) — implement per demand: measure-ir (Farina ESS) and defeedback MVP are the highest-leverage next
-- [ ] `@audio/shift-*`, `@audio/stretch-*`: publish 21 source-complete atoms — test-split + publish, no new code
-- [ ] `audio`: publish 4 pending commits past v2.2.0
-
-### Main
-
-- [ ] `audio`: finish, publish, integrate with filters: on par with SOX: compress, reverb, denoise, pitch-correct, denoise, declick, stretch — README still lists reverb/compressor/noise-reduction/chorus/flanger/phaser as "planned"; wire in @audio/effect + @audio/denoise, don't reimplement
-- [ ] `floabeat`: collection of fixtures for testing algorithms
-  * [ ] integrate into @audio/beat, audio, @audio/pitch, @audio/shift, @audio/stretch etc
-- [ ] `signal-generator` — sweep, impulse, DTMF, test tones (bare npm name unpublished 2021 — verify reclaimable, else `@audio/signal`)
-  - [ ] `audio-input?` – unified audio source: files, gens, urls, records, TTS, noises?
+- [ ] MIR research tail: downbeat, multif0, similarity (MFCC/chroma distance), transcribe, drums, coversong
+- [ ] Remaining stubs (implement by demand): voice-{tract, voder, glottis} · midi-{parse, write, soundfont} · speech-world · denoise-repair · tune-midi · synth-{sfx, poly} · effect-{sbr, stutter, graindelay, subbass, lofi} · reverb partitioned→streaming · primitives `@audio/{stft, window, biquad}` extraction (swap family cores behind differential tests) · neural lane (runtime adapter + policy)
+- [ ] Per-repo README refresh at publish (names renamed 2026-07 ✓; API docs/examples per repo still to verify) — filter: re-enable `test/readme.js` fence runner with the new import map; update `filter/plot/generate.js` + `test/types.ts` to split families
+- [ ] Per-atom `.d.ts` (umbrella-level shipped for filter/weighting/auditory/eq; atom-level only speech/crossfeed/pink-noise)
+- [ ] `am` wrapper convention: every atom ships an audio-module descriptor — file `am.js`, subpath `<pkg>/am`, discoverable manifest key `"audio-module": "./am.js"`; adopt during the audio-module migration (see research)
+- [ ] Release automation (changesets/CI publish) before atom count grows further; TypeScript types org-wide; bus factor (2nd npm owner + recovery playbook)
+- [ ] `floabeat` fixtures package (seeds live in beat/{synth,floatbeats}.js); `audio-input` unified source idea
+- [ ] `a-weighting` absorption → `@audio/weighting-*.response(f)`, then deprecate
+- [ ] `web-audio-api` positioning vs IRCAM node-web-audio-api; `web-codecs` polyfill window; jz DSP proof (see WASM)
 
 ## [ ] Website
 
@@ -58,7 +44,7 @@ Goal: **corporate sponsors/consulting first** (fastest to cash, needs no website
 In order of impact × feasibility today:
 
 * [ ] **Speech Enhancer** — voice recordings: denoise + declick + de-hum + de-ess + loudness normalize (-16 LUFS speech target). Audience: podcasters, journalists, course creators. Direct competitors: cleanvoice.ai ($10/mo), adobe podcast enhance, krisp. Modules: `@audio/denoise`, `@audio/effect`, `a-weighting`, `audio-buffer/util.normalize`. Positioning: sell the transparent chain + privacy, NOT denoise quality — ML (DeepFilterNet worklets; free: sapphi-red/web-noise-suppressor) beats classical on raw denoise.
-* [ ] **Music Enhancer** — music tracks: denoise (gentler), spectral repair, stereo-image fix, mastering chain (multiband comp + limiter + LUFS target -14). Audience: bedroom producers, archivists. Competitors: landr ($10-25/mo), bandlab mastering, eMastered. Modules: `@audio/denoise`, `@audio/filter`, `@audio/dynamics` (unpublished), `a-weighting`.
+* [ ] **Music Enhancer** — music tracks: denoise (gentler), spectral repair, stereo-image fix, mastering chain (multiband comp + limiter + LUFS target -14). Audience: bedroom producers, archivists. Competitors: landr ($10-25/mo), bandlab mastering, eMastered. Modules: `@audio/denoise`, `@audio/filter`, `@audio/dynamics` ✔, `a-weighting`.
 * [ ] **Mix Analyser** — drop a track, get a *report*: LUFS-I, true peak, dynamic range (PLR/PSR), spectral balance (genre reference curves = v2, needs target-curve library), mono compatibility, clipping detection, recommendations. Audience: mixing engineers. Competitors: youlean, izotope insight ($199), masteringthemix levels ($79). Modules: `a-weighting`, `fourier-transform`, `audio-buffer`. (No processing — pure measurement; smallest scope, fastest ship.)
 * [ ] **Auto-Chain** (umbrella product, after the three above) — drop file → pick content type → analyse → pick chain → process → render. Visible chain. Editable. Exports as audiojs JS pipeline (recipe). This is the grant story and the freemium upsell.
 
@@ -76,11 +62,11 @@ input → user picks content type → analysis pass (no processing) →
 
 **Stage 1 — Analysis pass** (read-only):
 
-* [ ] Loudness: ITU-R BS.1770-4 integrated LUFS, LRA, true peak (`@audio/loudness`, new — bare npm name `loudness` is taken)
+* [ ] Loudness: ITU-R BS.1770-4 integrated LUFS, LRA, true peak (`@audio/loudness` ✔ — lufs/truepeak/lra EBU-verified)
 * [ ] Noise PSD estimation: minimum-statistics on quiet frames (Martin 2001) → builds noise profile (`@audio/denoise`)
-* [ ] LTAS (long-term average spectrum) → drives adaptive EQ (`spectral-stats`, new)
-* [ ] Sibilance band energy (5–9 kHz) → de-ess threshold (`spectral-stats`)
-* [ ] Hum detection: spectral peaks at 50/60/100/120 Hz (`spectral-stats` + `fourier-transform`)
+* [ ] LTAS (long-term average spectrum) → drives adaptive EQ (`@audio/spectral-ltas` ✔)
+* [ ] Sibilance band energy (5–9 kHz) → de-ess threshold (`@audio/spectral` ✔)
+* [ ] Hum detection: spectral peaks at 50/60/100/120 Hz (`@audio/spectral` + `fourier-transform` ✔)
 * [ ] Clipping detection: consecutive samples at ±1 (`audio-buffer/util`)
 * [ ] Voiced/unvoiced ratio, F0 range (informs presets, also surfaces "is this really speech?" if user picked wrong)
 
@@ -88,11 +74,11 @@ input → user picks content type → analysis pass (no processing) →
 
 * [ ] DC remove + low-cut HPF 20–80 Hz (`digital-filter`)
 * [ ] Hum notch comb at detected mains frequency + harmonics (`digital-filter`)
-* [ ] Spectral noise reduction — Wiener / MMSE-LSA (Ephraim-Malah) using estimated noise PSD (`@audio/denoise`)
+* [ ] Spectral noise reduction — Wiener / MMSE-LSA using estimated noise PSD (`@audio/denoise` ✔)
 * [ ] Declick / decrackle — transient detection in HF + interpolation across short bursts (`@audio/denoise`, planned)
 * [ ] De-ess — dynamic high-shelf or band compressor at 5–9 kHz, sidechain on sibilance (`@audio/effect`)
 * [ ] Adaptive EQ — match measured LTAS toward content-type target curve, smoothed in critical bands (`digital-filter` + target curve library)
-* [ ] Multiband compressor — light, content-type-specific (`@audio/dynamics`, todo)
+* [ ] Multiband compressor — light, content-type-specific (`@audio/dynamics-multiband` ✔)
 * [ ] True-peak limiter, ceiling -1 dBTP (`@audio/dynamics`)
 * [ ] Loudness normalize to target: speech -16 LUFS, music -14 LUFS, voice-over-music -16 LUFS (`loudness`)
 
@@ -381,13 +367,9 @@ Strongest durable 2026 demand: OpenAI Realtime / LiveKit / Pipecat pipelines all
 
 - [ ] Close all issues in `contributing`, archive repo
 - [ ] `web-codecs`: portable WebCodecs API — WASM-based polyfill for cross-runtime codec access. Time-sensitive: native AudioEncoder = Opus/AAC only, Safari 26 only just added audio — ship FLAC/MP3/Vorbis polyfill while the gap is fresh
-- [ ] `a-weighting`: add K-weighting (BS.1770 RLB + high-shelf biquad cascade) — A/B/C/D/M/Z already exist, stale item said "add C"; K is the `@audio/loudness` blocker
 - [x] `@audio/denoise` — spectral subtraction, gating, dehum, declick: built (~2261 lines, 41 tests); publish → Priority
 - [ ] `audio-module` - cross-compiling audio-files, audio-shaders etc
 - [ ] Sponsoring: FUNDING.yml, open collective, NLnet Open Internet Stack (NGI Zero closed — see Funding)
-- [ ] `colors-of-noise` — pink ✔ (`@audio/synth-noise`); white, brown, blue, violet, gray, velvet — extend synth-noise
-- [x] `@audio/dynamics` — resolved 2026-07: canonical home for all dynamics; `effect/dynamics/` dissolved (transient-shaper moved in); gate/deesser variants qualified, merge at audio-module migration
-- [ ] `reverbs` — Freeverb, Dattorro, Schroeder, convolution
 - [ ] `defeedback` — adaptive feedback suppression (analyzer + tracker + notch bank) — scaffolded 2026-07 at `@audio/defeedback` (see its README: offline MVP = composition over existing atoms; only tracker + coef interpolation are new code; realtime waits on audio-module worklet)
   - [ ] Node.js audio capture/output from Dante VSC (appears as standard OS audio device)
   - [ ] `defeedback/analyzer.js` — FFT (via fourier-transform) + spectral peak detection
@@ -450,6 +432,19 @@ CZI EOSS (biomedical-only — unless a real bioacoustics adoption story exists b
 
 
 ## Archive
+
+### 2026-07 — @audio restructure & baseline waves (1–4)
+
+- [x] Ecosystem unified: 37 repos at `~/projects/@audio/<sub>`, one shape (umbrella root + `packages/*` atoms), 847 tests green — see research.md catalog + audio/.work/baseline.md matrix
+- [x] Moves/renames: 14 repos in (incl. audio-host → host, audio-module → module); scaffolds absorbed; conflicts resolved; bytebeat moved out (app-side, units-not-apps principle)
+- [x] Baseline implemented: resample, vocals, spectral (full), loudness (BS.1770/EBU-verified), multiband, FIR EQ, reverb family (7 kinds, Jot-T60-verified), saturate (oversampled), dynamics character models + leveler, eq-dynamic, tune-snap, measure (Farina ESS round-trip), amp, mir (tonnetz/melody/tempogram/structure/fingerprint), synth (generators + drums + voice), sinusoidal (MQ/SMS), defeedback MVP (closed-loop verified, zero-latency), spatial (complete), note, spectral freeze/contrast/harmonics/cqt
+- [x] Quality passes: FDN → canonical Jot T60 (Schroeder-EDC test); fft scratch-buffer aliasing found & hardened; consistency audit across all repos
+- [x] Docs: README package refs renamed to @audio scope everywhere; publish plan written (.work/publish.md); research.md catalog authoritative
+- [x] `@audio/effect`: exciter, frequency-shifter committed (auto-panner → @audio/spatial)
+- [x] `~/projects/@audio/{denoise,effect,eq,filter}` scaffolds: absorbed + committed
+- [x] reconcile draft atoms with canonical root DSP (full atomization)
+- [x] `@audio/dynamics` home resolved; `effect/dynamics` dissolved; gate/deesser variants qualified
+- [x] colors-of-noise (pink→violet, slope-verified); reverbs (Freeverb/Dattorro/Schroeder/convolution/FDN/spring/shimmer); defeedback analyzer/tracker/notchbank; K-weighting exact BS.1770 (in @audio/weighting-k)
 
 - [x] Archive `docs` repo
 - [x] `time-stretch` — phase vocoder, WSOLA, pitch shift

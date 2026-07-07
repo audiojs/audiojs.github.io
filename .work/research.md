@@ -196,7 +196,7 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 ✔ `sinusoidal-{track, synth, residual}` — 4 tests: two-tone tracked (amp ratio ±5%), vibrato contour followed, energy-preserving resynthesis, tonal/noise separation (MQ 1986 / Serra SMS). The De-Slop substrate.
 
 #### `@audio/host` / `@audio/module` — extension mechanisms
-`host`: native plugin hosts — `@audio/host` + `@audio/host-vst`/`@audio/host-clap` atoms + per-platform binary packages (speaker/mic pattern); full test needs a real VST3 + audio hardware (environment-gated). `module`: the cross-target module contract (JS → AudioWorklet / WAM / CLAP / VST3 / AU / LV2) — 16 tests ✓; the API-unification substrate (contract + migration plan in `audio-module/CONTRACT.md` + `audio/.work/audio-module.md`).
+`host`: native plugin hosts — `@audio/host` + `@audio/host-vst`/`@audio/host-clap` atoms + per-platform binary packages (speaker/mic pattern); full test needs a real VST3 + audio hardware (environment-gated). `module`: the cross-target module contract (JS → AudioWorklet / WAM / CLAP / VST3 / AU / LV2) — 16 tests ✓; the API-unification substrate (contract + migration plan in `module/CONTRACT.md` + `audio/.work/audio-module.md`). Wrapper convention decided: each atom ships an `am.js` descriptor at subpath `<pkg>/am`, declared via a `"audio-module": "./am.js"` manifest key so tooling can discover modules without importing them — adopt during the migration.
 
 #### `@audio/decode` / `@audio/encode` / `@audio/speaker` / `@audio/mic` — codecs & I/O
 ✔ decode 12 codec atoms (published), encode 10 (published), speaker/mic 5 platform-binary packages each (optionalDependencies pattern — native binaries, not algorithm atoms; exempt from the packages-only rule).
