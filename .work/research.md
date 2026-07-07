@@ -85,7 +85,7 @@ IDEA: make openly available JS packages have classified analogs compiled with JZ
 
 ## `@audio` Package Ecosystem
 
-**Status (2026-07, post-restructure)**: 36 repos at `~/projects/@audio/<sub>`, one shape everywhere — root = thin umbrella, every algorithm an atom in `packages/*`. 812 tests green across 25 suites; every pre-restructure test preserved (pitch-detection 62 = pitch 46 + mir 16; audio-filter 187 = filter 98 + weighting 30 + auditory 28 + eq 25 + spatial-crossfeed 4 + synth-noise 2; audio-effect 58 = effect 39 + spatial 7 + dynamics 1 ported + 11 superseded). Published on npm today: decode 12 + encode 10 + speaker 5 atoms (mic placeholders at 0.0.0) — everything else awaits Phase-1 publish. Baseline coverage matrix vs FFmpeg/SoX/librosa/Pedalboard/MIREX (with test evidence): `~/projects/audio/.work/baseline.md`. Local cross-repo atom deps use `file:` links (loudness-lufs→weighting-k, dynamics-multiband→eq-crossover, mir-melody→pitch-yin, mir-tempogram→beat-core) — swap to semver at publish. GitHub repos keep historical names; unscoped npm packages stay live until scoped publish + deprecation. Cite the published ~27 in pitches. Paths below relative to `~/projects/@audio/`.
+**Status (2026-07, post-restructure)**: 36 repos at `~/projects/@audio/<sub>`, one shape everywhere — root = thin umbrella, every algorithm an atom in `packages/*`. 826 tests green across 27 suites; every pre-restructure test preserved (pitch-detection 62 = pitch 46 + mir 16; audio-filter 187 = filter 98 + weighting 30 + auditory 28 + eq 25 + spatial-crossfeed 4 + synth-noise 2; audio-effect 58 = effect 39 + spatial 7 + dynamics 1 ported + 11 superseded). Published on npm today: decode 12 + encode 10 + speaker 5 atoms (mic placeholders at 0.0.0) — everything else awaits Phase-1 publish. Baseline coverage matrix vs FFmpeg/SoX/librosa/Pedalboard/MIREX (with test evidence): `~/projects/audio/.work/baseline.md`. Local cross-repo atom deps use `file:` links (loudness-lufs→weighting-k, dynamics-multiband→eq-crossover, mir-melody→pitch-yin, mir-tempogram→beat-core) — swap to semver at publish. GitHub repos keep historical names; unscoped npm packages stay live until scoped publish + deprecation. Cite the published ~27 in pitches. Paths below relative to `~/projects/@audio/`.
 
 ### Design Principles
 
@@ -142,10 +142,10 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 ✔ `spatial-{panner, widener, haas, autopan}` (from audio-effect), `spatial-crossfeed` (from audio-filter) — 11 tests. ◌ `spatial-{midside, surround, channelsplit, delay, microshift}`. FFmpeg parity: stereotools, stereowiden, extrastereo, bs2b, surround, channelsplit, adelay; H3000 MicroShift class.
 
 #### `@audio/mir` — music information retrieval
-✔ `mir-{chroma, chord, key, tonnetz, melody, tempogram}` — 19 tests (tonnetz transposition invariance per Harte 2006; melody sweep tracking via YIN; tempogram click-track hold). ◌ `mir-{structure, downbeat, multif0, fingerprint, similarity, transcribe, drums, coversong}`. ML-tier (genre/mood/tags/separate) deferred — needs hosted weights, conflicts with no-ML-in-hot-path.
+✔ `mir-{chroma, chord, key, tonnetz, melody, tempogram, structure, fingerprint}` — 21 tests (+ Foote novelty: texture seams found ±0.35 s; Wang landmark fingerprint: self/snippet-offset/noise-robust/junk-rejected). ◌ `mir-{downbeat, multif0, similarity, transcribe, drums, coversong}`. ML-tier (genre/mood/tags/separate) deferred — needs hosted weights, conflicts with no-ML-in-hot-path.
 
 #### `@audio/synth` — synthesis & generators
-✔ `synth-noise` (pink, from audio-filter; white/brown/blue/violet/gray/velvet planned — colors-of-noise backlog). ◌ `synth-{osc, chirp, dtmf, pluck, risset, rhythm, envelope, lfo, voice, drum, poly, sfx, wavetable}`. Parity: Audacity generators, Tone.js synthesis, ZZFX/ChipTone, WaveEdit.
+✔ `synth-noise` (colors: white/pink/brown/blue/violet — spectral slopes verified ±dB/oct, seeded), `synth-chirp` (lin/exp ESS sweep, instantaneous-frequency verified), `synth-osc` (periodic-function waveforms, harmonic signatures tested) — 5 tests. ◌ `synth-{dtmf, pluck, risset, rhythm, envelope, lfo, voice, drum, poly, sfx, wavetable}`.
 
 #### `@audio/spectral` — spectral features
 ✔ `spectral-{centroid, spread, flatness, rolloff, flux, slope, crest, mfcc, ltas, edit}` — 12 tests, analytic identities (Peeters 2004 / aspectralstats; MFCC gain-invariance per DCT property; LTAS Welch; edit = COLA STFT region gains with reconstruction + band-kill verified). ◌ `spectral-{freeze, contrast, harmonics, cqt}` (librosa/essentia descriptors + constant-Q). `ltas` is the adaptive-EQ / Matchering substrate.
@@ -160,7 +160,7 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 ◌ `@audio/{stft, window, biquad}` (unprefixed names per the audio plan) — dedupe targets: `denoise-core/stft` (canonical), `dynamics-core/biquad`, `window-function`/`digital-filter` (scijs, stay). Family cores keep local copies until these publish; swap behind differential tests.
 
 #### `@audio/reverb` — reverberation
-✔ family complete: `reverb-{schroeder, freeverb, dattorro, convolution, fdn, spring, shimmer}` — 13 tests. Convolution runs direct or uniform-partitioned FFT (differential-tested to 1e-6); fdn = Householder O(N) feedback (Jot); spring = dispersive allpass loop (Parker-Välimäki class); shimmer = octave-up feedback (Goertzel-verified 880 in the tail of a 440 input).
+✔ family complete: `reverb-{schroeder, freeverb, dattorro, convolution, fdn, spring, shimmer}` — 13 tests. Convolution runs direct or uniform-partitioned FFT (differential-tested to 1e-6); fdn = Householder O(N) + canonical Jot per-line T60 gains, Schroeder-EDC-verified ±30%; spring = dispersive allpass loop (Parker-Välimäki class); shimmer = octave-up feedback (Goertzel-verified 880 in the tail of a 440 input).
 
 #### `@audio/saturate` — saturation
 ✔ `saturate-{core, waveshaper, tube, transistor, tape, multiband}` — 5 tests. core = sinc-oversampled transfer application (upsample → shape → anti-aliased decimate via `resample-sinc`); alias-suppression differential test (4× vs naive on 10 kHz drive); tube even-dominant vs transistor odd-dominant verified by harmonic ratios; tape adds playback HF loss; multiband = Saturn class. Distinct from `effect-distortion` (hard clip).
@@ -169,13 +169,13 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 ✔ `tune-snap` — 4 tests: 47¢-sharp A4 → 440 ±3 Hz in A major, two-note melody corrected per note, in-tune gate leaves audio bit-identical, silence passthrough. Per-note v1 (no intra-note glide). ◌ `tune-midi` (Melodyne class, needs midi-parse).
 
 #### `@audio/amp` — amplification
-◌ `amp-{tube, cabinet}` — Ableton Amp/Cabinet, Logic Amp Designer class; classical modeling only (NAM = ML-tier, deferred). Cabinet shares the IR engine with `reverb-convolution`.
+✔ `amp-{tube, cabinet}` — 3 tests: tube = HP → oversampled `saturate-tube` → tone stack (even harmonics + tone shaping verified); cabinet = measured-IR convolution (delta-identity verified) or classical speaker-sim fallback (−12 dB+ at 8 kHz). NAM-class capture = `@audio/neural-amp`.
 
 #### `@audio/note` — music-theory primitives
 ✔ `note-{convert, scale}` — Hz ↔ MIDI ↔ name, cents (tuner readout), scale tables + nearest-degree snapping — 4 tests, 113 assertions (12-TET identities, full name/parse roundtrip). Substrate for `tune`, `midi`, the tuner tool.
 
 #### `@audio/measure` — acoustic & system measurement
-◌ `measure-{ir, response, latency, align}` — ESS sweep → IR capture (Farina 2000; feeds `reverb-convolution` + `amp-cabinet`), device response, loopback latency, multi-mic phase alignment (Auto-Align class). The practical recording surface: measure once, convolve forever.
+✔ `measure-{ir, response, latency, align}` — 5 tests: Farina ESS deconvolution recovers a known 3-tap system ±0.03 (identity → δ = 1.000), latency sample-exact, align recovers delay+polarity, response matches analytic one-pole ±0.5 dB. Feeds `reverb-convolution` + `amp-cabinet`: measure once, convolve forever.
 
 #### `@audio/voice` — voice synthesis
 ◌ `voice-{tract, voder, glottis}` — Kelly-Lochbaum waveguide (Pink Trombone class), Dudley 1939 Voder, LF/Rosenberg glottal pulses. Site-todo "voice generator via natural tract gen"; speech *analysis* stays `@audio/speech-*`; TTS = neural lane.
