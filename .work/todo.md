@@ -1,17 +1,49 @@
 
 ## Priority
 
-- [x] `audio`: finish, publish, integrate with filters: on par with SOX: compress, reverb, denoise, pitch-correct, denoise, declick, stretch
+### Ship what's already built (audit 2026-07: done locally, invisible publicly)
+
+- [ ] `@audio/effect`: publish — exciter + frequency-shifter committed 2026-07 (auto-panner moved to `@audio/spatial`); 39/39 tests
+- [ ] `@audio/denoise`: publish — ~2261 lines, 41/41 tests, never on npm; the Speech Enhancer engine
+- [x] `~/projects/@audio/{denoise,effect,eq,filter}`: `git init` + commit 45 stub packages — done 2026-07: scaffolds absorbed as `packages/` workspaces into the real repos (committed); `@audio/eq` git-initted
+- [x] reconcile draft atoms with canonical repo-root DSP — done 2026-07: full atomization across pitch/beat/dynamics/denoise/effect/filter/eq (+ weighting/auditory/spatial/mir/synth extracted); 724 tests green, every pre-restructure test preserved
+- [ ] publish newly atomized families + umbrellas (pitch, beat, dynamics, denoise, effect, filter+speech, eq, weighting, auditory, spatial, mir, synth) and deprecate unscoped npm names
+- [ ] create GitHub repos for new umbrellas (weighting, auditory, eq, spatial, mir, synth, spectral, loudness, vocals, primitives)
+
+### Restructure follow-ups (2026-07)
+
+- [ ] READMEs: rewrite per repo for atomized structure (before publish) — `filter/readme.md` especially (families moved out; `test/readme.js` disabled in orchestrator until then)
+- [ ] `filter/plot/generate.js`: prune to remaining families; move family plots with their repos
+- [ ] types: `filter/test/types.ts` update; per-atom `.d.ts` split (umbrella-level `.d.ts` shipped for filter/weighting/auditory/eq; atom-level only speech/crossfeed/pink-noise)
+- [ ] merge gate/deesser variants (dynamics hold-gate ↔ denoise lookahead-gate; broadband ↔ dynamic-EQ deesser) at audio-module migration, behind differential tests
+- [ ] `@audio/{stft,window,biquad}` primitives: extract + swap family-core copies behind differential tests (scaffolded at `primitives/`)
+- [x] baseline gaps wave 1 — done 2026-07: resample (sinc+linear), vocals, all spectral atoms (+mfcc/ltas/edit), loudness-lufs (EBU 3341 ±0.1), dynamics-multiband, eq-fir, reverb family (schroeder+freeverb+dattorro+convolution), mir tonnetz/melody/tempogram — 785 tests green; matrix statuses flipped
+- [x] baseline gaps wave 2 — done 2026-07: reverb family complete (fdn/spring/shimmer + partitioned FFT convolution), saturate family (sinc-oversampled, alias-verified), loudness complete (truepeak/lra/replaygain/dr), dynamics character models (opto/fet/vca/varimu) + leveler, eq-dynamic, tune-snap — 812 tests green
+- [ ] baseline wave 3: `@audio/amp` (compose saturate-tube + tone stack; cabinet = convolution wrapper, pairs with measure-ir); mir heavy tail (structure/fingerprint first); frontier stubs by demand
+- [ ] publish prep: swap `file:` atom links to semver (loudness-lufs→weighting-k, dynamics-multiband→eq-crossover, mir-melody→pitch-yin, mir-tempogram→beat-core; effect/module dev links)
+- [ ] frontier classes scaffolded 2026-07 (measure, voice, midi, neural, defeedback + bytebeat/note implemented) — implement per demand: measure-ir (Farina ESS) and defeedback MVP are the highest-leverage next
+- [ ] `@audio/shift-*`, `@audio/stretch-*`: publish 21 source-complete atoms — test-split + publish, no new code
+- [ ] `audio`: publish 4 pending commits past v2.2.0
+
+### Main
+
+- [ ] `audio`: finish, publish, integrate with filters: on par with SOX: compress, reverb, denoise, pitch-correct, denoise, declick, stretch — README still lists reverb/compressor/noise-reduction/chorus/flanger/phaser as "planned"; wire in @audio/effect + @audio/denoise, don't reimplement
 - [ ] `floabeat`: collection of fixtures for testing algorithms
-  * [ ] integrate into beat-detection, audio, pitch-detection, pitch-shift, time-stretch etc
-- [ ] `signal-generator` — sweep, impulse, DTMF, test tones
+  * [ ] integrate into @audio/beat, audio, @audio/pitch, @audio/shift, @audio/stretch etc
+- [ ] `signal-generator` — sweep, impulse, DTMF, test tones (bare npm name unpublished 2021 — verify reclaimable, else `@audio/signal`)
   - [ ] `audio-input?` – unified audio source: files, gens, urls, records, TTS, noises?
 
 ## [ ] Website
 
+* [ ] Resolve homepage direction: pick one of index-v2/v3/v4.html drafts, land it, delete the rest (undecided since Apr)
+* [ ] Complete audio analysis, manipulations in minimal online DAW
+* [ ] CLI mode as separate website style (dark, striped)
+* [ ] Singing to midi
+* [ ] tuner visually (Madri) with piano location
+
 ### Strategy
 
-Goal: prepare for **grants** (NLnet, Sovereign Tech Fund, Sloan, Google Web Fund) + **OSS corporate sponsors** (videojs/babel model) + **freemium hosted product** (cleanvoice/auphonic model). Three audiences, one site.
+Goal: **corporate sponsors/consulting first** (fastest to cash, needs no website — npm stats already exist) + **grants** (NLnet Open Internet Stack reopens post-summer 2026; STF Fellowship 2027; NumFOCUS for scijs layer) + **freemium hosted product** (cleanvoice/auphonic model). Three audiences, one site. (Verified 2026-07: NGI Zero closed all calls; "Google Web Fund" doesn't exist; Sloan needs scientific framing — see Funding.)
 
 * **Skip oversaturated commodity tools** (converter, trimmer, joiner) — flooded by ad-driven SEO farms; race-to-the-bottom; doesn't differentiate audiojs.
 * **Win where ML+DSP meets browser**: enhancer-class tools no one ships purely client-side, privately.
@@ -25,9 +57,9 @@ Goal: prepare for **grants** (NLnet, Sovereign Tech Fund, Sloan, Google Web Fund
 
 In order of impact × feasibility today:
 
-* [ ] **Speech Enhancer** — voice recordings: denoise + declick + de-hum + de-ess + loudness normalize (-16 LUFS speech target). Audience: podcasters, journalists, course creators. Direct competitors: cleanvoice.ai ($10/mo), adobe podcast enhance, krisp. Modules: `noise-reduction`, `audio-effect`, `a-weighting`, `audio-buffer/util.normalize`.
-* [ ] **Music Enhancer** — music tracks: denoise (gentler), spectral repair, stereo-image fix, mastering chain (multiband comp + limiter + LUFS target -14). Audience: bedroom producers, archivists. Competitors: landr ($10-25/mo), bandlab mastering, eMastered. Modules: `noise-reduction`, `audio-filter`, `dynamics-processor` (todo), `a-weighting`.
-* [ ] **Mix Analyser** — drop a track, get a *report*: LUFS-I, true peak, dynamic range (PLR/PSR), spectral balance vs reference genre, mono compatibility, clipping detection, recommendations. Audience: mixing engineers. Competitors: youlean, izotope insight ($199), masteringthemix levels ($79). Modules: `a-weighting`, `fourier-transform`, `audio-buffer`. (No processing — pure measurement; smallest scope, fastest ship.)
+* [ ] **Speech Enhancer** — voice recordings: denoise + declick + de-hum + de-ess + loudness normalize (-16 LUFS speech target). Audience: podcasters, journalists, course creators. Direct competitors: cleanvoice.ai ($10/mo), adobe podcast enhance, krisp. Modules: `@audio/denoise`, `@audio/effect`, `a-weighting`, `audio-buffer/util.normalize`. Positioning: sell the transparent chain + privacy, NOT denoise quality — ML (DeepFilterNet worklets; free: sapphi-red/web-noise-suppressor) beats classical on raw denoise.
+* [ ] **Music Enhancer** — music tracks: denoise (gentler), spectral repair, stereo-image fix, mastering chain (multiband comp + limiter + LUFS target -14). Audience: bedroom producers, archivists. Competitors: landr ($10-25/mo), bandlab mastering, eMastered. Modules: `@audio/denoise`, `@audio/filter`, `@audio/dynamics` (unpublished), `a-weighting`.
+* [ ] **Mix Analyser** — drop a track, get a *report*: LUFS-I, true peak, dynamic range (PLR/PSR), spectral balance (genre reference curves = v2, needs target-curve library), mono compatibility, clipping detection, recommendations. Audience: mixing engineers. Competitors: youlean, izotope insight ($199), masteringthemix levels ($79). Modules: `a-weighting`, `fourier-transform`, `audio-buffer`. (No processing — pure measurement; smallest scope, fastest ship.)
 * [ ] **Auto-Chain** (umbrella product, after the three above) — drop file → pick content type → analyse → pick chain → process → render. Visible chain. Editable. Exports as audiojs JS pipeline (recipe). This is the grant story and the freemium upsell.
 
 ### Auto-Chain engineering map
@@ -44,8 +76,8 @@ input → user picks content type → analysis pass (no processing) →
 
 **Stage 1 — Analysis pass** (read-only):
 
-* [ ] Loudness: ITU-R BS.1770-4 integrated LUFS, LRA, true peak (`loudness` module, new)
-* [ ] Noise PSD estimation: minimum-statistics on quiet frames (Martin 2001) → builds noise profile (`noise-reduction`)
+* [ ] Loudness: ITU-R BS.1770-4 integrated LUFS, LRA, true peak (`@audio/loudness`, new — bare npm name `loudness` is taken)
+* [ ] Noise PSD estimation: minimum-statistics on quiet frames (Martin 2001) → builds noise profile (`@audio/denoise`)
 * [ ] LTAS (long-term average spectrum) → drives adaptive EQ (`spectral-stats`, new)
 * [ ] Sibilance band energy (5–9 kHz) → de-ess threshold (`spectral-stats`)
 * [ ] Hum detection: spectral peaks at 50/60/100/120 Hz (`spectral-stats` + `fourier-transform`)
@@ -56,12 +88,12 @@ input → user picks content type → analysis pass (no processing) →
 
 * [ ] DC remove + low-cut HPF 20–80 Hz (`digital-filter`)
 * [ ] Hum notch comb at detected mains frequency + harmonics (`digital-filter`)
-* [ ] Spectral noise reduction — Wiener / MMSE-LSA (Ephraim-Malah) using estimated noise PSD (`noise-reduction`)
-* [ ] Declick / decrackle — transient detection in HF + interpolation across short bursts (`noise-reduction`, planned)
-* [ ] De-ess — dynamic high-shelf or band compressor at 5–9 kHz, sidechain on sibilance (`audio-effect`)
+* [ ] Spectral noise reduction — Wiener / MMSE-LSA (Ephraim-Malah) using estimated noise PSD (`@audio/denoise`)
+* [ ] Declick / decrackle — transient detection in HF + interpolation across short bursts (`@audio/denoise`, planned)
+* [ ] De-ess — dynamic high-shelf or band compressor at 5–9 kHz, sidechain on sibilance (`@audio/effect`)
 * [ ] Adaptive EQ — match measured LTAS toward content-type target curve, smoothed in critical bands (`digital-filter` + target curve library)
-* [ ] Multiband compressor — light, content-type-specific (`dynamics-processor`, todo)
-* [ ] True-peak limiter, ceiling -1 dBTP (`dynamics-processor`)
+* [ ] Multiband compressor — light, content-type-specific (`@audio/dynamics`, todo)
+* [ ] True-peak limiter, ceiling -1 dBTP (`@audio/dynamics`)
 * [ ] Loudness normalize to target: speech -16 LUFS, music -14 LUFS, voice-over-music -16 LUFS (`loudness`)
 
 **Stage 3 — Output:**
@@ -72,9 +104,9 @@ input → user picks content type → analysis pass (no processing) →
 
 **New modules needed (not in current org):**
 
-* [ ] `loudness` — BS.1770-4 integrated LUFS + LRA + true-peak meter. Small, well-specified, citable.
+* [ ] `@audio/loudness` — BS.1770-4 integrated LUFS + LRA + true-peak meter. Well-specified, citable — but multi-week, not small: K-weighting is missing from `a-weighting` (only A/B/C/D/M/Z exist) and is the blocking prerequisite (RLB pre-filter + high-shelf biquad cascade), plus gated block loudness, EBU Tech 3341 LRA, 4×-oversampled true peak; differential-test vs libebur128 / ffmpeg ebur128. Bare npm `loudness` owned by unrelated maintainer.
 * [ ] `spectral-stats` — LTAS, spectral centroid, voiced/unvoiced ratio, sibilance/hum band energy. Foundation for adaptive EQ + analyser.
-* [ ] `dynamics-processor` (already in backlog) — promote: needed for both flagship Music Enhancer and Auto-Chain.
+* [ ] `@audio/dynamics` (already in backlog) — promote: needed for both flagship Music Enhancer and Auto-Chain.
 * [ ] **Target curve library** — small JSON: per content type (speech / music genres / voice-over-music), the LTAS target. Drives adaptive EQ. This is the secret-sauce data layer; build it iteratively from public references (EBU R128 speech profile, mastering reference curves).
 * [ ] **Chain scheduler** — meta-module: takes analysis output + content-type preset → emits configured chain. The orchestrator. Lives in `audio` package or new `audio-chain`.
 
@@ -88,6 +120,8 @@ Second mode of Auto-Chain. Same engine, target curve comes from a user-supplied 
 
 **Selling line:** "Make my podcast sound like Joe Rogan's." / "Master my track like this Daft Punk reference."
 
+**License**: clean-room reimplementation from the algorithm description/papers only — never read GPL source (Matchering is GPL, ecosystem is MIT).
+
 **Algorithm** (no ML, all classical):
 
 * [ ] Load reference + target into `audio-buffer`
@@ -96,7 +130,7 @@ Second mode of Auto-Chain. Same engine, target curve comes from a user-supplied 
 * [ ] Apply as **linear-phase FIR** (no phase smear on transients) via `digital-filter` FIR mode
 * [ ] Match RMS / integrated loudness via `loudness` (BS.1770) → gain trim
 * [ ] Match stereo width via mid/side decomposition + side-band gain (new utility in `audio-buffer/util` or `spatial-audio`)
-* [ ] Match true peak via `dynamics-processor` limiter, ceiling -1 dBTP
+* [ ] Match true peak via `@audio/dynamics` limiter, ceiling -1 dBTP
 
 **New / extended modules needed:**
 
@@ -175,11 +209,11 @@ output
 **New modules needed:**
 
 * [ ] `lpc` — Linear predictive coding: autocorrelation method (Levinson-Durbin), pole/formant extraction, LPC synthesis filter. Foundation for vocoders. ~200 lines, well-cited (Markel & Gray 1976).
-* [ ] `psola` — Pitch-Synchronous Overlap-Add for pitch correction without time stretch. Could live inside `pitch-shift` as a method.
+* [ ] `psola` — Pitch-Synchronous Overlap-Add for pitch correction without time stretch. Could live inside `@audio/shift` as a method.
 * [ ] `sinusoidal-model` — McAulay-Quatieri analysis/synthesis. Peak picking, partial tracking, parameter smoothing, additive resynthesis. The big new module. ~600 lines.
 * [ ] `voice-vocoder` (ambitious) — WORLD-style source-filter decomposition (F0 + spectral envelope + aperiodicity). Reproducible from open Morise 2016 paper, ~5000 lines C → JS port. Phase 2.
-* [ ] `spectral-repair` — extend `noise-reduction` with gap interpolation across short spectral holes
-* [ ] `sbr` (spectral band replication) — fold midband harmonics up to fill HF; could live in `audio-effect` (aural exciter family already there)
+* [ ] `spectral-repair` — extend `@audio/denoise` with gap interpolation across short spectral holes
+* [ ] `sbr` (spectral band replication) — fold midband harmonics up to fill HF; could live in `@audio/effect` (aural exciter family already there)
 
 **Output (visible chain):**
 
@@ -214,10 +248,10 @@ output
 
 ### Supporting tool pages (Tier-2, lower priority)
 
-* [ ] BPM detector (`beat-detection`)
-* [ ] Pitch / key detector (`pitch-detection`)
+* [ ] BPM detector (`@audio/beat`)
+* [ ] Pitch / key detector (`@audio/pitch`)
 * [ ] Spectrogram viewer (`fourier-transform`)
-* [ ] Filter lab (`audio-filter`, `digital-filter`)
+* [ ] Filter lab (`@audio/filter`, `digital-filter`)
 * [ ] Loudness meter (`a-weighting`) — real-time LUFS
 
 ### Tool page template (one URL = one job)
@@ -235,6 +269,7 @@ output
 
 * [ ] Free: client-side, all features, file size cap (~50MB), no batch.
 * [ ] Pro (~$10-15/mo): batch, larger files, hosted API access, premium chains (better ML denoise weights), no cap.
+  * [ ] resolve first: "premium ML weights" contradicts no-ML-in-hot-path; needs weight hosting + license audit (many audio models are research-only licensed) before promising
 * [ ] Team / API (~$50-200/mo): API endpoints, webhook callbacks, SLA. Same engine, hosted.
 * [ ] OSS modules stay MIT forever. Pro = hosted convenience + curated weights, not paywalled algorithms.
 
@@ -266,12 +301,13 @@ output
 
 1. [ ] Cover page polish + module catalog stub + sponsor/roadmap strips (the grant pitch is functional at this point)
 2. [ ] **Mix Analyser** ships first — measurement only, no ML, fastest path to a real working tool
-3. [ ] FUNDING.yml + Open Collective + GH Sponsors live (do during step 2, not after)
+3. [ ] FUNDING.yml + Open Collective + GH Sponsors live (do during step 2, not after) + start corporate outreach (see Funding — doesn't need the site)
 4. [ ] **Speech Enhancer** ships second — proves the chain idea
-5. [ ] Apply NLnet NGI Zero with: working tools + ecosystem stats + roadmap
-6. [ ] **Music Enhancer** + Auto-Chain umbrella
-7. [ ] Apply Sovereign Tech Fund with traction numbers
-8. [ ] Freemium hosted layer
+5. [ ] Apply NLnet Open Internet Stack (call reopens post-summer 2026) with: working tools + ecosystem stats + roadmap
+6. [ ] MCP server + CLI + Agent Skill (see Agents section — same modules, second distribution surface)
+7. [ ] **Music Enhancer** + Auto-Chain umbrella
+8. [ ] Apply STF Fellowship 2027 cohort with traction numbers
+9. [ ] Freemium hosted layer
 
 ### Original demos (keep, lower priority)
 
@@ -299,18 +335,36 @@ output
 * [ ] Github stars
 * [ ] Sponsorship strip
 * [ ] Roadmap
+* [ ] matchering https://github.com/sergree/matchering
 
+## [ ] Agents: MCP + CLI + skill (sequence after Mix Analyser + Speech Enhancer ship)
+
+Verified 2026-07: no audio-DSP MCP server exists (nearest: a macOS playback toy); BPM/key detection has zero agent-facing competitor; a commercial LUFS-report MCP (Elysia) validates Mix Analyser demand. This is a credibility/grant wedge, not growth — best audio MCP (ElevenLabs TTS) tops out at 1.4k stars; ffmpeg-wrapper MCPs sit under 100. sox is dead (14.4.2, 2015; sox_ng is a C fork), ffmpeg carries live CVEs — a memory-safe npx-able CLI is a real security argument, not positioning.
+
+- [ ] Canonical CLI: npx-able, JSON output, exact errors, composable — over `@audio/loudness`/`spectral-stats`/beat/pitch/`@audio/denoise`
+- [ ] MCP server = thin wrapper over the CLI: analysis-native tools first (LUFS report, BPM/key, spectral), visible-chain recipe as output — what no ffmpeg shell can produce
+- [ ] Submit: official MCP registry + smithery/glama/pulsemcp
+- [ ] Agent Skill (SKILL.md, agentskills.io spec — 32 tools adopted it; zero audio skills in anthropics/skills)
+- [ ] Context7 indexing + typed, example-rich per-package READMEs (skip llms.txt: ~10% adoption, unproven citation value)
+
+## [ ] Realtime / voice-agent plumbing
+
+Strongest durable 2026 demand: OpenAI Realtime / LiveKit / Pipecat pipelines all need client-side 48↔16/24kHz resampling, VAD gating, buffering ahead of ML stages — model-agnostic, unglamorous, ours to take. Every flagship tool above is batch; this is the streaming leg.
+
+- [ ] `pcm-convert`: real resampler — currently sampleRate is metadata-only, no algorithm; sinc/polyphase, differential-test vs libsamplerate (atoms scaffolded: `@audio/resample-*`; tested impl already in `audio` core — extract)
+- [ ] Streaming/AudioWorklet-ready chunked API for chain stages
+- [ ] Position READMEs/pages for the voice-agent SDK plumbing use-case
 
 ## [ ] WASM
 
-- [ ] `jz`: integrate into filters, window function, waa?
+- [ ] `jz`: prove DSP integration — compile digital-filter biquad hot loop, benchmark vs JS. jz is the most mature asset in the org (1927 commits, daily-active, jz@0.8.1 published) with zero DSP integration yet; this is the VST/pro-tier proof point — gate Steinberg/NI/Ableton outreach on it
 - [ ] web-audio-api
 - [ ] stat packages, edit packages
 
 ## Ideas
 
 - [ ] Icecast/internet radio adapter? To stream eg. audio
-- [ ] Voice generator tool (via natural tract gen)
+- [ ] Voice generator tool (via natural tract gen) — scaffolded: `@audio/voice-{tract, voder, glottis}`
 - [ ] Speed up processing by engaging GPU (where?)
 - [ ] Essentia tone analysis: reproduce flute
 
@@ -325,17 +379,16 @@ output
 
 ## Backlog
 
-- [ ] `audio-effect` - add tests, make illustrative plots: seems to be broken
 - [ ] Close all issues in `contributing`, archive repo
-- [ ] `web-codecs`: portable WebCodecs API — WASM-based polyfill for cross-runtime codec access
-- [ ] `a-weighting`: add C-weighting, K-weighting curves
-- [ ] `noise-reduction` — spectral subtraction, gating, dehum, declick
+- [ ] `web-codecs`: portable WebCodecs API — WASM-based polyfill for cross-runtime codec access. Time-sensitive: native AudioEncoder = Opus/AAC only, Safari 26 only just added audio — ship FLAC/MP3/Vorbis polyfill while the gap is fresh
+- [ ] `a-weighting`: add K-weighting (BS.1770 RLB + high-shelf biquad cascade) — A/B/C/D/M/Z already exist, stale item said "add C"; K is the `@audio/loudness` blocker
+- [x] `@audio/denoise` — spectral subtraction, gating, dehum, declick: built (~2261 lines, 41 tests); publish → Priority
 - [ ] `audio-module` - cross-compiling audio-files, audio-shaders etc
-- [ ] Sponsiring: FUNDING.yml, open collective, NLnet NGI Zero
-- [ ] `colors-of-noise` — white, pink, brown, blue, violet, gray, velvet
-- [ ] `dynamics-processor` — compressor, limiter, gate, expander -> covered by audio-effect?
+- [ ] Sponsoring: FUNDING.yml, open collective, NLnet Open Internet Stack (NGI Zero closed — see Funding)
+- [ ] `colors-of-noise` — pink ✔ (`@audio/synth-noise`); white, brown, blue, violet, gray, velvet — extend synth-noise
+- [x] `@audio/dynamics` — resolved 2026-07: canonical home for all dynamics; `effect/dynamics/` dissolved (transient-shaper moved in); gate/deesser variants qualified, merge at audio-module migration
 - [ ] `reverbs` — Freeverb, Dattorro, Schroeder, convolution
-- [ ] `defeedback` — adaptive feedback suppression (analyzer + tracker + notch bank)
+- [ ] `defeedback` — adaptive feedback suppression (analyzer + tracker + notch bank) — scaffolded 2026-07 at `@audio/defeedback` (see its README: offline MVP = composition over existing atoms; only tracker + coef interpolation are new code; realtime waits on audio-module worklet)
   - [ ] Node.js audio capture/output from Dante VSC (appears as standard OS audio device)
   - [ ] `defeedback/analyzer.js` — FFT (via fourier-transform) + spectral peak detection
   - [ ] `defeedback/tracker.js` — peak tracking across frames, growth rate detection, feedback/music discrimination
@@ -347,30 +400,43 @@ output
 
   - [ ] COnsistency of all packages API across the org
 
+- [ ] Release automation (changesets / CI publish) — before atomization resumes: ~27 atoms published, ~168 planned; manual publish won't scale
+- [ ] TypeScript types across org (.d.ts or JSDoc→d.ts) — sponsor credibility + agent codegen accuracy
+- [ ] Bus factor as practice: second npm publish-access holder + recovery playbook (every funder asks; a website strip isn't the answer)
+- [ ] `web-audio-api`: position vs IRCAM node-web-audio-api (Rust-backed, v2.0 2026-05, ~6× our downloads) — pure-JS zero-native-deps portability + WebCodecs polyfill angle, or interop; don't fight a spec-completeness war
+
 ## Funding
 
-### Now (zero-cost setup)
-- [ ] Enable GitHub Sponsors on audiojs org
-- [ ] Create Open Collective for audiojs
-- [ ] Add FUNDING.yml to all active repos (audio-decode, audio-buffer, audio-type, web-audio-api, etc.)
-- [ ] Add "Sponsor" section to org README + each package readme
+Reality check (deep-verified 2026-07, adversarially checked vs primary sources): OSS funding is **redistributed, not gone** — away from application-shaped micro-grants (NGI Zero closed all calls; US NSF ~20% of prior pace, OTF in litigation; Ford/Sloan cohort was one-time; Mozilla MOSS dead since 2020) toward gates a solo maintainer must actively build: criticality flags (STA), internal nominations (corporate funds), public profile (Sponsors/Pledge). Honest 12-month expectation: **~$8-15k** — and that's an optimistic-modal figure dominated by one GitHub-fund win, not a weighted average. Grants are episodic project fuel, not salary (Zrythm: single NLnet grant ≫ its <$50/mo organic donations). Durable audio-OSS income has only ever come from a commercial derivative product (Ardour >$100k/yr subscriptions; JUCE; VCV) or employment — **the freemium/pro tier is the income line; grants bridge.**
 
-### With website (Q3 2026)
-- [ ] Sponsor tiers page on website (Backer → Patron, see research.md)
-- [ ] Corporate logo wall on homepage
-- [ ] Apply NLnet NGI Zero — scope: "complete DSP primitives for the open web"
-- [ ] Apply Google Web Fund — scope: "cross-runtime WebCodecs polyfill + Web Audio conformance"
-- [ ] "Fund the next package" campaign widget (progress bar, target amount)
+### Now (2026-Q3)
+- [ ] **GitHub Secure Open Source Fund** — apply now: $10k/project ($6k+$2k+$2k over 12mo), rolling, no residency bar, no entity needed. Pitch: audio-decode parses untrusted WAV/MP3/FLAC/OGG binaries — security hardening of a real attack surface, not download counts. Best single near-term shot (competitive: interview + cohort; odds unpublished)
+- [ ] Join **Open Source Collective** as fiscal host — free, immediate, wavesurfer precedent; prerequisite plumbing for org payouts / Pledge routing / future grants
+- [ ] Enroll as **Tidelift lifter**
+- [ ] **Sovereign Tech Resilience** (rolling, free, in-kind): request security audit / bug bounty on audio-decode — builds a documented STA relationship ahead of any Fellowship/Fund application
+- [ ] **thanks.dev / Open Source Pledge**: query dependency data — which of ~38 Pledge members (paying $3.7M/yr) already depend on audiojs packages; contact directly. Passive expectation: $0-2k/yr
+- [ ] Corporate outreach (needs no website — npm stats exist): dependents of audio-decode (666k dl/wk) via npm/GitHub graph; direct pitch Descript, Riverside.fm, BandLab + voice-agent platforms (LiveKit, Daily). Publish a public maintenance-policy page — groundwork for a filippo.io-style retainer (multi-year play, start now)
+- [ ] Enable GitHub Sponsors on audiojs org + FUNDING.yml on all active repos + "Sponsor" README sections (hygiene, not revenue)
 
-### With traction (Q4 2026)
-- [ ] Apply Sovereign Tech Fund — scope: "audiojs as critical JS audio infrastructure"
-  - [ ] Prepare governance docs (GOVERNANCE.md, contributor guidelines, release process)
+### Watch — apply within days of window opening
+- [ ] **NLnet Restack / Open Internet Stack** (€5-50k, worldwide individuals): reopens "after summer 2026" — monitor nlnet.nl/news. Frame as infrastructure per NLnet's own funded precedent (Tiliqua audio-DSP, DPF, HVCC, Servo Multimedia), NOT an end-user app. Don't force-fit Taler/Fediversity (Aug 1 deadline, zero overlap)
+- [ ] **STF Fellowship 2027** (freelance track, worldwide; Montreal precedent: Julia Evans, 2026 cohort; ~€15-40k/slot, ~8% acceptance): expect ~Q1 2027 window, 4-8 weeks — subscribe to STA newsletter/Mastodon now. Weakest criterion = societal Relevance: pitch accessibility / ed-tech / digital preservation / podcasting-journalism, and pre-empt the "dependency vs user-facing app" question with infrastructure framing
+  - [ ] GOVERNANCE.md, contributor guidelines, release process
   - [ ] Document dependents count, download stats, ecosystem impact
-- [ ] Corporate outreach: identify companies using audiojs via npm/GitHub dependency graph
-- [ ] Direct pitch to Descript, Riverside.fm, BandLab (browser audio editors → obvious dependents)
-- [ ] Sloan Foundation — scientific computing / open-source angle
+  - [ ] Verify Canada→Germany freelance invoicing/withholding before counting the income (unverified)
+- [ ] **Anthropic Claude-for-OSS** next round (2026 window closed Jun 30; audio-decode ~2.9M dl/mo clears the 1M threshold — in-kind, not cash)
+- [ ] **Mitacs** via CIRMMT (McGill) / BRAMS (UdeM): one outreach email to an audio/music-tech professor ($15k CAD/cycle; needs partner-org entity + grad student — low odds, cheap to open)
 
-### With audio-module (Q1 2027)
+### Later (gated)
+- [ ] STF Fund — only once a €50k+ hardening scope exists (solo-maintainer precedent: curl, WireGuard, OpenSSH, libmicrohttpd at €195-300k; ~6-month runway)
+- [ ] NumFOCUS affiliation for scijs layer (fourier-transform, digital-filter, window-function) — GNU Radio precedent
+- [ ] Spotify FOSS Fund — thematically perfect, internal-nomination ONLY (has only ever funded FFmpeg/Xiph/MSW); needs a Spotify engineer champion, find one first
+- [ ] Sponsor tiers page + corporate logo wall + "fund the next package" widget (with website)
+
+### Skip — verified dead ends for a Canada-based unincorporated solo maintainer
+CZI EOSS (biomedical-only — unless a real bioacoustics adoption story exists by the Oct 18 2026 LOI) · NSF PESOSE (US institutions) · Chrome Framework Fund + Cloudflare Vite fund (bundlers/frameworks only) · CALQ/SODEC/Canada Council (artworks, not tooling) · NRC IRAP (requires for-profit incorporation — values conflict) · Prototype Fund / SIDN / Horizon FSTP / Creative Europe (need EU entity or resident co-applicant)
+
+### With audio-module (gated on jz DSP proof, see WASM)
 - [ ] Pro audio industry outreach: consulting for "JS → VST/CLAP" pipeline
 - [ ] Approach Steinberg, Native Instruments, Ableton re: web plugin deployment
 - [ ] Paid workshop: "Audio DSP in JavaScript" — target conference workshops (Web Audio Conf, JSConf)

@@ -39,7 +39,7 @@ Don't build separate pages — embed the answer in the artifact.
 | Ecosystem proof / used by | Logo strip at page bottom — record-label-back-cover style. Weekly downloads as headline metric per module. |
 | Academic credibility | Each algorithm card has `[paper]` micro-link → BibTeX popup. Wolfram MathWorld pattern. |
 | Provenance / org age | Thin timeline strip at homepage bottom — museum exhibit caption. `2014 → 2026: shipped, deprecated, in-flight`. |
-| Roadmap | Gantt-style strip — flight progress bar. `Q3 2026: web-codecs LANDING ▪ Q4: time-stretch IN-FLIGHT`. |
+| Roadmap | Gantt-style strip — flight progress bar. `Q3 2026: web-codecs LANDING ▪ Q4: @audio/stretch IN-FLIGHT`. |
 
 ### Design principles
 
@@ -124,10 +124,10 @@ Don't build separate pages — embed the answer in the artifact.
 **Contents:**
 - Module grid — filterable by category (codec, I/O, analysis, effects, synthesis), status, runtime
 - Categories:
-  - **Codec:** audio-decode, audio-encode
-  - **I/O:** audio-speaker, audio-mic
-  - **Analysis:** beat-detection, pitch-detection
-  - **Effects:** audio-filter, time-stretch, pitch-shift, audio-effect
+  - **Codec:** @audio/decode, @audio/encode
+  - **I/O:** @audio/speaker, @audio/mic
+  - **Analysis:** @audio/beat, @audio/pitch
+  - **Effects:** @audio/filter, @audio/stretch, @audio/shift, @audio/effect
   - **Synthesis:** floatbeats, generator
 - Each card: status badge, install command, runtime icons, weekly downloads, minimal snippet, compile targets
 - Compile target badges: `JS ▪ Worklet ▪ VST3 ▪ CLAP` — the multi-target story
@@ -258,7 +258,7 @@ Don't build separate pages — embed the answer in the artifact.
 ### Text style
 
 #### Structure (from IC practice)
-* **BLUF** — Bottom Line Up Front. Every section opens with the conclusion. No buildup, no suspense. "audio-decode handles 14 formats across all runtimes." Then details.
+* **BLUF** — Bottom Line Up Front. Every section opens with the conclusion. No buildup, no suspense. "@audio/decode handles 14 formats across all runtimes." Then details.
 * **Key Judgments** — top of any longer section. Numbered, standalone, scannable. "1. Browser-native decoding fails for 6 of 14 formats. 2. WASM fallbacks close the gap. 3. No runtime dependency required."
 * **Estimative language** — never overstate. "We assess with high confidence" → CALIBRATED. "Likely" → PENDING CALIBRATION. "Insufficient data" → UNDER EVALUATION. No superlatives, no marketing claims.
 * **Classification markings as status** — not spy theater, but borrowed format:
@@ -317,10 +317,10 @@ Don't build separate pages — embed the answer in the artifact.
   * AI: audio-mcp (pending), audio-skill (pending) FIXME: are these good names?
   * Platform: web-audio-api, audio-buffer, web-codecs (pending), audio-worklet (pending)
   * Integration: audio-host (pending), audio-module (pending) (maybe platform?)
-  * Codec: audio-decode, audio-encode
-  * I/O: audio-speaker, audio-mic
-  * Analysis: fourier-transform, beat-detection, window-function, a-weighting, pitch-detection
-  * Effects: digital-filter, audio-filter, time-stretch, pitch-shift, audio-effect
+  * Codec: @audio/decode, @audio/encode
+  * I/O: @audio/speaker, @audio/mic
+  * Analysis: fourier-transform, @audio/beat, window-function, a-weighting, @audio/pitch
+  * Effects: digital-filter, @audio/filter, @audio/stretch, @audio/shift, @audio/effect
   * Syntehis: periodic-function, floatbeats (pending), generator (pending)
   * Utility: audio-type, audio-extensions, pcm-convert, decibels (?)
 
