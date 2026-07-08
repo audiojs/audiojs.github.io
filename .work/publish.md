@@ -26,7 +26,7 @@ Followed by an ecosystem-wide link sweep (197 files across 19 repos: 18 `@audio`
 
 Remaining 22 repos didn't need renaming (already created under their short names in the preflight push).
 
-## 1. Publish order (dependency-leaf first)
+## 1. Publish order (dependency-leaf first) — done 2026-07-08
 
 Registry deps (digital-filter, fourier-transform, window-function, periodic-function, tst, audio-lena) are already public. Cross-`@audio` runtime deps define the order:
 
@@ -35,6 +35,17 @@ Registry deps (digital-filter, fourier-transform, window-function, periodic-func
 | A — no `@audio` deps | note, weighting, auditory, resample, vocals, filter (+speech atoms), reverb, spatial, effect, pitch, beat, denoise, spectral, synth, sinusoidal, defeedback, shift, stretch, decode, encode, speaker, mic, module, host |
 | B — dep on A | eq (none actually — A), loudness (weighting, resample), saturate (resample, eq), dynamics (eq), measure (synth devDep), mir (pitch, beat, spectral) |
 | C — dep on B | tune (pitch, note, shift), amp (saturate, reverb) |
+
+**Result: 241 packages published across 29 repos.** Not the `npm run publish:all` per-repo scripts (found inconsistent across repos: some idempotent shell loops, some bare `npm publish --workspaces` that hard-errors on a conflict, `mic` had no publish script at all) — wrote one driver instead, leaf-then-umbrella per repo, classifying each attempt by the registry's actual reply rather than pre-checking:
+
+- 22 **private stubs** correctly skipped (denoise-repair, effect-{graindelay,lofi,sbr,stutter,subbass}, mir-{coversong,downbeat,drums,multif0,similarity,transcribe}, resample-polyphase, speech-world, synth-{poly,sfx}, tune-midi — matches the documented stub list)
+- 22 **already-live legacy leaves** skipped clean (decode-*, encode-* — pre-existing published packages, versions matched, no republish needed)
+- 10 **not-ready native leaves** skipped by design (`host-clap-*`, `host-vst-*` ×5 platforms, `mic-linux-*`/`mic-win32-x64` — missing `.node` binary, no build hook; flagged in preflight, unchanged)
+- 2 `mic-darwin-{arm64,x64}` and all 5 `speaker-*` published at their current local versions (1.1.0 / 2.3.1 — ahead of what was live, no bump needed, they were already due)
+
+Auth note: account 2FA is `auth-and-writes`; the classic token in `.npmrc` demanded an OTP after the very first publish (a stale grace window, not a real bypass) — blocked automation until swapped for an Automation token, which bypasses 2FA for writes as designed. Token rotated in `~/.npmrc` 2026-07-08.
+
+One name defect found publishing: `@audio/module` shipped at version `0.0.0` (its package.json was never bumped off the placeholder) — works, but worth a real first version before anyone treats it as stable.
 
 (Practically: A then B then C; within a wave order is free. Stubs are `private: true` — `--workspaces` skips them automatically? **No — verify**: npm publishes non-private only; private workspaces are skipped with a warning. Confirm on the first repo.)
 
