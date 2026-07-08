@@ -47,27 +47,32 @@ Auth note: account 2FA is `auth-and-writes`; the classic token in `.npmrc` deman
 
 One name defect found publishing: `@audio/module` shipped at version `0.0.0` (its package.json was never bumped off the placeholder) — works, but worth a real first version before anyone treats it as stable.
 
+**Post-publish queue (audio-agent feedback) — resolved 2026-07-08:**
+- `@audio/vocals@1.0.1` + `@audio/loudness-lra@1.0.1` — the two packages that shipped with runtime `file:` specs, republished with semver same day. Publish driver now hard-fails any runtime `file:`/`link:` spec before attempting a publish (dev-links in effect/module are devDeps — harmless, deliberate, kept).
+- `@audio/stretch-core@1.0.1` — anaHop rounding fix (published 1.0.0 NaN'd on every non-integer ratio); caret ranges propagate it to all stretchers and the umbrella, no other bumps needed.
+- `@audio/dynamics-{expander,compand,leveler,transient-shaper,ducker}@0.1.1` — audio-module manifests (e2561f0) live; audio's registry names all 18 modules against published packages.
+
 (Practically: A then B then C; within a wave order is free. Stubs are `private: true` — `--workspaces` skips them automatically? **No — verify**: npm publishes non-private only; private workspaces are skipped with a warning. Confirm on the first repo.)
 
 Versions: as committed (atoms 1.0.0 / 0.1.0 per family; umbrellas carry lineage versions — decode 3.11.0, filter 3.0.0, effect 2.0.0…). No bumps needed for first scoped publish.
 
-## 2. Deprecate unscoped (after all of 1 succeeds)
+## 2. Deprecate unscoped — done 2026-07-08
 
-`npm deprecate <name>@'*' "<msg>"` — messages name the successor(s):
+`npm deprecate <name>@'*' "<msg>"`, verified live via `npm view <name> deprecated` after each:
 
-| Old | Message |
-|---|---|
-| audio-decode | Renamed to @audio/decode |
-| encode-audio | Renamed to @audio/encode |
-| audio-speaker | Renamed to @audio/speaker |
-| audio-mic | Renamed to @audio/mic |
-| audio-filter | Split into @audio/filter, @audio/weighting, @audio/auditory, @audio/eq (+ @audio/spatial-crossfeed) |
-| audio-effect | Split into @audio/effect, @audio/dynamics, @audio/spatial, @audio/reverb; pitch-shifting → @audio/shift |
-| pitch-detection | Renamed to @audio/pitch; chroma/chord/key → @audio/mir |
-| beat-detection | Renamed to @audio/beat |
-| time-stretch | Renamed to @audio/stretch |
-| pitch-shift | Renamed to @audio/shift |
-| audio-module | Renamed to @audio/module |
+| Old | Message | Status |
+|---|---|---|
+| audio-decode | Renamed to @audio/decode | ✔ deprecated (51 versions) |
+| encode-audio | Renamed to @audio/encode | ✔ deprecated (11 versions) |
+| audio-speaker | Renamed to @audio/speaker | ✔ deprecated (41 versions) |
+| audio-mic | Renamed to @audio/mic | ✔ deprecated (2 versions) |
+| audio-filter | Split into @audio/filter, @audio/weighting, @audio/auditory, @audio/eq (+ @audio/spatial-crossfeed) | ✔ deprecated (6 versions) |
+| audio-effect | Split into @audio/effect, @audio/dynamics, @audio/spatial, @audio/reverb; pitch-shifting → @audio/shift | ✔ deprecated (2 versions) |
+| pitch-detection | Renamed to @audio/pitch; chroma/chord/key → @audio/mir | ✔ deprecated |
+| beat-detection | Renamed to @audio/beat | ✔ deprecated (2 versions) |
+| time-stretch | Renamed to @audio/stretch | ✔ deprecated (4 versions) |
+| audio-module | Renamed to @audio/module | ✔ deprecated |
+| ~~pitch-shift~~ | — | **Not deprecated — not ours.** `npm owner ls pitch-shift` shows `mikolalysenko`, not `dy`; the live package is an unrelated third-party placeholder at `0.0.0`. The `shift` repo's package.json was always named `pitch-shift` locally, but it was never actually published under that name (same bucket as noise-reduction/dynamics-processor/audio-host below) — the plan's table assumed ownership that was never verified. No action possible or needed. |
 
 Not deprecated (stay canonical): `audio`, `audio-buffer`, `web-audio-api`, `pcm-convert`, `audio-type`, `audio-lena`, `a-weighting` (until absorbed into @audio/weighting as `.response()`), scijs tier (`digital-filter`, `fourier-transform`, `window-function`, `periodic-function`). Never published, nothing to deprecate: noise-reduction, dynamics-processor, audio-host.
 
@@ -75,7 +80,7 @@ Optional breadcrumb: publish one final patch of each old package whose README to
 
 ## 3. After
 
-- [ ] `audio` package: switch its registry/plugin references to `@audio/*` names (its own release)
-- [ ] Site catalog + README org profile update; announce (x.com/audio_js release-notes style)
-- [ ] a-weighting absorption: add `.response(f)` exports to @audio/weighting atoms, deprecate a-weighting
-- [ ] Rename GitHub repos to scope names when convenient (redirects keep old links alive)
+- [ ] `audio` package: switch its registry/plugin references to `@audio/*` names (its own release) — **on hold, repo is mid-rebuild on your side, not touched**
+- [ ] Site catalog + README org profile update; announce (x.com/audio_js release-notes style) — separate from this pass, tracked as its own todo.md item
+- [x] a-weighting absorption (2026-07-08) — `.response(f, fs)` added to `weighting-{a,b,c,itu468}`, self-consistent with each atom's own `coefs()` (not a parallel reimplementation — verified to 1e-9 against a differential `magDB` check). New `@audio/weighting-b` atom implemented (was missing entirely): differential-tested against `a-weighting`'s own `b()` — caught and fixed a real error mid-derivation (assumed B shared A's f2/f3 poles; the correct mid-pole is its own 158.5 Hz, confirmed by back-solving `a-weighting`'s formula). `a-weighting`'s README now points A/B/C/ITU-468 users to `@audio/weighting`; stale `audio-filter` link fixed. **Deprecating `a-weighting` itself held back** — it was never on the named-11 list (marked "stay canonical until absorbed"), and absorption is partial: D-weighting and flat Z-weighting have no `@audio/weighting` equivalent, so the package is still the honest reference for those. One command away when you say go: `npm deprecate 'a-weighting@*' "A/B/C-weighting + ITU-468 moved to @audio/weighting-{a,b,c,itu468} (also .response(f)). D-weighting and Z-weighting have no @audio equivalent yet -- this package remains the reference for those."`
+- [x] Rename GitHub repos to scope names — done in §0b, all 14

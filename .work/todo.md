@@ -1,8 +1,8 @@
 
 ## Now (ordered)
 
-1. [ ] **Publish `@audio` scope** — full plan: [.work/publish.md](publish.md). Preflight (`file:`→semver swaps, GH repos for new umbrellas, pack dry-runs) → waves A/B/C `publish:all` → deprecate 11 unscoped names.
-2. [ ] `audio`: publish pending commits past v2.2.0; after scope publish, wire plugin registry/docs to `@audio/*` names.
+1. [x] **Publish `@audio` scope** — done 2026-07-08, full record: [.work/publish.md](publish.md). Preflight ✔ → waves A/B/C ✔ (241 + 33-package stub wave + fixes) → deprecate 10 of 11 unscoped names ✔ (`pitch-shift` was never actually owned/published — a third party holds that npm name; corrected in the plan) → a-weighting absorption ✔ (`.response()` on weighting-a/b/c/itu468, new weighting-b atom) — a-weighting's own deprecation held for your go-ahead (wasn't on the named list, partial coverage only, command ready in publish.md §3).
+2. [ ] `audio`: publish pending commits past v2.2.0; after scope publish, wire plugin registry/docs to `@audio/*` names. **Not touched — repo is mid-rebuild on your side.**
 3. [ ] Website: resolve homepage direction (index-v2/3/4, undecided since Apr) → ship **Mix Analyser** first (`@audio/loudness` + `@audio/spectral` now real) → FUNDING.yml/OSC/Sponsors plumbing → **Speech Enhancer** (`@audio/denoise` + `@audio/dynamics`).
 4. [~] **audio-module integration** — pilot done 2026-07 (audio.use(module) hosts the contract natively — no adapter dep; tail-compose, engine automation ≡ contract params, 500/500): next migrate families one-by-one (dynamics/denoise wave first) → toWorklet → defeedback realtime leg.
 5. [ ] Funding now-actions (see Funding): GitHub Secure OSS Fund application, Open Source Collective host, Tidelift, STR audit request, thanks.dev/Pledge query, corporate outreach.
