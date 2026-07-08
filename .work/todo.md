@@ -13,7 +13,7 @@
 - [ ] Remaining stubs (implement by demand): voice-{tract, voder, glottis} · midi-{parse, write, soundfont} · speech-world · denoise-repair · tune-midi · synth-{sfx, poly} · effect-{sbr, stutter, graindelay, subbass, lofi} · reverb partitioned→streaming · primitives `@audio/{stft, window, biquad}` extraction (swap family cores behind differential tests) · neural lane (runtime adapter + policy)
 - [ ] Per-repo README refresh at publish (names renamed 2026-07 ✓; API docs/examples per repo still to verify) — filter: re-enable `test/readme.js` fence runner with the new import map; update `filter/plot/generate.js` + `test/types.ts` to split families
 - [ ] Per-atom `.d.ts` (umbrella-level shipped for filter/weighting/auditory/eq; atom-level only speech/crossfeed/pink-noise)
-- [ ] `am` wrapper convention: every atom ships an audio-module descriptor — file `am.js`, subpath `<pkg>/am`, discoverable manifest key `"audio-module": "./am.js"`; adopt during the audio-module migration (see research)
+- [~] `am` wrapper convention — **pilot done 2026-07**: `toBatch`/`toStream` hosts implemented in `@audio/module`; contract verified against 8 atoms (compressor/delay/biquad/freeverb/isolate/osc/yin/tube — one per convention, differential vs native <1e-6, stream≡batch, generator/analyzer/streaming:false); findings folded in (`ctx.maxChannels`, equal-frames scope). Remaining: roll `am.js` across the other ~140 atoms mechanically + `toOp`/worklet-bundling path
 - [ ] Release automation (changesets/CI publish) before atom count grows further; TypeScript types org-wide; bus factor (2nd npm owner + recovery playbook)
 - [ ] `floabeat` fixtures package (seeds live in beat/{synth,floatbeats}.js); `audio-input` unified source idea
 - [ ] `a-weighting` absorption → `@audio/weighting-*.response(f)`, then deprecate
@@ -386,6 +386,7 @@ Strongest durable 2026 demand: OpenAI Realtime / LiveKit / Pipecat pipelines all
 - [ ] TypeScript types across org (.d.ts or JSDoc→d.ts) — sponsor credibility + agent codegen accuracy
 - [ ] Bus factor as practice: second npm publish-access holder + recovery playbook (every funder asks; a website strip isn't the answer)
 - [ ] `web-audio-api`: position vs IRCAM node-web-audio-api (Rust-backed, v2.0 2026-05, ~6× our downloads) — pure-JS zero-native-deps portability + WebCodecs polyfill angle, or interop; don't fight a spec-completeness war
+- [ ] Bassmaker https://www.youtube.com/watch?v=EpzQe8f6FfA
 
 ## Funding
 
