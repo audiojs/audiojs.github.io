@@ -16,10 +16,15 @@ Goal: publish all 37 repos' packages under `@audio/*`, then deprecate the unscop
 - [x] GitHub: created all 22 new umbrella repos (the plan said 15 but listed 21 — undercounted, and omitted `reverb`; actual count needed was 22: weighting, auditory, eq, spatial, mir, synth, spectral, loudness, vocals, resample, sinusoidal, note, tune, saturate, amp, measure, defeedback, primitives, neural, voice, midi, **reverb**) as `audiojs/<name>`, public, pushed. Pushed 12 of the 14 existing-name repos cleanly (fast-forward). **2 held back — see below.**
 - [x] Final sweep: `npm test` across all 36 repos. 32 pass real suites (auditory 28, beat 70, decode 67, filter 98, stretch 152, weighting 30, module 26, reverb 14, effect 36, host live-playback demo, …). 4 "fail" (midi, neural, primitives, voice) are the documented stub scaffolds (`private:true`, no `scripts.test` — npm's bare "missing script" exit, not a real failure).
 
-**Held back — not pushed, need a decision:**
-- `decode`: GitHub `master` has one commit past our local history (`20c1e35 Update readme.md`, you, direct-to-GitHub, removes 3 lines of format-coverage prose) that a force-push would erase. Local still has those 3 lines.
-- `speaker`: GitHub `master` has two commits past our local history — an external contributor PR (#66, Julia Ortiz, "Add optional dependency for speaker-darwin-arm64"). Local already independently carries that same optionalDependency (content isn't at risk), but the commit/attribution history would be erased by force-push.
-- Neither was force-pushed. Merging needs `git merge`/`pull`, which is off-limits without you asking for it directly — resolve by hand, or say the word and it's a two-commit merge for each.
+**decode/speaker — resolved 2026-07-08:** merged (not forced) and pushed on your ask. `decode` kept your direct README edit; `speaker` kept Julia Ortiz's PR #66 in history.
+
+## 0b. Repo rename — done 2026-07-08
+
+Renamed all 14 old-style GitHub repos to match their local short names (`gh repo rename`, redirects live): `audio-decode`→`decode`, `audio-encode`→`encode`, `audio-speaker`→`speaker`, `audio-mic`→`mic`, `audio-filter`→`filter`, `audio-effect`→`effect`, `audio-host`→`host`, `audio-module`→`module`, `pitch-detection`→`pitch`, `beat-detection`→`beat`, `time-stretch`→`stretch`, `pitch-shift`→`shift`, `noise-reduction`→`denoise`, `dynamics-processor`→`dynamics`.
+
+Followed by an ecosystem-wide link sweep (197 files across 19 repos: 18 `@audio` repos + the `audio` engine): GitHub URLs (`package.json` repository/bugs/homepage, README badges/links) repointed to the new canonical names, then a second pass fixed link *labels* that still read the old name even after the href was corrected (e.g. `[audio-encode](.../encode)` → `[encode](.../encode)`). Also fixed, found along the way: three `audio/README.md` ecosystem-list entries pointing at `github.com/nickolanack/*` instead of `audiojs/*` (pre-existing, unrelated to this rename, clearly a stale mistake). All local git remotes repointed to the new URLs. Verified zero remaining old-name references anywhere; full test sweep green (audio engine 508/508). All 19 repos committed and pushed.
+
+Remaining 22 repos didn't need renaming (already created under their short names in the preflight push).
 
 ## 1. Publish order (dependency-leaf first)
 
