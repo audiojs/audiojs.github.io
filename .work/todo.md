@@ -4,7 +4,7 @@
 1. [ ] **Publish `@audio` scope** — full plan: [.work/publish.md](publish.md). Preflight (`file:`→semver swaps, GH repos for new umbrellas, pack dry-runs) → waves A/B/C `publish:all` → deprecate 11 unscoped names.
 2. [ ] `audio`: publish pending commits past v2.2.0; after scope publish, wire plugin registry/docs to `@audio/*` names.
 3. [ ] Website: resolve homepage direction (index-v2/3/4, undecided since Apr) → ship **Mix Analyser** first (`@audio/loudness` + `@audio/spectral` now real) → FUNDING.yml/OSC/Sponsors plumbing → **Speech Enhancer** (`@audio/denoise` + `@audio/dynamics`).
-4. [ ] **audio-module pilot** (compressor per CONTRACT.md) → migrate families one-by-one → defeedback realtime leg (mic→Dante→speakers; offline MVP done).
+4. [~] **audio-module integration** — pilot + toOp done 2026-07 (audio.use(module) live, tail-compose, engine automation ≡ contract params, 500/500): next migrate families one-by-one (dynamics/denoise wave first) → toWorklet → defeedback realtime leg.
 5. [ ] Funding now-actions (see Funding): GitHub Secure OSS Fund application, Open Source Collective host, Tidelift, STR audit request, thanks.dev/Pledge query, corporate outreach.
 
 ## Next
