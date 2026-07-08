@@ -4,7 +4,7 @@
 1. [ ] **Publish `@audio` scope** — full plan: [.work/publish.md](publish.md). Preflight (`file:`→semver swaps, GH repos for new umbrellas, pack dry-runs) → waves A/B/C `publish:all` → deprecate 11 unscoped names.
 2. [ ] `audio`: publish pending commits past v2.2.0; after scope publish, wire plugin registry/docs to `@audio/*` names.
 3. [ ] Website: resolve homepage direction (index-v2/3/4, undecided since Apr) → ship **Mix Analyser** first (`@audio/loudness` + `@audio/spectral` now real) → FUNDING.yml/OSC/Sponsors plumbing → **Speech Enhancer** (`@audio/denoise` + `@audio/dynamics`).
-4. [~] **audio-module integration** — pilot + toOp done 2026-07 (audio.use(module) live, tail-compose, engine automation ≡ contract params, 500/500): next migrate families one-by-one (dynamics/denoise wave first) → toWorklet → defeedback realtime leg.
+4. [~] **audio-module integration** — pilot done 2026-07 (audio.use(module) hosts the contract natively — no adapter dep; tail-compose, engine automation ≡ contract params, 500/500): next migrate families one-by-one (dynamics/denoise wave first) → toWorklet → defeedback realtime leg.
 5. [ ] Funding now-actions (see Funding): GitHub Secure OSS Fund application, Open Source Collective host, Tidelift, STR audit request, thanks.dev/Pledge query, corporate outreach.
 
 ## Next
@@ -13,7 +13,7 @@
 - [ ] Remaining stubs (implement by demand): voice-{tract, voder, glottis} · midi-{parse, write, soundfont} · speech-world · denoise-repair · tune-midi · synth-{sfx, poly} · effect-{sbr, stutter, graindelay, subbass, lofi} · reverb partitioned→streaming · primitives `@audio/{stft, window, biquad}` extraction (swap family cores behind differential tests) · neural lane (runtime adapter + policy)
 - [ ] Per-repo README refresh at publish (names renamed 2026-07 ✓; API docs/examples per repo still to verify) — filter: re-enable `test/readme.js` fence runner with the new import map; update `filter/plot/generate.js` + `test/types.ts` to split families
 - [ ] Per-atom `.d.ts` (umbrella-level shipped for filter/weighting/auditory/eq; atom-level only speech/crossfeed/pink-noise)
-- [~] `audio-module.js` wrapper convention — **pilot done 2026-07**: `toBatch`/`toStream` hosts implemented in `@audio/module`; contract verified against 8 atoms (compressor/delay/biquad/freeverb/isolate/osc/yin/tube — one per convention, differential vs native <1e-6, stream≡batch, generator/analyzer/streaming:false); findings folded in (`ctx.maxChannels`, equal-frames scope). Remaining: roll `audio-module.js` across the other ~140 atoms mechanically + `toOp`/worklet-bundling path
+- [~] `audio-module.js` wrapper convention — **pilot done 2026-07**: `toBatch`/`toStream` hosts implemented in `@audio/module`; contract verified against 8 atoms (compressor/delay/biquad/freeverb/isolate/osc/yin/tube — one per convention, differential vs native <1e-6, stream≡batch, generator/analyzer/streaming:false); findings folded in (`ctx.maxChannels`, equal-frames scope). Remaining: roll `audio-module.js` across the other ~140 atoms mechanically + worklet-bundling path (`audio` itself hosts the contract natively — no adapter)
 - [ ] Release automation (changesets/CI publish) before atom count grows further; TypeScript types org-wide; bus factor (2nd npm owner + recovery playbook)
 - [ ] `floabeat` fixtures package (seeds live in beat/{synth,floatbeats}.js); `audio-input` unified source idea
 - [ ] `a-weighting` absorption → `@audio/weighting-*.response(f)`, then deprecate
