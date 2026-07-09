@@ -4,7 +4,7 @@
 
 ### Visitor questions (primary — must answer obviously)
 
-- **What's this?** — impression first. Main proposition: audio-modules, AI (audio-mcp/skill), JS ↔ pro audio bridge. Secondary: reference DSP, wavearea editor, audio CLI, online tools, platform polyfills.
+- **What's this?** — impression first. Main proposition: atoms, AI (audio-mcp/skill), JS ↔ pro audio bridge. Secondary: reference DSP, wavearea editor, audio CLI, online tools, platform polyfills.
 - **How's it different?** — mission, the moat (cross-runtime + WPT + composable + paper-cited).
 - **What does it consist of?** — platform, core modules, audio units.
 - **Where do I start?** — clear routing per audience layer.
@@ -316,7 +316,7 @@ Don't build separate pages — embed the answer in the artifact.
 
   * AI: audio-mcp (pending), audio-skill (pending) FIXME: are these good names?
   * Platform: web-audio-api, audio-buffer, web-codecs (pending), audio-worklet (pending)
-  * Integration: audio-host (pending), audio-module (pending) (maybe platform?)
+  * Integration: audio-host (pending), atom (pending) (maybe platform?)
   * Codec: @audio/decode, @audio/encode
   * I/O: @audio/speaker, @audio/mic
   * Analysis: fourier-transform, @audio/beat, window-function, a-weighting, @audio/pitch

@@ -20,7 +20,7 @@ Goal: publish all 37 repos' packages under `@audio/*`, then deprecate the unscop
 
 ## 0b. Repo rename — done 2026-07-08
 
-Renamed all 14 old-style GitHub repos to match their local short names (`gh repo rename`, redirects live): `audio-decode`→`decode`, `audio-encode`→`encode`, `audio-speaker`→`speaker`, `audio-mic`→`mic`, `audio-filter`→`filter`, `audio-effect`→`effect`, `audio-host`→`host`, `audio-module`→`module`, `pitch-detection`→`pitch`, `beat-detection`→`beat`, `time-stretch`→`stretch`, `pitch-shift`→`shift`, `noise-reduction`→`denoise`, `dynamics-processor`→`dynamics`.
+Renamed all 14 old-style GitHub repos to match their local short names (`gh repo rename`, redirects live): `audio-decode`→`decode`, `audio-encode`→`encode`, `audio-speaker`→`speaker`, `audio-mic`→`mic`, `audio-filter`→`filter`, `audio-effect`→`effect`, `audio-host`→`host`, `audio-module`→`module` (since renamed again → `atom`), `pitch-detection`→`pitch`, `beat-detection`→`beat`, `time-stretch`→`stretch`, `pitch-shift`→`shift`, `noise-reduction`→`denoise`, `dynamics-processor`→`dynamics`.
 
 Followed by an ecosystem-wide link sweep (197 files across 19 repos: 18 `@audio` repos + the `audio` engine): GitHub URLs (`package.json` repository/bugs/homepage, README badges/links) repointed to the new canonical names, then a second pass fixed link *labels* that still read the old name even after the href was corrected (e.g. `[audio-encode](.../encode)` → `[encode](.../encode)`). Also fixed, found along the way: three `audio/README.md` ecosystem-list entries pointing at `github.com/nickolanack/*` instead of `audiojs/*` (pre-existing, unrelated to this rename, clearly a stale mistake). All local git remotes repointed to the new URLs. Verified zero remaining old-name references anywhere; full test sweep green (audio engine 508/508). All 19 repos committed and pushed.
 
@@ -45,12 +45,12 @@ Registry deps (digital-filter, fourier-transform, window-function, periodic-func
 
 Auth note: account 2FA is `auth-and-writes`; the classic token in `.npmrc` demanded an OTP after the very first publish (a stale grace window, not a real bypass) — blocked automation until swapped for an Automation token, which bypasses 2FA for writes as designed. Token rotated in `~/.npmrc` 2026-07-08.
 
-One name defect found publishing: `@audio/module` shipped at version `0.0.0` (its package.json was never bumped off the placeholder) — works, but worth a real first version before anyone treats it as stable.
+One name defect found publishing: `@audio/module` shipped at version `0.0.0` (its package.json was never bumped off the placeholder) — resolved by the atom rename below (unpublished, reborn as `@audio/atom@0.1.0`).
 
 **Post-publish queue (audio-agent feedback) — resolved 2026-07-08:**
 - `@audio/vocals@1.0.1` + `@audio/loudness-lra@1.0.1` — the two packages that shipped with runtime `file:` specs, republished with semver same day. Publish driver now hard-fails any runtime `file:`/`link:` spec before attempting a publish (dev-links in effect/module are devDeps — harmless, deliberate, kept).
 - `@audio/stretch-core@1.0.1` — anaHop rounding fix (published 1.0.0 NaN'd on every non-integer ratio); caret ranges propagate it to all stretchers and the umbrella, no other bumps needed.
-- `@audio/dynamics-{expander,compand,leveler,transient-shaper,ducker}@0.1.1` — audio-module manifests (e2561f0) live; audio's registry names all 18 modules against published packages.
+- `@audio/dynamics-{expander,compand,leveler,transient-shaper,ducker}@0.1.1` — atom manifests (e2561f0) live; audio's registry names all 18 modules against published packages.
 
 (Practically: A then B then C; within a wave order is free. Stubs are `private: true` — `--workspaces` skips them automatically? **No — verify**: npm publishes non-private only; private workspaces are skipped with a warning. Confirm on the first repo.)
 
@@ -71,7 +71,7 @@ Versions: as committed (atoms 1.0.0 / 0.1.0 per family; umbrellas carry lineage 
 | pitch-detection | Renamed to @audio/pitch; chroma/chord/key → @audio/mir | ✔ deprecated |
 | beat-detection | Renamed to @audio/beat | ✔ deprecated (2 versions) |
 | time-stretch | Renamed to @audio/stretch | ✔ deprecated (4 versions) |
-| audio-module | Renamed to @audio/module | ✔ deprecated |
+| atom | Renamed to @audio/atom | ✔ deprecated |
 | ~~pitch-shift~~ | — | **Not deprecated — not ours.** `npm owner ls pitch-shift` shows `mikolalysenko`, not `dy`; the live package is an unrelated third-party placeholder at `0.0.0`. The `shift` repo's package.json was always named `pitch-shift` locally, but it was never actually published under that name (same bucket as noise-reduction/dynamics-processor/audio-host below) — the plan's table assumed ownership that was never verified. No action possible or needed. |
 
 Not deprecated (stay canonical): `audio`, `audio-buffer`, `web-audio-api`, `pcm-convert`, `audio-type`, `audio-lena`, `a-weighting` (until absorbed into @audio/weighting as `.response()`), scijs tier (`digital-filter`, `fourier-transform`, `window-function`, `periodic-function`). Never published, nothing to deprecate: noise-reduction, dynamics-processor, audio-host.
@@ -84,3 +84,13 @@ Optional breadcrumb: publish one final patch of each old package whose README to
 - [ ] Site catalog + README org profile update; announce (x.com/audio_js release-notes style) — separate from this pass, tracked as its own todo.md item
 - [x] a-weighting absorption (2026-07-08) — `.response(f, fs)` added to `weighting-{a,b,c,itu468}`, self-consistent with each atom's own `coefs()` (not a parallel reimplementation — verified to 1e-9 against a differential `magDB` check). New `@audio/weighting-b` atom implemented (was missing entirely): differential-tested against `a-weighting`'s own `b()` — caught and fixed a real error mid-derivation (assumed B shared A's f2/f3 poles; the correct mid-pole is its own 158.5 Hz, confirmed by back-solving `a-weighting`'s formula). `a-weighting`'s README now points A/B/C/ITU-468 users to `@audio/weighting`; stale `audio-filter` link fixed. **Deprecating `a-weighting` itself held back** — it was never on the named-11 list (marked "stay canonical until absorbed"), and absorption is partial: D-weighting and flat Z-weighting have no `@audio/weighting` equivalent, so the package is still the honest reference for those. One command away when you say go: `npm deprecate 'a-weighting@*' "A/B/C-weighting + ITU-468 moved to @audio/weighting-{a,b,c,itu468} (also .response(f)). D-weighting and Z-weighting have no @audio equivalent yet -- this package remains the reference for those."`
 - [x] Rename GitHub repos to scope names — done in §0b, all 14
+
+## 4. @audio/module → @audio/atom — done 2026-07-08
+
+The contract package renamed to name the unit rather than collide with its own compile targets (module = *Web Audio Modules*' word, unit = *AudioUnit*'s, node/processor = Web Audio's; "atom" is the ecosystem's existing vocabulary and the last generic term standing). Scope:
+
+- 50 manifests `audio-module.js` → `atom.js` across 9 repos (denoise 12, dynamics 10, effect 22, filter, pitch, reverb, saturate, synth, vocals); package.json subpath `./audio-module` → `./atom`, key `"audio-module"` → `"atom"`; all patch-bumped and republished.
+- `@audio/module@0.0.0` **unpublished** (placeholder version, <72 h old, zero dependents) and reborn as `@audio/atom@0.1.0` — real first version. GitHub repo `audiojs/module` → `audiojs/atom` (redirect live), local dir renamed, CONTRACT/GUIDE/README terminology swept module→atom (protecting "Web Audio Modules", "ES module", `node_modules`), 26/26 tests green.
+- Old unscoped `audio-module` deprecation re-pointed: "Renamed to @audio/atom".
+- `audio` engine: registry subpaths ×~40, test files `module-*` → `atom-*`, docs — committed; `core.js`'s two references patched in the working tree but left uncommitted with the rebuild. Suite 548/548 against the republished registry packages.
+- Manifest filename decision: `atom.js` (not `.atom.js` — hidden dotfile; not `aa.js` — same ambiguity class as the rejected `am.js`). CLI naming headroom: `aa` the npm name is squatted, but a future `@audio/atom` bin can still be named `aa` (`npx @audio/atom` unaffected).

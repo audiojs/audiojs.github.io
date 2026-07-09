@@ -29,7 +29,7 @@ Sound is the first element and medium of communication.
 * Audio-lab: interactive audio graphs editor like reaktor, maxdsp/msp (can import nodes) etc.
 * Neural-plugin: learns behavior of any vst (combination of filters - possible?)
 * Neural-synth: learns any sound into synth
-* Defeedback: realtime feedback reducer audio-module/plugin
+* Defeedback: realtime feedback reducer atom/plugin
 * Any sort of vst/plugin chain processing in dante network
 * Apply VST to native audio (mac) Free/DIY: BlackHole → DAW/plugin host → speakers
 
@@ -136,7 +136,7 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 #### `@audio/denoise` — noise reduction & restoration
 ✔ `denoise-{core, spectral, wiener, omlsa, dehum, declick, decrackle, declip, dewind, deplosive, deesser, debreath, dereverb, detect, gate}` — 42 tests. ◌ `denoise-repair` (time×frequency gap interpolation — De-Slop / RX class). core = STFT (batch/stream/analyse) + noise estimation (min-stats, IMCRA) + VAD + AR + quality metrics.
 
-**Gate/de-esser qualification** (deliberate near-dupes): `dynamics-gate` = musical hold-based gate; `denoise-gate` = look-ahead + hysteresis restoration gate. `dynamics-deesser` = broadband sidechain-compressor; `denoise-deesser` = dynamic peaking-EQ. Merge candidates at the audio-module migration, behind differential tests.
+**Gate/de-esser qualification** (deliberate near-dupes): `dynamics-gate` = musical hold-based gate; `denoise-gate` = look-ahead + hysteresis restoration gate. `dynamics-deesser` = broadband sidechain-compressor; `denoise-deesser` = dynamic peaking-EQ. Merge candidates at the atom migration, behind differential tests.
 
 #### `@audio/spatial` — spatial & channel tools
 ✔ family complete: `spatial-{panner, widener, haas, autopan, crossfeed, midside, channelsplit, delay, microshift, surround}` — 11 tests (M/S roundtrip identity, sample-exact delay, microshift ±cents verified, 5.1 matrix content checks). FFmpeg + H3000 parity closed.
@@ -195,8 +195,8 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 #### `@audio/sinusoidal` — sinusoidal modeling
 ✔ `sinusoidal-{track, synth, residual}` — 4 tests: two-tone tracked (amp ratio ±5%), vibrato contour followed, energy-preserving resynthesis, tonal/noise separation (MQ 1986 / Serra SMS). The De-Slop substrate.
 
-#### `@audio/host` / `@audio/module` — extension mechanisms
-`host`: native plugin hosts — `@audio/host` + `@audio/host-vst`/`@audio/host-clap` atoms + per-platform binary packages (speaker/mic pattern); full test needs a real VST3 + audio hardware (environment-gated). `module`: the cross-target module contract (JS → AudioWorklet / WAM / CLAP / VST3 / AU / LV2) — 16 tests ✓; the API-unification substrate (contract + migration plan in `module/CONTRACT.md` + `audio/.work/audio-module.md`). Wrapper convention decided and **pilot-verified (2026-07)**: `audio-module.js` descriptor at subpath `<pkg>/audio-module` + `"audio-module": "./audio-module.js"` manifest key — one token in all four places (package, key, file, subpath); `toBatch`/`toStream` JS hosts shipped; contract held against 8 atoms across every convention (differential vs native, stream≡batch, generators, analyzers, streaming:false) — two amendments only: `ctx.maxChannels`, equal-frames scope (rate-changers stay batch APIs). See `module/GUIDE.md` § Verified.
+#### `@audio/host` / `@audio/atom` — extension mechanisms
+`host`: native plugin hosts — `@audio/host` + `@audio/host-vst`/`@audio/host-clap` atoms + per-platform binary packages (speaker/mic pattern); full test needs a real VST3 + audio hardware (environment-gated). `module`: the cross-target module contract (JS → AudioWorklet / WAM / CLAP / VST3 / AU / LV2) — 16 tests ✓; the API-unification substrate (contract + migration plan in `module/CONTRACT.md` + `audio/.work/atom.md`). Wrapper convention decided and **pilot-verified (2026-07)**: `atom.js` descriptor at subpath `<pkg>/atom` + `"atom": "./atom.js"` manifest key — one token in all four places (package, key, file, subpath); `toBatch`/`toStream` JS hosts shipped; contract held against 8 atoms across every convention (differential vs native, stream≡batch, generators, analyzers, streaming:false) — two amendments only: `ctx.maxChannels`, equal-frames scope (rate-changers stay batch APIs). See `module/GUIDE.md` § Verified.
 
 #### `@audio/decode` / `@audio/encode` / `@audio/speaker` / `@audio/mic` — codecs & I/O
 ✔ decode 12 codec atoms (published), encode 10 (published), speaker/mic 5 platform-binary packages each (optionalDependencies pattern — native binaries, not algorithm atoms; exempt from the packages-only rule).
@@ -247,5 +247,5 @@ These are structural, page-based, or tightly coupled to the `audio` engine. Not 
 - [x] **Phase 0.5** (2026-07): full structure unification — every algorithm an atom in `packages/*` (pitch 8, beat 5, dynamics 11, denoise 15, effect 20, filter 11 + speech 3, eq 7, weighting 5, auditory 5, spatial 5, mir 3, synth 1 + 26 shift/stretch); families deduped (effect/dynamics dissolved, pitch-shifter superseded, crossfeed→spatial, pink-noise→synth, chroma/chord/key→mir); new umbrellas scaffolded (spectral, loudness, vocals, primitives + stubs across mir/spatial/synth). 724 tests green, every pre-restructure test preserved.
 - [ ] **Phase 1**: publish all source-complete atoms + umbrellas (`npm run publish:all` per repo); deprecate unscoped npm names (audio-decode, encode-audio, audio-speaker, audio-mic, audio-effect, audio-filter, pitch-detection, beat-detection, time-stretch, pitch-shift) with pointers; create/rename GitHub repos (new umbrellas have no remotes yet).
 - [x] **Phase 2** (2026-07-08): stubs implemented — the 22-package wave (effect 5, mir 6, voice 3, midi 2, synth 2, primitives 3 published as @audio/{stft,window,biquad}, denoise-repair, resample-polyphase, tune-midi) with tests, published + pushed. Deferred with documented reasons: speech-world, midi-soundfont, neural lane.
-- [ ] **Phase 3**: audio-module contract migration (see `~/projects/audio/.work/audio-module.md`) — unify the 3 API conventions behind adapters (toBatch/toStream/toWorklet; `audio` hosts the contract natively); swap family-core copies for `@audio/{stft, window, biquad}` behind differential tests; merge gate/deesser variants; per-atom .d.ts + READMEs.
+- [ ] **Phase 3**: atom contract migration (see `~/projects/audio/.work/atom.md`) — unify the 3 API conventions behind adapters (toBatch/toStream/toWorklet; `audio` hosts the contract natively); swap family-core copies for `@audio/{stft, window, biquad}` behind differential tests; merge gate/deesser variants; per-atom .d.ts + READMEs.
 - [ ] **Phase 4**: optionally transfer `fourier-transform`, `window-function`, `digital-filter`, `periodic-function` to `scijs` org with deprecation notices.

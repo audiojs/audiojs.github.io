@@ -4,7 +4,7 @@
 1. [x] **Publish `@audio` scope** — done 2026-07-08, full record: [.work/publish.md](publish.md). Preflight ✔ → waves A/B/C ✔ (241 + 33-package stub wave + fixes) → deprecate 10 of 11 unscoped names ✔ (`pitch-shift` was never actually owned/published — a third party holds that npm name; corrected in the plan) → a-weighting absorption ✔ (`.response()` on weighting-a/b/c/itu468, new weighting-b atom) — a-weighting's own deprecation held for your go-ahead (wasn't on the named list, partial coverage only, command ready in publish.md §3).
 2. [ ] `audio`: publish pending commits past v2.2.0; after scope publish, wire plugin registry/docs to `@audio/*` names. **Not touched — repo is mid-rebuild on your side.**
 3. [ ] Website: resolve homepage direction (index-v2/3/4, undecided since Apr) → ship **Mix Analyser** first (`@audio/loudness` + `@audio/spectral` now real) → FUNDING.yml/OSC/Sponsors plumbing → **Speech Enhancer** (`@audio/denoise` + `@audio/dynamics`).
-4. [~] **audio-module integration** — pilot done 2026-07 (audio.use(module) hosts the contract natively — no adapter dep; tail-compose, engine automation ≡ contract params, 500/500): next migrate families one-by-one (dynamics/denoise wave first) → toWorklet → defeedback realtime leg.
+4. [~] **atom integration** — pilot done 2026-07 (audio.use(module) hosts the contract natively — no adapter dep; tail-compose, engine automation ≡ contract params, 500/500): next migrate families one-by-one (dynamics/denoise wave first) → toWorklet → defeedback realtime leg.
 5. [ ] Funding now-actions (see Funding): GitHub Secure OSS Fund application, Open Source Collective host, Tidelift, STR audit request, thanks.dev/Pledge query, corporate outreach.
 
 ## Next
@@ -14,10 +14,9 @@
 - [ ] Still deferred, reasons on record in their READMEs: speech-world (faithful WORLD port or WASM — not a namesake), midi-soundfont (asset-strategy decision), neural lane (runtime adapter + policy) · reverb partitioned→streaming · family-core swap to @audio/{stft,window,biquad}
 - [ ] Per-repo README refresh at publish (names renamed 2026-07 ✓; API docs/examples per repo still to verify) — filter: re-enable `test/readme.js` fence runner with the new import map; update `filter/plot/generate.js` + `test/types.ts` to split families
 - [ ] Per-atom `.d.ts` (umbrella-level shipped for filter/weighting/auditory/eq; atom-level only speech/crossfeed/pink-noise)
-- [~] `audio-module.js` wrapper convention — **pilot done 2026-07**: `toBatch`/`toStream` hosts implemented in `@audio/module`; contract verified against 8 atoms (compressor/delay/biquad/freeverb/isolate/osc/yin/tube — one per convention, differential vs native <1e-6, stream≡batch, generator/analyzer/streaming:false); findings folded in (`ctx.maxChannels`, equal-frames scope). Remaining: roll `audio-module.js` across the other ~140 atoms mechanically + worklet-bundling path (`audio` itself hosts the contract natively — no adapter)
+- [~] `atom.js` wrapper convention — **pilot done 2026-07**: `toBatch`/`toStream` hosts implemented in `@audio/atom`; contract verified against 8 atoms (compressor/delay/biquad/freeverb/isolate/osc/yin/tube — one per convention, differential vs native <1e-6, stream≡batch, generator/analyzer/streaming:false); findings folded in (`ctx.maxChannels`, equal-frames scope). Remaining: roll `atom.js` across the other ~140 atoms mechanically + worklet-bundling path (`audio` itself hosts the contract natively — no adapter)
 - [ ] Release automation (changesets/CI publish) before atom count grows further; TypeScript types org-wide; bus factor (2nd npm owner + recovery playbook)
 - [ ] `floabeat` fixtures package (seeds live in beat/{synth,floatbeats}.js); `audio-input` unified source idea
-- [ ] `a-weighting` absorption → `@audio/weighting-*.response(f)`, then deprecate
 - [ ] `web-audio-api` positioning vs IRCAM node-web-audio-api; `web-codecs` polyfill window; jz DSP proof (see WASM)
 
 ## [ ] Website
@@ -369,9 +368,9 @@ Strongest durable 2026 demand: OpenAI Realtime / LiveKit / Pipecat pipelines all
 - [ ] Close all issues in `contributing`, archive repo
 - [ ] `web-codecs`: portable WebCodecs API — WASM-based polyfill for cross-runtime codec access. Time-sensitive: native AudioEncoder = Opus/AAC only, Safari 26 only just added audio — ship FLAC/MP3/Vorbis polyfill while the gap is fresh
 - [x] `@audio/denoise` — spectral subtraction, gating, dehum, declick: built (~2261 lines, 41 tests); publish → Priority
-- [ ] `audio-module` - cross-compiling audio-files, audio-shaders etc
+- [ ] `atom` - cross-compiling audio-files, audio-shaders etc
 - [ ] Sponsoring: FUNDING.yml, open collective, NLnet Open Internet Stack (NGI Zero closed — see Funding)
-- [ ] `defeedback` — adaptive feedback suppression (analyzer + tracker + notch bank) — scaffolded 2026-07 at `@audio/defeedback` (see its README: offline MVP = composition over existing atoms; only tracker + coef interpolation are new code; realtime waits on audio-module worklet)
+- [ ] `defeedback` — adaptive feedback suppression (analyzer + tracker + notch bank) — scaffolded 2026-07 at `@audio/defeedback` (see its README: offline MVP = composition over existing atoms; only tracker + coef interpolation are new code; realtime waits on atom worklet)
   - [ ] Node.js audio capture/output from Dante VSC (appears as standard OS audio device)
   - [ ] `defeedback/analyzer.js` — FFT (via fourier-transform) + spectral peak detection
   - [ ] `defeedback/tracker.js` — peak tracking across frames, growth rate detection, feedback/music discrimination
@@ -420,7 +419,7 @@ Reality check (deep-verified 2026-07, adversarially checked vs primary sources):
 ### Skip — verified dead ends for a Canada-based unincorporated solo maintainer
 CZI EOSS (biomedical-only — unless a real bioacoustics adoption story exists by the Oct 18 2026 LOI) · NSF PESOSE (US institutions) · Chrome Framework Fund + Cloudflare Vite fund (bundlers/frameworks only) · CALQ/SODEC/Canada Council (artworks, not tooling) · NRC IRAP (requires for-profit incorporation — values conflict) · Prototype Fund / SIDN / Horizon FSTP / Creative Europe (need EU entity or resident co-applicant)
 
-### With audio-module (gated on jz DSP proof, see WASM)
+### With atom (gated on jz DSP proof, see WASM)
 - [ ] Pro audio industry outreach: consulting for "JS → VST/CLAP" pipeline
 - [ ] Approach Steinberg, Native Instruments, Ableton re: web plugin deployment
 - [ ] Paid workshop: "Audio DSP in JavaScript" — target conference workshops (Web Audio Conf, JSConf)
@@ -438,7 +437,7 @@ CZI EOSS (biomedical-only — unless a real bioacoustics adoption story exists b
 ### 2026-07 — @audio restructure & baseline waves (1–4)
 
 - [x] Ecosystem unified: 37 repos at `~/projects/@audio/<sub>`, one shape (umbrella root + `packages/*` atoms), 847 tests green — see research.md catalog + audio/.work/baseline.md matrix
-- [x] Moves/renames: 14 repos in (incl. audio-host → host, audio-module → module); scaffolds absorbed; conflicts resolved; bytebeat moved out (app-side, units-not-apps principle)
+- [x] Moves/renames: 14 repos in (incl. audio-host → host, atom → module); scaffolds absorbed; conflicts resolved; bytebeat moved out (app-side, units-not-apps principle)
 - [x] Baseline implemented: resample, vocals, spectral (full), loudness (BS.1770/EBU-verified), multiband, FIR EQ, reverb family (7 kinds, Jot-T60-verified), saturate (oversampled), dynamics character models + leveler, eq-dynamic, tune-snap, measure (Farina ESS round-trip), amp, mir (tonnetz/melody/tempogram/structure/fingerprint), synth (generators + drums + voice), sinusoidal (MQ/SMS), defeedback MVP (closed-loop verified, zero-latency), spatial (complete), note, spectral freeze/contrast/harmonics/cqt
 - [x] Quality passes: FDN → canonical Jot T60 (Schroeder-EDC test); fft scratch-buffer aliasing found & hardened; consistency audit across all repos
 - [x] Docs: README package refs renamed to @audio scope everywhere; publish plan written (.work/publish.md); research.md catalog authoritative
