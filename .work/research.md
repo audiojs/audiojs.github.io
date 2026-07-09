@@ -85,7 +85,7 @@ IDEA: make openly available JS packages have classified analogs compiled with JZ
 
 ## `@audio` Package Ecosystem
 
-**Status (2026-07, post-restructure)**: 36 repos at `~/projects/@audio/<sub>`, one shape everywhere — root = thin umbrella, every algorithm an atom in `packages/*`. 847 tests green across 29 suites; every pre-restructure test preserved (pitch-detection 62 = pitch 46 + mir 16; audio-filter 187 = filter 98 + weighting 30 + auditory 28 + eq 25 + spatial-crossfeed 4 + synth-noise 2; audio-effect 58 = effect 39 + spatial 7 + dynamics 1 ported + 11 superseded). Published on npm today: decode 12 + encode 10 + speaker 5 atoms (mic placeholders at 0.0.0) — everything else awaits Phase-1 publish. Baseline coverage matrix vs FFmpeg/SoX/librosa/Pedalboard/MIREX (with test evidence): `~/projects/audio/.work/baseline.md`. Local cross-repo atom deps use `file:` links (loudness-lufs→weighting-k, dynamics-multiband→eq-crossover, mir-melody→pitch-yin, mir-tempogram→beat-core) — swap to semver at publish. GitHub repos keep historical names; unscoped npm packages stay live until scoped publish + deprecation. Cite the published ~27 in pitches. Paths below relative to `~/projects/@audio/`.
+**Status (2026-07-09, fully published)**: 36 repos at `~/projects/@audio/<sub>`, one shape everywhere — root = thin umbrella, every algorithm an atom in `packages/*`. **~330 packages live on npm** (~942 atom tests + audio engine's own 548 — see `~/projects/audio/.work/baseline.md` for the FFmpeg/SoX/librosa/Pedalboard/MIREX coverage matrix with test evidence). GitHub repos renamed to short scope-matching names (`audio-decode`→`decode`, etc. — redirects live); 10 of 11 unscoped npm names deprecated with pointers (`pitch-shift` was never actually owned — corrected in publish.md). `audio@2.3.0` consumes the scope natively. Full publish record: `publish.md`. Paths below relative to `~/projects/@audio/`.
 
 ### Design Principles
 
@@ -95,6 +95,7 @@ IDEA: make openly available JS packages have classified analogs compiled with JZ
 4. **umbrellas re-export atoms** — `@audio/pitch` → `@audio/pitch-yin`, `@audio/pitch-mcleod` etc.
 5. **atoms are installable standalone** — `@audio/pitch-yin` works without `@audio/pitch`.
 6. **stack = units, not apps** — `@audio` holds processing/analysis/synthesis units and infrastructure; applications (bytebeat machine, livecoding, site tools, wavearea) live outside and compose units. (bytebeat moved out to `~/projects/bytebeat` accordingly.)
+
 
 ### `@audio` Atoms & Umbrellas
 
@@ -122,19 +123,19 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 ✔ `eq-{highshelf, lowshelf, parametric, graphic, baxandall, tilt, crossover, fir, dynamic}` — 30 tests. FIR: exact-identity/linear-phase; dynamic = band-energy-driven peaking (Pro-Q3/soothe class): hot band −3 dB+, other bands ±0.7 dB, transparent below threshold. Crossfeed moved to `@audio/spatial-crossfeed`.
 
 #### `@audio/weighting` — frequency weighting filters
-✔ `weighting-{a, c, k, itu468, riaa}` — 30 tests; K is exact BS.1770-4 at any fs (the `@audio/loudness` prerequisite). Magnitude-response *functions* remain in the root `a-weighting` package (different kind — absorb later as `.response(f)` per atom).
+✔ `weighting-{a, b, c, k, itu468, riaa}` — 34 tests; K is exact BS.1770-4 at any fs (the `@audio/loudness` prerequisite). `a-weighting` absorbed: `.response(f, fs)` on a/b/c/itu468, self-consistent with each atom's own filter (not a parallel formula). B was missing entirely — implemented and differential-tested against `a-weighting`'s own `b()` (own 158.5 Hz mid pole, not shared with A). D/Z-weighting have no atom equivalent — `a-weighting` stays canonical for those two, deprecation held pending.
 
 #### `@audio/auditory` — auditory filterbanks
 ✔ `auditory-{bark, erb, mel, gammatone, octave}` — 28 tests.
 
 #### `@audio/effect` — audio effects
-✔ 19 atoms — modulation `effect-{phaser, flanger, chorus, wah, autowah, tremolo, vibrato, ringmod, freqshift}`, delay `effect-{delay, multitap, pingpong}`, distortion `effect-{distortion, bitcrusher, exciter}`, utility `effect-{gain, mixer, slew, noiseshaper}` — 36 tests. ◌ `effect-{sbr, stutter, graindelay, subbass, lofi}`. dynamics/ dissolved into `@audio/dynamics`; spatial/ → `@audio/spatial`; reverb promoted to `@audio/reverb`; pitch-shifter superseded by `@audio/shift` (git history keeps all).
+✔ family complete, 24 atoms — modulation `effect-{phaser, flanger, chorus, wah, autowah, tremolo, vibrato, ringmod, freqshift}`, delay `effect-{delay, multitap, pingpong, graindelay}`, distortion `effect-{distortion, bitcrusher, exciter, lofi}`, utility `effect-{gain, mixer, slew, noiseshaper, stutter, subbass, sbr}` — 44 tests. graindelay = pitch/time grain scatter; stutter = beat-repeat; lofi = wow/flutter + 3-pole ceiling + vinyl bed; subbass = MaxxBass-class harmonic synthesis; sbr = exciter-class bandwidth recovery. dynamics/ dissolved into `@audio/dynamics`; spatial/ → `@audio/spatial`; reverb promoted to `@audio/reverb`; pitch-shifter superseded by `@audio/shift` (git history keeps all).
 
 #### `@audio/dynamics` — dynamics processing
 ✔ `dynamics-{core, envelope, compressor, limiter, gate, expander, deesser, ducker, softclip, compand, transient-shaper, multiband, opto, fet, vca, varimu, leveler}` — 32 tests. Character models verified behaviorally: opto's T4 program-dependent release (long reduction → slower recovery), fet ≫ varimu attack speed, varimu drive-dependent ratio; leveler = dynaudnorm-class framewise riding, peak-guarded. Canonical home for all dynamics per the `audio` plan ("compressor/limiter/gate/… → dynamics-processor"); audio-effect's parallel variants deleted.
 
 #### `@audio/denoise` — noise reduction & restoration
-✔ `denoise-{core, spectral, wiener, omlsa, dehum, declick, decrackle, declip, dewind, deplosive, deesser, debreath, dereverb, detect, gate}` — 42 tests. ◌ `denoise-repair` (time×frequency gap interpolation — De-Slop / RX class). core = STFT (batch/stream/analyse) + noise estimation (min-stats, IMCRA) + VAD + AR + quality metrics.
+✔ family complete: `denoise-{core, spectral, wiener, omlsa, dehum, declick, decrackle, declip, dewind, deplosive, deesser, debreath, dereverb, detect, gate, repair}` — 46 tests. `repair` = RX-class spectral repair: log-magnitude interpolation across time×frequency regions with measured phase-vocoder phase advance — a 60 ms dropout reconstructs to 100.3% of reference level, a band-limited beep drops −46 dB with program untouched. core = STFT (batch/stream/analyse) + noise estimation (min-stats, IMCRA) + VAD + AR + quality metrics. (Root-cause fix, 0.1.1: stream ring compaction was erasing the last frame's partial OLA tail past ~16k streamed samples — shared with `@audio/stft`, fixed in both.)
 
 **Gate/de-esser qualification** (deliberate near-dupes): `dynamics-gate` = musical hold-based gate; `denoise-gate` = look-ahead + hysteresis restoration gate. `dynamics-deesser` = broadband sidechain-compressor; `denoise-deesser` = dynamic peaking-EQ. Merge candidates at the atom migration, behind differential tests.
 
@@ -142,10 +143,10 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 ✔ family complete: `spatial-{panner, widener, haas, autopan, crossfeed, midside, channelsplit, delay, microshift, surround}` — 11 tests (M/S roundtrip identity, sample-exact delay, microshift ±cents verified, 5.1 matrix content checks). FFmpeg + H3000 parity closed.
 
 #### `@audio/mir` — music information retrieval
-✔ `mir-{chroma, chord, key, tonnetz, melody, tempogram, structure, fingerprint}` — 21 tests (+ Foote novelty: texture seams found ±0.35 s; Wang landmark fingerprint: self/snippet-offset/noise-robust/junk-rejected). ◌ `mir-{downbeat, multif0, similarity, transcribe, drums, coversong}`. ML-tier (genre/mood/tags/separate) deferred — needs hosted weights, conflicts with no-ML-in-hot-path.
+✔ family complete: `mir-{chroma, chord, key, tonnetz, melody, tempogram, structure, fingerprint, downbeat, multif0, similarity, transcribe, drums, coversong}` — 27 tests. multif0 = Klapuri iterative spectral subtraction with bandwise-compression whitening (duet/triad/single all correctly resolved); transcribe = continuity note tracking on multif0; drums = flux onsets banded into kick/snare/hihat; downbeat = bass/flux/chroma-change phase scoring against a beat grid; similarity = MFCC-Gaussian + chroma; coversong = OTI + lag cross-correlation (finds a 3-semitone transposition exactly). Plus Foote novelty (texture seams ±0.35 s), Wang landmark fingerprint (self/snippet-offset/noise-robust/junk-rejected). ML-tier (genre/mood/tags/separate) deferred — needs hosted weights, conflicts with no-ML-in-hot-path.
 
 #### `@audio/synth` — synthesis & generators
-✔ family (near-)complete: noise colors, chirp, osc, dtmf (Q.23 pairs), pluck (Karplus-Strong), risset, rhythm (grid-timed), adsr, lfo, wavetable (morph verified), drum (membrane/metal/noise), voice — 11 tests. ◌ `synth-{sfx, poly}` (ZZFX-class + voice allocator).
+✔ family complete: noise colors, chirp, osc, dtmf (Q.23 pairs), pluck (Karplus-Strong), risset, rhythm (grid-timed), adsr, lfo, wavetable (morph verified), drum (membrane/metal/noise), voice, poly, sfx — 17 tests. poly = N-voice allocator with steal-fade (any generator as a voice); sfx = ZZFX-class parameterized SFX, 8 deterministic presets.
 
 #### `@audio/spectral` — spectral features
 ✔ `spectral-{centroid, spread, flatness, rolloff, flux, slope, crest, mfcc, ltas, edit}` — 12 tests, analytic identities (Peeters 2004 / aspectralstats; MFCC gain-invariance per DCT property; LTAS Welch; edit = COLA STFT region gains with reconstruction + band-kill verified). ✔ family complete: + `spectral-{freeze, contrast, harmonics, cqt}` — 16 tests total (freeze sustains, contrast tone≫noise, harmonics matches analytic saw T1=0.645, CQT exact octave spacing).
@@ -154,10 +155,10 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 ✔ family complete: `loudness-{lufs, truepeak, lra, replaygain, dr}` — 10 tests. lufs = EBU 3341 cases 1–3 ±0.1 LU; truepeak = 4× sinc inter-sample (fs/4@45° reads 0 dBTP where sample peak is −3 dBFS); lra = EBU 3342 (−20/−30 alternation → 10 ±1 LU); replaygain = RG2 −18 LUFS reference; dr = TT crest method.
 
 #### `@audio/vocals` — vocal isolation
-✔ `vocals-{isolate, remove}` (extracted from `audio` core) — 4 tests: mid/side identities, center cancellation, mono passthrough. `audio` keeps its op until publish wiring.
+✔ single package (folded from separate `vocals-isolate`/`vocals-remove` atoms — always used together, no independent-install value) — 4 tests: mid/side identities, center cancellation, mono passthrough. Built on `@audio/spatial-midside`'s encode/decode rather than reimplementing the formula. `audio`'s `isolate` op consumes it directly via the atom contract.
 
 #### `@audio/primitives` — shared DSP primitives
-◌ `@audio/{stft, window, biquad}` (unprefixed names per the audio plan) — dedupe targets: `denoise-core/stft` (canonical), `dynamics-core/biquad`, `window-function`/`digital-filter` (scijs, stay). Family cores keep local copies until these publish; swap behind differential tests.
+✔ `@audio/{stft, window, biquad}` published (unprefixed names per the audio plan; the `primitives` workspace root itself stays private, never publishes). stft = canonical `denoise-core` extraction (batch/stream/analyse, includes the OLA-tail compaction fix); window = typed periodic/symmetric fills + COLA check over `window-function`; biquad = RBJ cookbook + stateful kernel, differential-tested against `digital-filter` to 1e-9. 8 tests. Family cores (`denoise-core/stft`, `dynamics-core/biquad`) still keep local copies — the swap-behind-differential-tests step is next, not done.
 
 #### `@audio/reverb` — reverberation
 ✔ family complete: `reverb-{schroeder, freeverb, dattorro, convolution, fdn, spring, shimmer}` — 13 tests. Convolution runs direct or uniform-partitioned FFT (differential-tested to 1e-6); fdn = Householder O(N) + canonical Jot per-line T60 gains, Schroeder-EDC-verified ±30%; spring = dispersive allpass loop (Parker-Välimäki class); shimmer = octave-up feedback (Goertzel-verified 880 in the tail of a 440 input).
@@ -166,22 +167,22 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 ✔ `saturate-{core, waveshaper, tube, transistor, tape, multiband}` — 5 tests. core = sinc-oversampled transfer application (upsample → shape → anti-aliased decimate via `resample-sinc`); alias-suppression differential test (4× vs naive on 10 kHz drive); tube even-dominant vs transistor odd-dominant verified by harmonic ratios; tape adds playback HF loss; multiband = Saturn class. Distinct from `effect-distortion` (hard clip).
 
 #### `@audio/tune` — pitch correction
-✔ `tune-snap` — 4 tests: 47¢-sharp A4 → 440 ±3 Hz in A major, two-note melody corrected per note, in-tune gate leaves audio bit-identical, silence passthrough. Per-note v1 (no intra-note glide). ◌ `tune-midi` (Melodyne class, needs midi-parse).
+✔ `tune-{snap, midi}` — 6 tests: snap = 47¢-sharp A4 → 440 ±3 Hz in A major, two-note melody corrected per note, in-tune gate leaves audio bit-identical, silence passthrough (per-note v1, no intra-note glide); midi = MIDI-guided retune (YIN → per-guide-note median → PSOLA), the melody-following complement to snap's scale snapping.
 
 #### `@audio/amp` — amplification
 ✔ `amp-{tube, cabinet}` — 3 tests: tube = HP → oversampled `saturate-tube` → tone stack (even harmonics + tone shaping verified); cabinet = measured-IR convolution (delta-identity verified) or classical speaker-sim fallback (−12 dB+ at 8 kHz). NAM-class capture = `@audio/neural-amp`.
 
 #### `@audio/note` — music-theory primitives
-✔ `note-{convert, scale}` — Hz ↔ MIDI ↔ name, cents (tuner readout), scale tables + nearest-degree snapping — 4 tests, 113 assertions (12-TET identities, full name/parse roundtrip). Substrate for `tune`, `midi`, the tuner tool.
+✔ single package (folded from separate `note-convert`/`note-scale` atoms — always used together, foundational-utility size) — Hz ↔ MIDI ↔ name, cents (tuner readout), scale tables + nearest-degree snapping — 4 tests, 113 assertions (12-TET identities, full name/parse roundtrip). Deliberately stays this size: full music theory (chords, keys, roman numerals) is composition/notation tooling, the same category `bytebeat` was cut for — out of audio-processing scope; tonal.js/teoria.js already own it. Substrate for `tune`, `midi`, the tuner tool.
 
 #### `@audio/measure` — acoustic & system measurement
 ✔ `measure-{ir, response, latency, align}` — 5 tests: Farina ESS deconvolution recovers a known 3-tap system ±0.03 (identity → δ = 1.000), latency sample-exact, align recovers delay+polarity, response matches analytic one-pole ±0.5 dB. Feeds `reverb-convolution` + `amp-cabinet`: measure once, convolve forever.
 
 #### `@audio/voice` — voice synthesis
-◌ `voice-{tract, voder, glottis}` — Kelly-Lochbaum waveguide (Pink Trombone class), Dudley 1939 Voder, LF/Rosenberg glottal pulses. Site-todo "voice generator via natural tract gen"; speech *analysis* stays `@audio/speech-*`; TTS = neural lane.
+✔ `voice-{tract, voder, glottis}` — 5 tests. glottis = LF model (Fant's Rd regression + area-balance bisection — textbook pulse shape across Rd) + Rosenberg pulse, jitter/shimmer/aspiration; tract = Kelly-Lochbaum waveguide, 5 vowel area presets (/a/-vs-/i/ formants verified), double-buffered scattering; voder = Dudley 1939 10-band channel synth. Site-todo "voice generator via natural tract gen" realized; speech *analysis* stays `@audio/speech-*`; TTS = neural lane.
 
 #### `@audio/midi` — symbolic bridge
-◌ `midi-{parse, write, soundfont}` — SMF I/O (`mir-transcribe` output target, `tune-midi` reference input), midi-js-soundfonts rendering. Singing-to-midi tool substrate.
+✔ `midi-{parse, write}` — 3 tests: SMF 0/1 parse (running status, VLQ, tempo map, flattened notes), format-0 write, roundtrip-verified against a hand-built file with a mid-file tempo change. ◌ `midi-soundfont` — deferred, real gap: needs an asset-strategy decision (SF2 engine vs ~100 MB pre-rendered banks don't belong in an npm atom). Interim: `poly(parse(smf).notes, { voice })` renders MIDI through any synth voice today. `mir-transcribe` output target, `tune-midi` reference input.
 
 #### `@audio/neural` — the opt-in ML lane
 ◌ `neural-{runtime, denoise, amp, separate}` — one inference adapter (ONNX Runtime Web/tflite, worklet-ready) + RNNoise/DeepFilterNet, NAM, Demucs classes. Policy: classical tools never require it; weights hosted separately, license-audited (resolves the freemium "premium ML weights" conflict); MIR's deferred ML tier lands here.
@@ -190,13 +191,15 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 ✔ `defeedback-{analyzer, tracker, notchbank}` + streaming umbrella factory — 3 tests: growing howl killed ≥12 dB with music ±1 dB, harmonic-rich tones deploy zero notches, and a **closed electro-acoustic loop** (resonant room, gain >1) runs away without and stays bounded with the suppressor inline. Zero-latency direct path (pure IIR); PNPR/PHPR + relational harmonic gates; click-free coefficient morphing. Alpha-Labs-class ML suppression = `@audio/neural`.
 
 #### `@audio/resample` — sample-rate conversion
-✔ `resample-{sinc, linear}` (extracted from `audio` core) — 8 tests: pitch preservation, round-trip energy <1%, anti-alias at Nyquist. ◌ `resample-polyphase` (streaming voice-agent path). Differential-test vs libsamplerate at publish.
+✔ family complete: `resample-{sinc, linear, polyphase}` — 12 tests: pitch preservation, round-trip energy <1%, anti-alias at Nyquist. polyphase = rational L/M Kaiser-windowed FIR with a true streaming interpolator (the voice-agent 48↔16/24kHz path) — stream ≡ batch bit-identical, −97 dB alias floor.
 
 #### `@audio/sinusoidal` — sinusoidal modeling
 ✔ `sinusoidal-{track, synth, residual}` — 4 tests: two-tone tracked (amp ratio ±5%), vibrato contour followed, energy-preserving resynthesis, tonal/noise separation (MQ 1986 / Serra SMS). The De-Slop substrate.
 
 #### `@audio/host` / `@audio/atom` — extension mechanisms
-`host`: native plugin hosts — `@audio/host` + `@audio/host-vst`/`@audio/host-clap` atoms + per-platform binary packages (speaker/mic pattern); full test needs a real VST3 + audio hardware (environment-gated). `module`: the cross-target module contract (JS → AudioWorklet / WAM / CLAP / VST3 / AU / LV2) — 16 tests ✓; the API-unification substrate (contract + migration plan in `module/CONTRACT.md` + `audio/.work/atom.md`). Wrapper convention decided and **pilot-verified (2026-07)**: `atom.js` descriptor at subpath `<pkg>/atom` + `"atom": "./atom.js"` manifest key — one token in all four places (package, key, file, subpath); `toBatch`/`toStream` JS hosts shipped; contract held against 8 atoms across every convention (differential vs native, stream≡batch, generators, analyzers, streaming:false) — two amendments only: `ctx.maxChannels`, equal-frames scope (rate-changers stay batch APIs). See `module/GUIDE.md` § Verified.
+`host`: native plugin hosts — `@audio/host` + `@audio/host-vst`/`@audio/host-clap` atoms + per-platform binary packages (speaker/mic pattern); full test needs a real VST3 + audio hardware (environment-gated). Platform leaves (`host-{clap,vst}-{darwin,linux,win32}-*`) aren't npm-publishable yet — they reference `.node` binaries with no prebuildify-style CI pipeline to build them; the JS-only packages are unaffected.
+
+`@audio/atom` (renamed from `@audio/module` 2026-07-08 — "module" collided with its own compile target, WAM = *Web Audio Modules*; "atom" was already the ecosystem's word for the unit): the cross-target processor contract (JS → AudioWorklet / WAM / CLAP / VST3 / AU / LV2), 26 tests. Manifest convention: `atom.js` at subpath `<pkg>/atom` + `"atom": "./atom.js"` package.json key. **Fully rolled out** — 50 manifests across 9 families (denoise, dynamics, effect, filter, pitch, reverb, saturate, synth, vocals), `toBatch`/`toStream`/`toWam` hosts shipped, and `audio@2.3.0` hosts the contract **natively** (no adapter dependency — `audio.use(factory)` reads a factory's own `params` object and maps it to an op directly; a declared `tail` composes a trailing pad, `streaming: false` and multi-bus sidechain hosting are the two still-unhosted engine features). See `module/CONTRACT.md` (now `atom/CONTRACT.md`) + `audio/.work/atom.md` (marked superseded/historical by its own header — CONTRACT.md is the live source of truth) + `atom/GUIDE.md` § Verified.
 
 #### `@audio/decode` / `@audio/encode` / `@audio/speaker` / `@audio/mic` — codecs & I/O
 ✔ decode 12 codec atoms (published), encode 10 (published), speaker/mic 5 platform-binary packages each (optionalDependencies pattern — native binaries, not algorithm atoms; exempt from the packages-only rule).
@@ -244,8 +247,9 @@ These are structural, page-based, or tightly coupled to the `audio` engine. Not 
 ### Migration Path
 
 - [x] **Phase 0** (2026-07): co-locate all repos at `~/projects/@audio/<sub>`; scoped umbrella names; unified metadata; scaffolds absorbed.
-- [x] **Phase 0.5** (2026-07): full structure unification — every algorithm an atom in `packages/*` (pitch 8, beat 5, dynamics 11, denoise 15, effect 20, filter 11 + speech 3, eq 7, weighting 5, auditory 5, spatial 5, mir 3, synth 1 + 26 shift/stretch); families deduped (effect/dynamics dissolved, pitch-shifter superseded, crossfeed→spatial, pink-noise→synth, chroma/chord/key→mir); new umbrellas scaffolded (spectral, loudness, vocals, primitives + stubs across mir/spatial/synth). 724 tests green, every pre-restructure test preserved.
-- [ ] **Phase 1**: publish all source-complete atoms + umbrellas (`npm run publish:all` per repo); deprecate unscoped npm names (audio-decode, encode-audio, audio-speaker, audio-mic, audio-effect, audio-filter, pitch-detection, beat-detection, time-stretch, pitch-shift) with pointers; create/rename GitHub repos (new umbrellas have no remotes yet).
-- [x] **Phase 2** (2026-07-08): stubs implemented — the 22-package wave (effect 5, mir 6, voice 3, midi 2, synth 2, primitives 3 published as @audio/{stft,window,biquad}, denoise-repair, resample-polyphase, tune-midi) with tests, published + pushed. Deferred with documented reasons: speech-world, midi-soundfont, neural lane.
-- [ ] **Phase 3**: atom contract migration (see `~/projects/audio/.work/atom.md`) — unify the 3 API conventions behind adapters (toBatch/toStream/toWorklet; `audio` hosts the contract natively); swap family-core copies for `@audio/{stft, window, biquad}` behind differential tests; merge gate/deesser variants; per-atom .d.ts + READMEs.
+- [x] **Phase 0.5** (2026-07): full structure unification — every algorithm an atom in `packages/*`; families deduped (effect/dynamics dissolved, pitch-shifter superseded, crossfeed→spatial, pink-noise→synth, chroma/chord/key→mir); new umbrellas scaffolded.
+- [x] **Phase 1** (2026-07-08): published all atoms + umbrellas (~330 packages, waves A/B/C + stub wave + atom rename republish); deprecated 10 of 11 unscoped npm names with pointers (`pitch-shift` was never owned — a third party holds that name); renamed all 14 pre-existing GitHub repos to short names.
+- [x] **Phase 2** (2026-07-08): stubs implemented — 22-package wave (effect 5, mir 6, voice 3, midi 2, synth 2, primitives 3, denoise-repair, resample-polyphase, tune-midi), published. Deferred with documented reasons: speech-world, midi-soundfont, neural lane.
+- [x] **`@audio/module` → `@audio/atom` rename** (2026-07-08): contract package renamed (module collided with WAM's own name); 50 manifests across 9 families moved `audio-module.js`→`atom.js`; `audio@2.3.0` hosts the contract natively.
+- [ ] **Phase 3 (open)**: swap family-core copies (`denoise-core/stft`, `dynamics-core/biquad`) for the published `@audio/{stft, biquad}` behind differential tests; merge `dynamics-gate`/`denoise-gate` and `dynamics-deesser`/`denoise-deesser` near-dupes (deliberately qualified as different, not yet merged); per-atom `.d.ts` + individual READMEs (currently umbrella-level only — a real content-authorship decision, ~280 atoms); engine-side `streaming: false` whole-signal hosting + true multi-bus sidechain feeding.
 - [ ] **Phase 4**: optionally transfer `fourier-transform`, `window-function`, `digital-filter`, `periodic-function` to `scijs` org with deprecation notices.

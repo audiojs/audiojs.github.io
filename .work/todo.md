@@ -1,20 +1,18 @@
 
 ## Now (ordered)
 
-1. [x] **Publish `@audio` scope** — done 2026-07-08, full record: [.work/publish.md](publish.md). Preflight ✔ → waves A/B/C ✔ (241 + 33-package stub wave + fixes) → deprecate 10 of 11 unscoped names ✔ (`pitch-shift` was never actually owned/published — a third party holds that npm name; corrected in the plan) → a-weighting absorption ✔ (`.response()` on weighting-a/b/c/itu468, new weighting-b atom) — a-weighting's own deprecation held for your go-ahead (wasn't on the named list, partial coverage only, command ready in publish.md §3).
-2. [ ] `audio`: publish pending commits past v2.2.0; after scope publish, wire plugin registry/docs to `@audio/*` names. **Not touched — repo is mid-rebuild on your side.**
+1. [x] **Publish `@audio` scope** — done 2026-07-08, full record: [.work/publish.md](publish.md). Preflight → waves A/B/C → 22-package stub wave → `@audio/module`→`@audio/atom` rename → deprecate 10 of 11 unscoped names (`pitch-shift` was never actually owned — a third party holds that npm name) → a-weighting absorption (`.response()` on weighting-a/b/c/itu468, new weighting-b atom; a-weighting's own deprecation held for your go-ahead — command ready in publish.md §3).
+2. [x] **`audio@2.3.0` published** — 2026-07-09, deps fully `@audio/*` (old unscoped refs gone). **One real CI failure found on check**: `test/fix-core.js` "Blob/File/Response sources" uses the global `File` constructor, which doesn't exist in Node 18 (CI matrix runs 18/20/22 — the 20/22 jobs show `cancelled`, not failed, that's GitHub's matrix fail-fast on the Node-18 job, not 3 independent failures). Needs a decision: guard the File-specific assertions behind `typeof File !== 'undefined'` (matches this same file's existing pattern for the OPFS-unavailable-in-Node case), or drop Node 18 from the matrix if `File` support is now a real `engines.node` requirement. Not fixed — `test/fix-core.js` wasn't mine to edit unprompted.
 3. [ ] Website: resolve homepage direction (index-v2/3/4, undecided since Apr) → ship **Mix Analyser** first (`@audio/loudness` + `@audio/spectral` now real) → FUNDING.yml/OSC/Sponsors plumbing → **Speech Enhancer** (`@audio/denoise` + `@audio/dynamics`).
-4. [~] **atom integration** — pilot done 2026-07 (audio.use(module) hosts the contract natively — no adapter dep; tail-compose, engine automation ≡ contract params, 500/500): next migrate families one-by-one (dynamics/denoise wave first) → toWorklet → defeedback realtime leg.
+4. [x] **atom integration** — done 2026-07-08: `@audio/atom` (renamed from `@audio/module`) fully rolled out, 50 manifests across 9 families, `audio@2.3.0` hosts the contract natively (`audio.use(factory)`, tail-compose, engine automation ≡ contract params). Open: `streaming: false` whole-signal hosting (leveler et al. currently run per-block — wrong for time-varying material) and true multi-bus sidechain feeding (ducker self-keys as a fallback) are engine-side work, not atom work.
 5. [ ] Funding now-actions (see Funding): GitHub Secure OSS Fund application, Open Source Collective host, Tidelift, STR audit request, thanks.dev/Pledge query, corporate outreach.
 
 ## Next
 
-- [ ] MIR research tail: downbeat, multif0, similarity (MFCC/chroma distance), transcribe, drums, coversong
-- [x] Stub wave done 2026-07-08 — 22 implemented+published: voice-{glottis (LF/Fant), tract (Kelly-Lochbaum), voder} · midi-{parse, write} + tune-midi · denoise-repair (RX-class spectral repair) · synth-{sfx (ZZFX-class), poly} · effect-{sbr, stutter, graindelay, subbass, lofi} · mir-{multif0 (Klapuri), transcribe, drums, downbeat, similarity, coversong} · resample-polyphase (streaming rational) · primitives @audio/{stft, window, biquad} published (family-core swap = next, behind differential tests). Bonus root-cause fix: denoise-core stream ring compaction erased OLA tails (>16k samples) — fixed in both copies, 0.1.1.
-- [ ] Still deferred, reasons on record in their READMEs: speech-world (faithful WORLD port or WASM — not a namesake), midi-soundfont (asset-strategy decision), neural lane (runtime adapter + policy) · reverb partitioned→streaming · family-core swap to @audio/{stft,window,biquad}
+- [x] Stub wave + atom rollout done 2026-07-08/09 — 22 packages implemented+published (voice ×3, midi ×2 + tune-midi, denoise-repair, synth ×2, effect ×5, mir ×6, resample-polyphase, primitives ×3), `@audio/atom` fully rolled out (50 manifests, native engine hosting). Bonus root-cause fix: denoise-core/`@audio/stft` shared stream ring-compaction bug (erased OLA tails past ~16k samples) — fixed in both, 0.1.1.
+- [ ] Open, reasons on record in their READMEs: speech-world (faithful WORLD port or WASM — not a namesake), midi-soundfont (asset-strategy decision), neural lane (runtime adapter + policy) · reverb partitioned→streaming · family-core swap to `@audio/{stft,biquad}` behind differential tests (published, not yet swapped in) · merge `dynamics-gate`/`denoise-gate` + `dynamics-deesser`/`denoise-deesser` near-dupes
 - [ ] Per-repo README refresh at publish (names renamed 2026-07 ✓; API docs/examples per repo still to verify) — filter: re-enable `test/readme.js` fence runner with the new import map; update `filter/plot/generate.js` + `test/types.ts` to split families
-- [ ] Per-atom `.d.ts` (umbrella-level shipped for filter/weighting/auditory/eq; atom-level only speech/crossfeed/pink-noise)
-- [~] `atom.js` wrapper convention — **pilot done 2026-07**: `toBatch`/`toStream` hosts implemented in `@audio/atom`; contract verified against 8 atoms (compressor/delay/biquad/freeverb/isolate/osc/yin/tube — one per convention, differential vs native <1e-6, stream≡batch, generator/analyzer/streaming:false); findings folded in (`ctx.maxChannels`, equal-frames scope). Remaining: roll `atom.js` across the other ~140 atoms mechanically + worklet-bundling path (`audio` itself hosts the contract natively — no adapter)
+- [ ] Per-atom `.d.ts` + individual READMEs (currently umbrella-level docs only, atom-level only speech/crossfeed/pink-noise — ~280 atoms, a real content-authorship decision not a mechanical one)
 - [ ] Release automation (changesets/CI publish) before atom count grows further; TypeScript types org-wide; bus factor (2nd npm owner + recovery playbook)
 - [ ] `floabeat` fixtures package (seeds live in beat/{synth,floatbeats}.js); `audio-input` unified source idea
 - [ ] `web-audio-api` positioning vs IRCAM node-web-audio-api; `web-codecs` polyfill window; jz DSP proof (see WASM)
@@ -337,7 +335,7 @@ Verified 2026-07: no audio-DSP MCP server exists (nearest: a macOS playback toy)
 
 Strongest durable 2026 demand: OpenAI Realtime / LiveKit / Pipecat pipelines all need client-side 48↔16/24kHz resampling, VAD gating, buffering ahead of ML stages — model-agnostic, unglamorous, ours to take. Every flagship tool above is batch; this is the streaming leg.
 
-- [ ] `pcm-convert`: real resampler — currently sampleRate is metadata-only, no algorithm; sinc/polyphase, differential-test vs libsamplerate (atoms scaffolded: `@audio/resample-*`; tested impl already in `audio` core — extract)
+- [ ] `pcm-convert`: real resampler — currently sampleRate is metadata-only, no algorithm; sinc/polyphase, differential-test vs libsamplerate (`@audio/resample-*` implemented incl. streaming polyphase; tested impl already in `audio` core — extract)
 - [ ] Streaming/AudioWorklet-ready chunked API for chain stages
 - [ ] Position READMEs/pages for the voice-agent SDK plumbing use-case
 
@@ -350,7 +348,7 @@ Strongest durable 2026 demand: OpenAI Realtime / LiveKit / Pipecat pipelines all
 ## Ideas
 
 - [ ] Icecast/internet radio adapter? To stream eg. audio
-- [ ] Voice generator tool (via natural tract gen) — scaffolded: `@audio/voice-{tract, voder, glottis}`
+- [ ] Voice generator tool (via natural tract gen) — `@audio/voice-{tract, voder, glottis}` implemented (5 tests); tool page not built
 - [ ] Speed up processing by engaging GPU (where?)
 - [ ] Essentia tone analysis: reproduce flute
 
@@ -367,10 +365,10 @@ Strongest durable 2026 demand: OpenAI Realtime / LiveKit / Pipecat pipelines all
 
 - [ ] Close all issues in `contributing`, archive repo
 - [ ] `web-codecs`: portable WebCodecs API — WASM-based polyfill for cross-runtime codec access. Time-sensitive: native AudioEncoder = Opus/AAC only, Safari 26 only just added audio — ship FLAC/MP3/Vorbis polyfill while the gap is fresh
-- [x] `@audio/denoise` — spectral subtraction, gating, dehum, declick: built (~2261 lines, 41 tests); publish → Priority
-- [ ] `atom` - cross-compiling audio-files, audio-shaders etc
+- [x] `@audio/denoise` — spectral subtraction, gating, dehum, declick: built and published, family complete (46 tests)
+- [ ] `audio-module` idea (broader than `@audio/atom`, which covers processing units specifically) — cross-compiling audio-files, audio-shaders etc
 - [ ] Sponsoring: FUNDING.yml, open collective, NLnet Open Internet Stack (NGI Zero closed — see Funding)
-- [ ] `defeedback` — adaptive feedback suppression (analyzer + tracker + notch bank) — scaffolded 2026-07 at `@audio/defeedback` (see its README: offline MVP = composition over existing atoms; only tracker + coef interpolation are new code; realtime waits on atom worklet)
+- [ ] `defeedback` — adaptive feedback suppression (analyzer + tracker + notch bank) — offline MVP implemented and tested at `@audio/defeedback` (closed-loop verified, zero-latency); realtime waits on atom worklet
   - [ ] Node.js audio capture/output from Dante VSC (appears as standard OS audio device)
   - [ ] `defeedback/analyzer.js` — FFT (via fourier-transform) + spectral peak detection
   - [ ] `defeedback/tracker.js` — peak tracking across frames, growth rate detection, feedback/music discrimination

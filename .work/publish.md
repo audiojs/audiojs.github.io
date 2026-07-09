@@ -71,10 +71,10 @@ Versions: as committed (atoms 1.0.0 / 0.1.0 per family; umbrellas carry lineage 
 | pitch-detection | Renamed to @audio/pitch; chroma/chord/key → @audio/mir | ✔ deprecated |
 | beat-detection | Renamed to @audio/beat | ✔ deprecated (2 versions) |
 | time-stretch | Renamed to @audio/stretch | ✔ deprecated (4 versions) |
-| atom | Renamed to @audio/atom | ✔ deprecated |
+| audio-module | Renamed to @audio/atom (was @audio/module, itself renamed 2026-07-08 — see §4) | ✔ deprecated |
 | ~~pitch-shift~~ | — | **Not deprecated — not ours.** `npm owner ls pitch-shift` shows `mikolalysenko`, not `dy`; the live package is an unrelated third-party placeholder at `0.0.0`. The `shift` repo's package.json was always named `pitch-shift` locally, but it was never actually published under that name (same bucket as noise-reduction/dynamics-processor/audio-host below) — the plan's table assumed ownership that was never verified. No action possible or needed. |
 
-Not deprecated (stay canonical): `audio`, `audio-buffer`, `web-audio-api`, `pcm-convert`, `audio-type`, `audio-lena`, `a-weighting` (until absorbed into @audio/weighting as `.response()`), scijs tier (`digital-filter`, `fourier-transform`, `window-function`, `periodic-function`). Never published, nothing to deprecate: noise-reduction, dynamics-processor, audio-host.
+Not deprecated (stay canonical): `audio`, `audio-buffer`, `web-audio-api`, `pcm-convert`, `audio-type`, `audio-lena`, `a-weighting` (absorbed for A/B/C/ITU-468 per §3 below, but D/Z-weighting have no equivalent — stays canonical for those, its own deprecation held pending), scijs tier (`digital-filter`, `fourier-transform`, `window-function`, `periodic-function`). Never published, nothing to deprecate: noise-reduction, dynamics-processor, audio-host.
 
 Optional breadcrumb: publish one final patch of each old package whose README top says "moved to @audio/x" before deprecating — recommend **skip** (deprecation banner suffices; avoids 11 pointless releases).
 
