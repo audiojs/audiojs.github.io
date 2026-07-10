@@ -94,3 +94,28 @@ The contract package renamed to name the unit rather than collide with its own c
 - Old unscoped `audio-module` deprecation re-pointed: "Renamed to @audio/atom".
 - `audio` engine: registry subpaths ×~40, test files `module-*` → `atom-*`, docs — committed; `core.js`'s two references patched in the working tree but left uncommitted with the rebuild. Suite 548/548 against the republished registry packages.
 - Manifest filename decision: `atom.js` (not `.atom.js` — hidden dotfile; not `aa.js` — same ambiguity class as the rejected `am.js`). CLI naming headroom: `aa` the npm name is squatted, but a future `@audio/atom` bin can still be named `aa` (`npx @audio/atom` unaffected).
+
+
+## 5. audio.js manifest convention + @audio/atom split — repos done 2026-07-09, publish pending
+
+Convention: manifest `atom.js`/`stat.js` → `audio.js`, subpath `./atom`/`./stat` → `./audio`, package.json key `"atom"`/`"stat"` → `"audio"` — consumer-named (svelte's `"svelte"` field precedent); `atom.js` implied atom = processor and mismarked the manifest-less atoms; stat manifests unified (export shape declares kind: factory+params = processor, `{ stat, compute }` = analyzer).
+
+Package split (adapters were never the product — compiling manifests to targets is):
+- `@audio/compile@0.1.0` — contract custodian (CONTRACT.md, GUIDE.md, doc-only files) + future WASM compiler CLI. GitHub `audiojs/atom` → `audiojs/compile` renamed (redirect live), description updated. Local dir `@audio/atom` → `@audio/compile`.
+- `@audio/wam@0.1.0` — `toWam` + examples + demo + 3 test files (16/16 green), new local repo `~/projects/@audio/wam`; default vendor `'audio-plugin'` → `'audio'`.
+- `audio/batch` + `audio/stream` — `toBatch`/`toStream` absorbed into the engine (batch.js), conformance suite → `test/batch.test.js` (`npm run test:batch`, 10/10 green vs sibling checkouts). Registry `audio.atoms` 123 entries → `/audio`; `core.js`/`bin/cli.js` package-name parsing fixed (`spec.split('/atom')[0]` broke on `/audio` — now `split('/').slice(0,2).join('/')`); README/architecture docs swept; `audio@2.4.0` staged.
+
+Sweep: 121 manifests, 18 repos (dynamics 15, denoise 12, effect 22, filter 11, synth 9, mir 10, eq 4, reverb 6, saturate 5, spatial 7, shift 4 incl. umbrella manifest, loudness 4, spectral 6, amp 2, pitch 1, tune 1, defeedback 1, vocals 1) — every affected package patch-bumped, `"audio"` marker added where missing (~35 packages had export but no key), all 18 suites green, one commit per repo, nothing pushed.
+
+**Pending (blocked by permission mode — run manually or grant Bash npm-publish permission):**
+```sh
+node scripts/release.mjs --publish          # republish the 121 bumped atoms + umbrellas
+(cd ~/projects/@audio/compile && npm publish --access public)
+(cd ~/projects/@audio/wam && npm publish --access public)
+npm deprecate @audio/atom@0.1.0 "Split: contract + compiler → @audio/compile; toWam → @audio/wam; toBatch/toStream → audio/batch"
+gh repo create audiojs/wam --public -d "Run audio.js atoms as Web Audio Modules / AudioWorklet nodes"
+(cd ~/projects/@audio/wam && git remote add origin https://github.com/audiojs/wam.git && git push -u origin main)
+# then verify engine against the republished set and release it:
+(cd ~/projects/audio && npm update && npm test && npm run test:batch && npm publish)   # prepublishOnly runs test:all
+# pushes (per repo, when ready): compile + 18 family repos + audio
+```
