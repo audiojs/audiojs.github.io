@@ -4,6 +4,7 @@
 2. [ ] Funding now-actions: GitHub Secure OSS Fund application, Open Source Collective host, Tidelift, STR audit request, thanks.dev/Pledge query, corporate outreach (see Funding)
 3. [ ] Registry-drift holds (all other drift resolved 2026-07-09: compile 0.1.1 + ducker 0.1.5 published, sweeps clean): 3 mic platform binaries (need CI runners) · pcm-convert 3.2.0 (needs 2FA OTP) · decode wasm WIP (3 wasm.cjs + lockfile, in progress)
 4. [x] **2026-07-10 gap-closure wave published**: NEW `@audio/{synth-fm, synth-modal, effect-rotary, effect-tapestop}` 0.1.0 · dynamics compressor/expander/softclip 0.2.0 + multiband 0.4.0 (upward/OTT/oversample; expander knee sign fix) + 6 sibling range bumps · umbrellas dynamics 0.2.3, synth 1.1.1, effect 2.1.2 · `audio@2.6.2` (registry +4; engine 669/669). Suites: dynamics 47 · synth 31/113 · effect 65. Committed + pushed per repo (dynamics/synth/effect/audio/site). (New-package GETs lagged npm indexing ~10 min at publish; all four verified visible same session.)
+5. [x] **2026-07-10 component wave published** (all app components except `audio-chain` now shipped): NEW `@audio/dynamics-unlimit` 0.1.0 (deficit-mode classical de-limiter — Ozone-Unlimiter counterpart, 3-gate detector) · `@audio/spatial-binaural` 0.1.0 (Brown-Duda structural HRTF, dataless, paper-verified constants) · `@audio/spectral-target` 1.0.0 (target-curve library: Byrne/Pestana-cited + deviation/smooth — Auto-Chain data layer done) · umbrellas dynamics 0.2.4, spatial 1.0.1, spectral 1.2.1 (+ envelope 0.1.2, multiband 0.4.1 d.ts-regen republishes) · `audio@2.6.3` (registry: unlimit, binaural). Suites: dynamics 56 · spatial 18(+4) · spectral 31 · engine 669/669 (one meter-playback flake proven environmental via standalone probe: 612 ms, rms 0.707 exact). Committed + pushed.
 
 ## Next
 
@@ -67,7 +68,7 @@ input → user picks content type → analysis pass (no processing) →
 * Spectral noise reduction — Wiener / MMSE-LSA using estimated noise PSD — `@audio/denoise`
 * Declick / decrackle — `@audio/denoise-{declick,decrackle}`
 * De-ess — sidechain on sibilance band — `@audio/dynamics-deesser`
-* Adaptive EQ — match measured LTAS toward content-type target curve, smoothed in critical bands — FIR EQ ✔, **needs target curve library**
+* Adaptive EQ — match measured LTAS toward content-type target curve, smoothed in critical bands — FIR EQ ✔ + `@audio/spectral-target` ✔ (2026-07-10)
 * Multiband compressor — light, content-type-specific — `@audio/dynamics-multiband`
 * True-peak limiter, ceiling -1 dBTP — `@audio/dynamics-limiter`
 * Loudness normalize to target: speech -16 LUFS, music -14 LUFS, voice-over-music -16 LUFS — `@audio/loudness`
@@ -80,8 +81,8 @@ input → user picks content type → analysis pass (no processing) →
 
 **Still to build:**
 
-* [ ] **Target curve library** — small JSON: per content type (speech / music genres / voice-over-music), the LTAS target. Drives adaptive EQ. This is the secret-sauce data layer; build it iteratively from public references (EBU R128 speech profile, mastering reference curves).
-* [ ] **`audio-chain` scheduler** — meta-module: takes analysis output + content-type preset → emits configured chain; also accepts `{mode: 'reference', reference: AudioBuffer}` (see Match-by-Reference). The orchestrator. Lives in `audio` package or new `audio-chain`.
+* [x] **Target curve library** — shipped 2026-07-10 as `@audio/spectral-target`: speech = Byrne et al. 1994 LTASS (cited table), music = Pestana et al. 2013 AES (−5 dB/oct 100–4 kHz, cited), pink analytic, voice-music convention; `deviation()` = band-limited mean-normalized ⅓-oct-smoothed clamped correction (feeds `eq-fir` directly; doubles as the Match-by-Reference core with a measured reference as target); `smooth()` exported.
+* [ ] **`audio-chain` scheduler** — meta-module: takes analysis output + content-type preset → emits configured chain; also accepts `{mode: 'reference', reference: AudioBuffer}` (see Match-by-Reference). The orchestrator. Lives in `audio` package or new `audio-chain`. **The last missing component** (2026-07-10: every DSP atom + the target-curve data layer now shipped) — placement decision open, take deliberately.
 
 **Why no classifier:** user prompt is faster, more honest, and avoids ML weights in the hot path. If the user's pick disagrees with our voiced/unvoiced measurement, surface a soft hint ("This sounds like music — use Music preset?") but never override.
 
