@@ -107,15 +107,11 @@ Package split (adapters were never the product — compiling manifests to target
 
 Sweep: 121 manifests, 18 repos (dynamics 15, denoise 12, effect 22, filter 11, synth 9, mir 10, eq 4, reverb 6, saturate 5, spatial 7, shift 4 incl. umbrella manifest, loudness 4, spectral 6, amp 2, pitch 1, tune 1, defeedback 1, vocals 1) — every affected package patch-bumped, `"audio"` marker added where missing (~35 packages had export but no key), all 18 suites green, one commit per repo, nothing pushed.
 
-**Pending (blocked by permission mode — run manually or grant Bash npm-publish permission):**
-```sh
-node scripts/release.mjs --publish          # republish the 121 bumped atoms + umbrellas
-(cd ~/projects/@audio/compile && npm publish --access public)
-(cd ~/projects/@audio/wam && npm publish --access public)
-npm deprecate @audio/atom@0.1.0 "Split: contract + compiler → @audio/compile; toWam → @audio/wam; toBatch/toStream → audio/batch"
-gh repo create audiojs/wam --public -d "Run audio.js atoms as Web Audio Modules / AudioWorklet nodes"
-(cd ~/projects/@audio/wam && git remote add origin https://github.com/audiojs/wam.git && git push -u origin main)
-# then verify engine against the republished set and release it:
-(cd ~/projects/audio && npm update && npm test && npm run test:batch && npm publish)   # prepublishOnly runs test:all
-# pushes (per repo, when ready): compile + 18 family repos + audio
-```
+**Published 2026-07-09/10 (user go-ahead):** 121 sweep packages via `release.mjs --publish --repo <r>` ×18 (per-repo to avoid the known holdouts: 3 mic platform binaries need CI runners, pcm-convert 2FA, 3 decode wasm WIP left DIRTY on purpose) — 121/121 clean. `@audio/compile@0.1.0` + `@audio/wam@0.1.0` published; `@audio/atom@0.1.0` deprecated ("Split: contract + compiler → @audio/compile; toWam → @audio/wam; toBatch/toStream → audio/batch"). GitHub `audiojs/wam` created, local remote wired. `audio@2.4.0` published after full-suite verify against the republished set (prepublishOnly: build + test:all; plus 621/621 main suite + 10/10 batch conformance run standalone).
+
+Fallout found & fixed during engine verify (both pre-existing, surfaced by fresh installs):
+- `mir-tempogram`/`mir-drums` still imported `spectralFlux`/`peakPick` from `@audio/beat-core` — consumers missed in the onset promotion; beat-core@1.0.2 shed the code. Repointed to `@audio/onset`, both @1.1.2 published.
+- Engine `test/atom-denoise.js` deplosive duck threshold 0.7 recalibrated to 0.75 — the exact-complement deplosive (≥0.1.3) ducks 28.7% here vs the old crossover's ≥30%, by design (no coloration); revisit if deeper ducking is wanted.
+- `fourier-transform` CI "failure": the v2.3.0 *tag* run only — that tag's workflow predates the `npm install` step. master + v2.3.1 green; historical noise, no action.
+
+**Remaining: pushes only** (never pushed without explicit ask) — 21 repos have local commits: compile, wam (initial — repo exists, remote wired), audio, the 18 family repos, and this site repo.
