@@ -40,6 +40,49 @@ for (let m of md.matchAll(/^(##+) [`*]*([\w-]+)[`*]*.*$/gm)) {
 const ALIAS = {
   'denoise-detect': 'denoise',          // the auto-selector documents itself as `denoise`
   'denoise-spectral': 'specsub',        // package named by category, section by function
+  'shift-pvoc': 'vocoder',              // package named by algorithm family, section by name
+  'shift-pvoc-lock': 'phaseLock',       // package named by algorithm family, section by name
+}
+
+// Package → umbrella-section heading token, for repos whose headings are prose
+// ("### Ping-pong") rather than code ("### `pingpong`") — the heading regex only
+// captures the first word-run, and casing differs from the package short name.
+// Section lookup only; does not affect the derived fnName below.
+const SECTION_ALIAS = {
+  'effect-autowah': 'Auto-wah',
+  'effect-bitcrusher': 'Bitcrusher',
+  'effect-chorus': 'Chorus',
+  'effect-delay': 'Delay',
+  'effect-distortion': 'Distortion',
+  'effect-exciter': 'Exciter',
+  'effect-flanger': 'Flanger',
+  'effect-freqshift': 'Frequency',
+  'effect-gain': 'Gain',
+  'effect-mixer': 'Mixer',
+  'effect-multitap': 'Multitap',
+  'effect-noiseshaper': 'Noise',
+  'effect-phaser': 'Phaser',
+  'effect-pingpong': 'Ping-pong',
+  'effect-ringmod': 'Ring',
+  'effect-rotary': 'Rotary',
+  'effect-slew': 'Slew',
+  'effect-tapestop': 'Tape',
+  'effect-tremolo': 'Tremolo',
+  'effect-vibrato': 'Vibrato',
+  'effect-wah': 'Wah-wah',
+}
+
+// Package → real exported identifier (the umbrella index.js is the source of truth),
+// for atoms where camelCase(short) doesn't match — e.g. 'pingpong' → 'pingPong'.
+const FN_NAME = {
+  'effect-autowah': 'autoWah',
+  'effect-freqshift': 'frequencyShifter',
+  'effect-graindelay': 'grainDelay',
+  'effect-noiseshaper': 'noiseShaping',
+  'effect-pingpong': 'pingPong',
+  'effect-ringmod': 'ringMod',
+  'effect-slew': 'slewLimiter',
+  'effect-tapestop': 'tapeStop',
 }
 
 const pkgs = readdirSync(join(repoDir, 'packages')).filter(p => existsSync(join(repoDir, 'packages', p, 'package.json')))
@@ -53,10 +96,10 @@ for (let p of pkgs) {
   if (existsSync(existing) && !readFileSync(existing, 'utf8').includes('generated from the umbrella docs')) { skipped.push(p); continue }
   // section key: alias → strip family prefix (denoise-dehum → dehum) → full name
   let short = p.replace(new RegExp(`^${repo}-`), '')
-  let section = sections[ALIAS[p]] || sections[short] || sections[p]
+  let section = sections[SECTION_ALIAS[p]] || sections[ALIAS[p]] || sections[short] || sections[p]
   if (!section) { missing.push(p); continue }
 
-  let fnName = (ALIAS[p] || short).replace(/-(\w)/g, (_, c) => c.toUpperCase())
+  let fnName = FN_NAME[p] || (ALIAS[p] || short).replace(/-(\w)/g, (_, c) => c.toUpperCase())
   let body = `# ${pj.name} [![npm](https://img.shields.io/npm/v/${pj.name})](https://www.npmjs.com/package/${pj.name}) [![MIT](https://img.shields.io/badge/MIT-%E0%A5%90-white)](https://github.com/krishnized/license)
 
 ${pj.description}
