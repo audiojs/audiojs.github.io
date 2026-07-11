@@ -33,7 +33,7 @@ import { tmpdir } from 'os'
 const ROOT = resolve(process.env.AUDIO_ROOT || join(process.env.HOME, 'projects/@audio'))
 // Non-@audio repos that belong to the same release discipline
 // (audit 2026-07-10: digital-filter carried an unpublished major invisibly — sweep everything the org ships)
-const EXTRA = ['fourier-transform', 'periodic-function', 'pcm-convert', 'digital-filter', 'window-function', 'audio', 'audio-buffer', 'web-audio-api']
+const EXTRA = ['fourier-transform', 'periodic-function', 'pcm-convert', 'digital-filter', 'window-function', 'audio', 'audio-buffer', 'web-audio-api', 'audio-type', 'audio-lena']
   .map(r => join(process.env.HOME, 'projects', r))
 const CACHE = join(tmpdir(), 'audiojs-release-cache')
 
@@ -60,7 +60,14 @@ function packageDirs() {
   return dirs
 }
 
-// Files npm would pack, hashed — package.json excluded (version differs by design).
+// Files npm would pack, hashed. package.json participates with its version field
+// normalized out — excluding the whole file blinded the sweep to funding/deps/exports
+// changes (bit us 2026-07-10: a 315-package funding-field wave produced 2 DIRTY).
+const pjDigest = (raw) => tryd(() => {
+  let j = JSON.parse(raw)
+  delete j.version
+  return JSON.stringify(j)
+}) ?? String(raw)
 // --ignore-scripts: prepack builders must not run (or print) during a check sweep.
 function localDigest(dir) {
   let out = tryd(() => sh('npm pack --dry-run --json --ignore-scripts 2>/dev/null', dir))
@@ -73,6 +80,8 @@ function localDigest(dir) {
     h.update(f + '\0')
     tryd(() => h.update(readFileSync(join(dir, f))))
   }
+  h.update('package.json\0')
+  h.update(pjDigest(readFileSync(join(dir, 'package.json'), 'utf8')))
   return h.digest('hex')
 }
 
@@ -99,6 +108,8 @@ function registryDigest(name, version) {
     h.update(f + '\0')
     h.update(readFileSync(join(pkg, f)))
   }
+  h.update('package.json\0')
+  h.update(pjDigest(readFileSync(join(pkg, 'package.json'), 'utf8')))
   return h.digest('hex')
 }
 
