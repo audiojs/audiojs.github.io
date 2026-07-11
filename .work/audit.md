@@ -14,7 +14,9 @@
 
 **Plumbing:** repository ×150 + directory ×6 + license ×5 + engines ×35 + sideEffects ×38 fields added org-wide; CI test.yml ×25 repos; GitHub descriptions ×22; release.mjs now sweeps digital-filter/window-function/audio/audio-buffer/web-audio-api and reports STALE dep ranges (the class that hid the umbrella bug). All repos committed; publishes via release sweep; pushes after.
 
-**Left open (deliberate):** funding field/FUNDING.yml (couples to enabling GitHub Sponsors — org decision); decode wasm WIP (user's active lane); host platform binaries (need CI runners); pcm-convert OTP; per-atom `.d.ts` for kernel entries beyond denoise/decode/encode/stretch (content-authorship, ~audit unchanged); engine-native stat duplication (documented two-tier design, not consolidated); manifest coverage for weighting/auditory/measure/pitch/beat stat forms (needs §frames/stat design decisions, listed in todo).
+**Left open (deliberate):** decode wasm WIP (user's active lane); pcm-convert OTP; engine-native stat duplication (documented two-tier design, not consolidated); auditory/measure manifest exemptions + pitch/beat stat forms (engine-native by design, documented).
+
+**Closed later same day (funding + docs waves):** funding field ×315 + FUNDING.yml ×47 + org `.github` profile + sponsors kit (`.work/sponsors.md`; Sponsors enablement itself = account-holder steps); per-atom READMEs 178→0 and kernel `.d.ts` 216→0 (denoise pattern, tsc-strict, generated-where-derivable via improved atomdocs.mjs, hand-written elsewhere — several umbrella doc bugs caught in passing: wah depth octaves, oberheim phantom drive, defeedback analyzer kc); weighting audio.js manifests ×7 (curves smoke-verified per standard); host packages got real `index.d.ts` (audit's broken types fields) + host-clap `_Thread_local`→MSVC fix (windows leg was the last red CI job); mic platform binaries: CI now builds them on 7 legs (gyp pin matrix), empty placeholders deprecated, release sweep gained a main-in-pack publish guard + package.json-in-digest (version-normalized) + STALE-range class; org test sweep 0 failing repos; 308-package publish; CI green org-wide.
 
 ---
 
