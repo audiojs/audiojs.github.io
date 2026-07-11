@@ -201,6 +201,9 @@ One repo shape everywhere: root = thin umbrella (index.js re-exports atoms + tes
 #### `@audio/sinusoidal` — sinusoidal modeling
 ✔ `sinusoidal-{track, synth, residual}` — 4 tests: two-tone tracked (amp ratio ±5%), vibrato contour followed, energy-preserving resynthesis, tonal/noise separation (MQ 1986 / Serra SMS). The De-Slop substrate.
 
+#### `@audio/chain` — the Auto-Chain scheduler (2026-07-10)
+✔ own repo `audiojs/chain` (infrastructure register, sibling of compile/host/wam): `analyze(channels)` → LUFS/TP/LRA, min-statistics noise PSD (via `@audio/stft` framing), LTAS, sibilance band, mains-hum Goertzel, clipping runs, `denoise-detect` click score, VAD voiced ratio · `plan(analysis, {type|reference, intensity, targetLufs})` → recipe JSON with adaptive stage inclusion and a cited `why` per stage (hpf → dehum → wiener → declick → deesser → adaptive EQ via `spectral-target`+`eq-fir` → multiband → gain → limiter; reference mode swaps target for reference LTAS + LUFS/width match = Match-by-Reference) · `apply()` (single LUFS-refinement trim, re-limited) · `code()` copy-paste JS recipe · manifest `auto` processor (streaming:false whole-render one-knob enhance — the hostable/compilable open God-Particle) + `chain` stat (recipe without processing — the Mix Analyser feed). Engine registry `auto:` (audio@2.6.5). 9 tests: hum −33 dB, silence-gap noise −22.5 dB, LUFS ±1e-9 of target, TP ≤ −1 dBTP, reference tilt gap −59.8%, deterministic.
+
 #### `@audio/host` / `@audio/compile` / `@audio/wam` — extension mechanisms
 `host`: native plugin hosts — `@audio/host` + `@audio/host-vst`/`@audio/host-clap` atoms + per-platform binary packages (speaker/mic pattern); full test needs a real VST3 + audio hardware (environment-gated). Platform leaves (`host-{clap,vst}-{darwin,linux,win32}-*`) aren't npm-publishable yet — they reference `.node` binaries with no prebuildify-style CI pipeline to build them; the JS-only packages are unaffected.
 
