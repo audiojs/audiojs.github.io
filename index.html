@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>audiojs · open audio stack for JavaScript</title>
-    <meta name="description" content="Open audio stack for JavaScript. Decode, process, synthesize and play — same code on Browser, Node, Deno and Bun. 48 modular packages. W3C Web Audio · WPT 100%.">
+    <meta name="description" content="Open audio stack for JavaScript. Decode, process, synthesize and play — same code on Browser, Node, Deno and Bun. 48 modular packages · 9M+ npm downloads/month. W3C Web Audio · WPT 100%.">
     <meta name="theme-color" content="#0d1014">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://audiojs.org/">
@@ -14,14 +14,14 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://audiojs.org/">
     <meta property="og:title" content="audiojs · open audio stack for JavaScript">
-    <meta property="og:description" content="Decode, process, synthesize and play — same code on Browser, Node, Deno and Bun. 48 modular packages. W3C Web Audio · WPT 100%.">
+    <meta property="og:description" content="Decode, process, synthesize and play — same code on Browser, Node, Deno and Bun. 48 modular packages · 9M+ npm downloads/month. W3C Web Audio · WPT 100%.">
     <meta property="og:site_name" content="audiojs">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@audio_js">
     <meta name="twitter:title" content="audiojs · open audio stack for JavaScript">
-    <meta name="twitter:description" content="Decode, process, synthesize and play — same code on Browser, Node, Deno and Bun. 48 modular packages. W3C Web Audio · WPT 100%.">
+    <meta name="twitter:description" content="Decode, process, synthesize and play — same code on Browser, Node, Deno and Bun. 48 modular packages · 9M+ npm downloads/month. W3C Web Audio · WPT 100%.">
 
     <script type="application/ld+json">
     {
@@ -254,6 +254,35 @@
         color: var(--ink);
         line-height: 1.55;
       }
+      .stats {
+        margin-top: 26px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 14px 56px;
+        position: relative;
+        z-index: 3;
+        text-align: center;
+      }
+      .stats a {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        color: var(--ink);
+        text-decoration: none;
+        transition: opacity 0.15s;
+      }
+      .stats a:hover { opacity: 0.7; }
+      .stats .n {
+        font-weight: 800;
+        font-size: var(--fs-lg);
+        letter-spacing: -0.012em;
+        line-height: 1;
+      }
+      .stats .l {
+        font-weight: 500;
+        font-size: var(--fs-xs);
+      }
       .bullets {
         margin-top: 20px;
         text-align: center;
@@ -348,8 +377,13 @@
           <div>Modular Design</div>
           <div>Standards Compliant</div>
         </div>
+        <div class="stats">
+          <a href="https://www.npmjs.com/org/audio" target="_blank" rel="noopener" title="audiojs on npm"><span class="n">9M+</span><span class="l">npm downloads / month</span></a>
+          <a href="https://github.com/audiojs" target="_blank" rel="noopener" title="audiojs on GitHub"><span class="n">48</span><span class="l">open-source packages</span></a>
+          <a href="https://github.com/audiojs/web-audio-api" target="_blank" rel="noopener" title="maintained since 2016"><span class="n">2016</span><span class="l">maintained ever since</span></a>
+        </div>
         <div class="bullets">
-          <div>ES Modules</div><div>Web Audio API</div><div>Sample-accurate</div><div>20+ modules</div>
+          <div>ES Modules</div><div>Web Audio API</div><div>Sample-accurate</div>
         </div>
         <a class="seal" href="https://github.com/audiojs/web-audio-api/actions/workflows/test.yml" target="_blank" rel="noopener" title="web-audio-api · WPT 100% · CI status" aria-label="web-audio-api WPT conformance · view CI">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">

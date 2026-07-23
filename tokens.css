@@ -1,0 +1,126 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: studied-DNA (source: image)
+ * paper oklch(95% 0.005 80) · ink oklch(15% 0.005 240) · accent oklch(64% 0.115 210)
+ * display: Manrope · body: Manrope · stamp: Orbitron · stripe: Wavefont · code: system mono
+ * nav: N1 · footer: Ft5 · enrichment: Tier-A SVG + Wavefont stripe
+ * studied: yes · DNA-source: image (user reference) · brief: .impeccable.md (light/dark inversion)
+ * Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
+ */
+
+:root {
+  /* paper field — light by brief */
+  --c-paper:        oklch(95% 0.005 80);     /* page bg */
+  --c-paper-2:      oklch(93.5% 0.005 80);   /* card surface */
+  --c-paper-3:      oklch(91% 0.005 80);     /* divider */
+
+  /* dark instrumentation — used for panels, ink, accents */
+  --c-ink:          oklch(15% 0.005 240);    /* primary text + panel fill */
+  --c-ink-2:        oklch(38% 0.005 240);    /* muted text */
+  --c-ink-3:        oklch(60% 0.005 240);    /* labels, captions */
+  --c-rule:         oklch(82% 0.005 80);     /* hairline */
+  --c-rule-strong:  oklch(70% 0.005 80);     /* visible rule */
+
+  /* the one disciplined accent — used <3% of surface */
+  --c-accent:       oklch(64% 0.115 210);    /* teal — calibration green-blue */
+  --c-focus:        oklch(64% 0.115 210);
+
+  /* paper-on-ink inversions for instrument panels */
+  --c-panel-bg:     var(--c-ink);
+  --c-panel-fg:     oklch(94% 0.005 80);
+  --c-panel-grid:   oklch(30% 0.005 240);
+  --c-panel-trace:  oklch(94% 0.005 80);
+  --c-panel-label:  oklch(70% 0.005 240);
+
+  /* derived greys for hover/code-highlight states */
+  --c-ink-hover:    oklch(25% 0.01 240);
+  --c-syntax-com:   oklch(60% 0.005 240);
+  --c-syntax-str:   oklch(80% 0.04 80);
+
+  /* on-dark text and rule tokens — for the dark hero band */
+  --c-on-dark-fg:        oklch(94% 0.005 80);
+  --c-on-dark-fg-2:      oklch(72% 0.005 80);
+  --c-on-dark-fg-3:      oklch(55% 0.005 240);
+  --c-on-dark-rule:      oklch(26% 0.005 240);
+  --c-on-dark-rule-strong: oklch(40% 0.005 80);
+
+  /* legacy hex aliases preserved from index.html */
+  --c-ink-hex:      #0d1014;
+  --c-paper-hex:    #edebe4;
+  --c-bg-hex:       #f1efe9;
+  --c-accent-hex:   #00a4b8;
+
+  /* typography */
+  --f-display:  'Manrope', system-ui, sans-serif;
+  --f-body:     'Manrope', system-ui, sans-serif;
+  --f-stamp:    'Orbitron', sans-serif;
+  --f-wave:     'Wavefont', monospace;
+  --f-mono:     ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* type scale — 1.25 ratio, 16px base */
+  --fs-xs:       0.6875rem;   /* 11 — caption */
+  --fs-sm:       0.8125rem;   /* 13 — small */
+  --fs-md:       1rem;        /* 16 — body */
+  --fs-lg:       1.25rem;     /* 20 */
+  --fs-xl:       1.5rem;      /* 24 */
+  --fs-2xl:      2rem;        /* 32 */
+  --fs-3xl:      2.5rem;      /* 40 */
+  --fs-display:  clamp(2.75rem, 6vw + 0.5rem, 5.5rem);
+  --fs-stmt:     clamp(1.75rem, 5vw, 3.25rem);
+
+  /* leading */
+  --lh-tight:    1.05;
+  --lh-snug:     1.25;
+  --lh-body:     1.5;
+
+  /* tracking */
+  --tr-tight:    -0.02em;
+  --tr-display:  -0.028em;
+  --tr-stamp:    0.08em;
+  --tr-wide:     0.16em;
+
+  /* spacing — 4pt scale */
+  --sp-1:        0.25rem;     /* 4 */
+  --sp-2:        0.5rem;      /* 8 */
+  --sp-3:        0.75rem;     /* 12 */
+  --sp-4:        1rem;        /* 16 */
+  --sp-5:        1.25rem;     /* 20 */
+  --sp-6:        1.5rem;      /* 24 */
+  --sp-8:        2rem;        /* 32 */
+  --sp-10:       2.5rem;      /* 40 */
+  --sp-12:       3rem;        /* 48 */
+  --sp-16:       4rem;        /* 64 */
+  --sp-20:       5rem;        /* 80 */
+  --sp-24:       6rem;        /* 96 */
+  --sp-32:       8rem;        /* 128 */
+
+  /* page geometry */
+  --page-max:    1180px;
+  --page-gutter: clamp(1.25rem, 4vw, 3.5rem);
+
+  /* rules */
+  --rule-hair:   1px;
+  --rule-line:   1.5px;
+
+  /* wavefont stripe sizing (preserved from index.html) */
+  --rh:          clamp(72px, 10.8vw, 108px);
+  --sw:          calc(var(--rh) * 4);
+
+  /* motion — three easings, three durations */
+  --ease-out:    cubic-bezier(0.2, 0, 0, 1);
+  --ease-in:    cubic-bezier(0.5, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.5, 0, 0.5, 1);
+  --dur-fast:    120ms;
+  --dur-med:     220ms;
+  --dur-slow:    400ms;
+
+  /* radius — modern-minimal allows 8px */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
