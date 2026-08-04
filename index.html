@@ -327,6 +327,32 @@
         position: relative;
         z-index: 3;
       }
+      .sponsors {
+        padding: 44px 24px 56px;
+        text-align: center;
+        color: var(--ink);
+      }
+      .sponsors .s-label {
+        font-weight: 800;
+        font-size: var(--fs-md);
+        letter-spacing: -0.012em;
+      }
+      .sponsors .s-logos {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 18px 40px;
+        margin-top: 18px;
+      }
+      .sponsors .s-logos:empty { display: none; }
+      .sponsors .s-logos img { height: 28px; max-width: 140px; object-fit: contain; }
+      .sponsors .s-note {
+        margin-top: 14px;
+        font-weight: 500;
+        font-size: var(--fs-xs);
+      }
+      .sponsors .s-note a { color: inherit; }
 
       @media (max-width: 479px) {
         .inner { padding-left: 24px; padding-right: 24px; }
@@ -399,7 +425,13 @@
 
     </article>
   </header>
-  <main></main>
+  <main>
+    <section class="sponsors" id="sponsors" aria-label="Sponsors">
+      <div class="s-label">Sponsors</div>
+      <div class="s-logos"></div>
+      <div class="s-note">Maintenance is funded by sponsorship — <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">become a sponsor</a></div>
+    </section>
+  </main>
   <footer></footer>
   <!-- <a href="https://github.com/krishnized/license" style="position: fixed; bottom: 1rem; right: 1rem; color: var(--ink); text-decoration: none; font-size: 1.25rem; line-height: 1; opacity: 0.5;" target="_blank" rel="noopener" title="krishnized license">ॐ</a> -->
   <script>
