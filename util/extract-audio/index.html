@@ -45,7 +45,7 @@
           {
             "@type": "Question",
             "name": "Which video formats are supported?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR, which makes the page a converter as well." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR, which makes the page a converter as well." }
           },
           {
             "@type": "Question",
@@ -66,7 +66,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="modulepreload" href="https://esm.sh/@audio/encode@1.6.2">
+  <link rel="modulepreload" href="https://esm.sh/@audio/encode@1.6.3">
   <style>
     :root {
       --c-ink:    #0d1014;
@@ -216,10 +216,10 @@
 
       <h3>Supported input formats</h3>
       <ul>
-        <li><strong>Video</strong>: MP4, M4V, MOV, 3GP, WebM, MKV and AVI carrying AAC, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio.</li>
+        <li><strong>Video</strong>: MP4, M4V, MOV, 3GP, WebM, MKV and AVI carrying AAC, AC-3, DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. 5.1 tracks keep all six channels.</li>
         <li><strong>Audio</strong>: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR, so the page also converts audio (MP3 to WAV, M4A to MP3, FLAC to MP3).</li>
       </ul>
-      <p>AC-3 and DTS tracks have no open decoder here. When the in-page decoder cannot read a file it hands the bytes to your browser's own decoder, and as a last resort plays the file silently through the audio graph and records the output in real time.</p>
+      <p>When the in-page decoder cannot read a file (E-AC-3, TrueHD) it hands the bytes to your browser's own decoder, and as a last resort plays the file silently through the audio graph and records the output in real time.</p>
 
       <h3>Common uses</h3>
       <ul>
@@ -248,8 +248,8 @@
           progress = $('progress'), out = $('out'), player = $('player'), fmt = $('fmt'), save = $('save'), saveLabel = $('saveLabel')
 
     let buffer = null, file = null, url = null, run = 0
-    const decodeLib = import('https://esm.sh/@audio/decode@3.13.0?deps=@audio/decode-mp4@1.0.0,@audio/decode-avi@1.0.0,@audio/decode-webm@1.5.0,@audio/decode-aac@1.5.0').then(m => m.default)
-    const encodeLib = import('https://esm.sh/@audio/encode@1.6.2').then(m => m.default)
+    const decodeLib = import('https://esm.sh/@audio/decode@3.14.0?deps=@audio/decode-mp4@1.1.0,@audio/decode-avi@1.1.0,@audio/decode-webm@1.6.0,@audio/decode-aac@1.5.0,@audio/decode-ac3@1.0.0,@audio/decode-dts@1.0.0').then(m => m.default)
+    const encodeLib = import('https://esm.sh/@audio/encode@1.6.3').then(m => m.default)
 
     // ── input ──
     const pick = f => { if (f) load(f) }
