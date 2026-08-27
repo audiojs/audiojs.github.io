@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Extract audio from video — free, in your browser · audiojs</title>
-  <meta name="description" content="Extract the audio track from any video (MP4, MOV, WebM…) or convert audio files — to MP3, WAV, FLAC, OGG or AAC. Runs entirely in your browser: no upload, no signup, no watermark, no size limit.">
+  <title>Extract audio from video: free, in your browser · audiojs</title>
+  <meta name="description" content="Extract the audio track from a video (MP4, MOV, MKV, WebM, AVI) or convert an audio file to MP3, WAV, FLAC, OGG, Opus or AAC. Runs in your browser: no upload, no signup, no watermark, no size limit.">
   <meta name="theme-color" content="#0d1014">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://audiojs.dev/extract-audio/">
+  <link rel="canonical" href="https://audiojs.dev/util/extract-audio/">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
 
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://audiojs.dev/extract-audio/">
-  <meta property="og:title" content="Extract audio from video — free, in your browser">
-  <meta property="og:description" content="Drop a video, get its audio as MP3, WAV, FLAC, OGG or AAC. No upload — the file never leaves your device.">
+  <meta property="og:url" content="https://audiojs.dev/util/extract-audio/">
+  <meta property="og:title" content="Extract audio from video: free, in your browser">
+  <meta property="og:description" content="Drop a video, get its audio as MP3, WAV, FLAC, OGG, Opus or AAC. No upload: the file never leaves your device.">
   <meta property="og:site_name" content="audiojs">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:site" content="@audio_js">
@@ -24,14 +24,14 @@
     "@graph": [
       {
         "@type": "WebApplication",
-        "@id": "https://audiojs.dev/extract-audio/#app",
+        "@id": "https://audiojs.dev/util/extract-audio/#app",
         "name": "Extract audio from video",
-        "url": "https://audiojs.dev/extract-audio/",
+        "url": "https://audiojs.dev/util/extract-audio/",
         "applicationCategory": "MultimediaApplication",
         "operatingSystem": "Any",
         "browserRequirements": "Requires JavaScript and Web Audio",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "description": "Extract the audio track from a video file or convert an audio file, entirely in the browser. Output MP3, WAV, FLAC, OGG or AAC.",
+        "description": "Extract the audio track from a video file or convert an audio file, entirely in the browser. Output MP3, WAV, FLAC, OGG, Opus or AAC.",
         "author": { "@type": "Organization", "name": "audiojs", "url": "https://audiojs.dev/" }
       },
       {
@@ -40,22 +40,22 @@
           {
             "@type": "Question",
             "name": "Is the video uploaded anywhere?",
-            "acceptedAnswer": { "@type": "Answer", "text": "No. Decoding and encoding run in your browser with the Web Audio API and WebAssembly. The file never leaves your device, so there is no size limit, no queue and nothing to delete afterwards." }
+            "acceptedAnswer": { "@type": "Answer", "text": "No. Decoding and encoding run in your browser with open-source JavaScript and WebAssembly codecs. The file never leaves your device, so there is no size limit, no queue and nothing to delete afterwards." }
           },
           {
             "@type": "Question",
             "name": "Which video formats are supported?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Anything your browser can play: MP4, M4V, MOV, WebM, and in Chrome also MKV. Audio inputs work too — MP3, WAV, FLAC, OGG, Opus, AAC, M4A — which makes the tool a converter as well." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR, which makes the page a converter as well." }
           },
           {
             "@type": "Question",
             "name": "Which output formats can I save?",
-            "acceptedAnswer": { "@type": "Answer", "text": "MP3, WAV, FLAC, OGG Vorbis and AAC. WAV and FLAC are lossless; MP3, OGG and AAC are compressed." }
+            "acceptedAnswer": { "@type": "Answer", "text": "MP3, WAV, FLAC, OGG Vorbis, Opus and AAC. WAV and FLAC are lossless; MP3, OGG, Opus and AAC are compressed." }
           },
           {
             "@type": "Question",
             "name": "Does it lose quality?",
-            "acceptedAnswer": { "@type": "Answer", "text": "The video's audio track is decoded to raw PCM, then encoded to the format you pick. Choose WAV or FLAC for a lossless copy of the decoded audio; MP3, OGG and AAC re-compress it." }
+            "acceptedAnswer": { "@type": "Answer", "text": "The audio track is decoded to raw PCM at its original sample rate, then encoded to the format you pick. WAV and FLAC keep every decoded sample; MP3, OGG, Opus and AAC re-compress." }
           }
         ]
       }
@@ -66,7 +66,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="modulepreload" href="https://esm.sh/@audio/encode@1.6.1">
+  <link rel="modulepreload" href="https://esm.sh/@audio/encode@1.6.2">
   <style>
     :root {
       --c-ink:    #0d1014;
@@ -162,20 +162,20 @@
   <header class="top">
     <div class="inner">
       <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
-      <nav><a href="/#tools">All tools</a> · <a href="https://github.com/audiojs/encode" target="_blank" rel="noopener">Source</a></nav>
+      <nav><a href="/#util">All utilities</a> · <a href="https://github.com/audiojs/decode" target="_blank" rel="noopener">Source</a></nav>
     </div>
   </header>
 
   <main class="inner">
     <section class="hero">
       <h1>Extract audio from video</h1>
-      <p>Drop a video or audio file — save its sound as MP3, WAV, FLAC, OGG or AAC.</p>
+      <p>Drop a video or audio file. Save its sound as MP3, WAV, FLAC, OGG, Opus or AAC.</p>
     </section>
 
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a video or audio file">
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
       <div class="t">Drop a video or audio file here</div>
-      <div class="s">or click to choose · or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
       <input type="file" id="file" accept="video/*,audio/*,.mkv,.m4a,.flac,.opus">
     </div>
 
@@ -193,6 +193,7 @@
             <option value="wav">WAV · 16-bit</option>
             <option value="flac">FLAC · lossless</option>
             <option value="ogg">OGG Vorbis</option>
+            <option value="opus">Opus</option>
             <option value="aac">AAC</option>
           </select>
         </label>
@@ -204,50 +205,51 @@
       </div>
     </section>
 
-    <p class="privacy">Nothing is uploaded — decoding and encoding run in this tab. Encoding by <a href="https://npmjs.com/package/@audio/encode" target="_blank" rel="noopener"><code>@audio/encode</code></a>.</p>
+    <p class="privacy">Nothing is uploaded. Decoding and encoding run in this tab with <a href="https://npmjs.com/package/@audio/decode" target="_blank" rel="noopener"><code>@audio/decode</code></a> and <a href="https://npmjs.com/package/@audio/encode" target="_blank" rel="noopener"><code>@audio/encode</code></a>.</p>
 
     <section class="seo">
-      <h2>Free audio extractor that never sees your file</h2>
-      <p>Most “extract audio from video online” tools upload your video to a server, queue it, and hand back a watermarked or size-limited file. This one doesn't have a server. Your browser demuxes and decodes the video's audio track with the Web Audio API, then <code>@audio/encode</code> — an open-source JavaScript/WebAssembly encoder from audiojs — writes the output format you choose. A 4 GB screen recording is as fine as a 10-second clip.</p>
+      <h2>A free audio extractor that never sees your file</h2>
+      <p>Most online extractors upload your video to a server, queue it, and return a watermarked or size-limited file. This page has no server. It reads the audio track out of the container with <code>@audio/decode</code>, an open-source JavaScript and WebAssembly decoder from audiojs, and writes the format you choose with <code>@audio/encode</code>. A 4 GB screen recording works the same as a 10-second clip.</p>
 
-      <h3>Video to MP3, WAV, FLAC, OGG, AAC</h3>
-      <p>MP3 at 256 kbps is the default because it plays everywhere. Pick WAV or FLAC when you need a lossless copy for editing, transcription or archiving; AAC for the smallest files at the same quality. Sample rate is 48 kHz, the video standard, so a typical MP4 or MOV track is not resampled.</p>
+      <h3>Video to MP3, WAV, FLAC, OGG, Opus, AAC</h3>
+      <p>MP3 at 256 kbps is the default because it plays everywhere. Choose WAV or FLAC for a lossless copy to edit, transcribe or archive. Opus and AAC give the smallest files at equal quality. The sample rate follows the source, so nothing is resampled unless you pick Opus, which always runs at 48 kHz.</p>
 
       <h3>Supported input formats</h3>
       <ul>
-        <li><strong>Video</strong>: MP4, M4V, MOV, WebM, and MKV in Chrome — any container your browser can play.</li>
-        <li><strong>Audio</strong>: MP3, WAV, FLAC, OGG, Opus, AAC, M4A — so this also works as an audio converter (MP3 to WAV, M4A to MP3, FLAC to MP3…).</li>
+        <li><strong>Video</strong>: MP4, M4V, MOV, 3GP, WebM, MKV and AVI carrying AAC, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio.</li>
+        <li><strong>Audio</strong>: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR, so the page also converts audio (MP3 to WAV, M4A to MP3, FLAC to MP3).</li>
       </ul>
-      <p>If a file can't be decoded directly, the page falls back to playing it silently through the audio graph and capturing the output — slower (real time), but it handles anything the <code>&lt;video&gt;</code> element can play.</p>
+      <p>AC-3 and DTS tracks have no open decoder here. When the in-page decoder cannot read a file it hands the bytes to your browser's own decoder, and as a last resort plays the file silently through the audio graph and records the output in real time.</p>
 
       <h3>Common uses</h3>
       <ul>
         <li>Convert MP4 to MP3 for a lecture, podcast or interview recording</li>
         <li>Get a WAV from a screen recording to feed a transcription tool</li>
-        <li>Pull the soundtrack out of a MOV from your phone or camera</li>
-        <li>Extract audio from a WebM meeting recording</li>
+        <li>Pull the soundtrack out of a MOV from a phone or camera</li>
+        <li>Extract audio from a WebM or MKV meeting recording</li>
         <li>Convert audio between formats without installing FFmpeg</li>
       </ul>
 
       <h3>Is the video uploaded anywhere?</h3>
-      <p>No. There is no upload, no account, no watermark and no file-size limit. Close the tab and nothing remains. Everything runs on open-source audiojs packages — <a href="https://github.com/audiojs/encode" target="_blank" rel="noopener">read the encoder source</a>.</p>
+      <p>No. There is no upload, account, watermark or size limit. Close the tab and nothing remains. The decoder and encoder are open source: <a href="https://github.com/audiojs/decode" target="_blank" rel="noopener">read the decoder</a>, <a href="https://github.com/audiojs/encode" target="_blank" rel="noopener">read the encoder</a>.</p>
     </section>
   </main>
 
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
 
   <script type="module">
-    const RATE = 48000
-    const OPTS = { mp3: { bitrate: 256 }, wav: { bitDepth: 16 }, flac: {}, ogg: { quality: 6 }, aac: { bitrate: 192 } }
-    const EXT = { mp3: 'mp3', wav: 'wav', flac: 'flac', ogg: 'ogg', aac: 'aac' }
-    const MIME = { mp3: 'audio/mpeg', wav: 'audio/wav', flac: 'audio/flac', ogg: 'audio/ogg', aac: 'audio/aac' }
+    const RATE = 48000 // capture fallback only; decoded audio keeps its source rate
+    const OPTS = { mp3: { bitrate: 256 }, wav: { bitDepth: 16 }, flac: {}, ogg: { quality: 6 }, opus: { bitrate: 128 }, aac: { bitrate: 192 } }
+    const EXT = { mp3: 'mp3', wav: 'wav', flac: 'flac', ogg: 'ogg', opus: 'opus', aac: 'aac' }
+    const MIME = { mp3: 'audio/mpeg', wav: 'audio/wav', flac: 'audio/flac', ogg: 'audio/ogg', opus: 'audio/ogg', aac: 'audio/aac' }
 
     const $ = id => document.getElementById(id)
     const drop = $('drop'), input = $('file'), panel = $('panel'), status = $('status'), bar = $('bar'),
           progress = $('progress'), out = $('out'), player = $('player'), fmt = $('fmt'), save = $('save'), saveLabel = $('saveLabel')
 
     let buffer = null, file = null, url = null, run = 0
-    const encodeLib = import('https://esm.sh/@audio/encode@1.6.1').then(m => m.default)
+    const decodeLib = import('https://esm.sh/@audio/decode@3.13.0?deps=@audio/decode-mp4@1.0.0,@audio/decode-avi@1.0.0,@audio/decode-webm@1.5.0,@audio/decode-aac@1.5.0').then(m => m.default)
+    const encodeLib = import('https://esm.sh/@audio/encode@1.6.2').then(m => m.default)
 
     // ── input ──
     const pick = f => { if (f) load(f) }
@@ -280,7 +282,7 @@
       try {
         let buf
         try { buf = await decode(f) }
-        catch (e) { console.warn('decodeAudioData failed, capturing playback', e); buf = await capture(f, p => id === run && (status.textContent = 'Capturing playback… ' + (p * 100 | 0) + '%', setBar(p))) }
+        catch (e) { console.warn('no decoder for this file, capturing playback', e); buf = await capture(f, p => id === run && (status.textContent = 'Capturing playback… ' + (p * 100 | 0) + '%', setBar(p))) }
         if (id !== run) return
         buffer = buf
         $('meta').textContent = `${fmtSize(f.size)} · ${fmtTime(buf.duration)} · ${buf.numberOfChannels === 1 ? 'mono' : buf.numberOfChannels === 2 ? 'stereo' : buf.numberOfChannels + ' ch'} · ${buf.sampleRate / 1000} kHz`
@@ -288,7 +290,7 @@
       } catch (e) {
         if (id !== run) return
         console.error(e)
-        show(`Can't read this file — your browser has no decoder for it. Try Chrome, or a different container.`, false, true)
+        show(`Can't read this file: no decoder for it here or in your browser. Try Chrome, or a different container.`, false, true)
       }
     }
 
@@ -310,15 +312,22 @@
       } catch (e) {
         if (id !== run) return
         console.error(e)
-        show(`${f.toUpperCase()} encoding isn't available in this browser — pick another format.`, false, true)
+        show(`${f.toUpperCase()} encoding isn't available in this browser. Pick another format.`, false, true)
         out.hidden = false
       }
     }
 
-    // ── decode: native demux + decode, offline (no gesture needed) ──
+    // ── decode: @audio/decode (JS/WASM demux + codecs), then the browser's own decoder ──
     async function decode(f) {
-      const ab = await f.arrayBuffer()
-      return new OfflineAudioContext(1, 1, RATE).decodeAudioData(ab)
+      const bytes = new Uint8Array(await f.arrayBuffer())
+      try {
+        const { channelData, sampleRate } = await (await decodeLib)(bytes)
+        if (!channelData.length) throw Error('empty')
+        return { numberOfChannels: channelData.length, sampleRate, length: channelData[0].length, duration: channelData[0].length / sampleRate, getChannelData: c => channelData[c] }
+      } catch (e) {
+        console.warn('@audio/decode:', e.message)
+        return new OfflineAudioContext(1, 1, RATE).decodeAudioData(bytes.buffer)
+      }
     }
 
     // ── fallback: play through a silent graph and record PCM in real time ──
