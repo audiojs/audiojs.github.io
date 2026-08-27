@@ -327,6 +327,46 @@
         position: relative;
         z-index: 3;
       }
+      .tools {
+        padding: 44px 24px 0;
+        text-align: center;
+        color: var(--ink);
+      }
+      .tools .t-label {
+        font-weight: 800;
+        font-size: var(--fs-md);
+        letter-spacing: -0.012em;
+      }
+      .tools ul {
+        list-style: none;
+        margin: 18px auto 0;
+        padding: 0;
+        max-width: 560px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .tools a {
+        display: block;
+        padding: 14px 18px;
+        border: 1px solid #d6d3cb;
+        border-radius: 8px;
+        background: var(--paper);
+        color: inherit;
+        text-decoration: none;
+        transition: border-color 0.15s;
+      }
+      .tools a:hover { border-color: var(--teal); }
+      .tools .t-name {
+        font-weight: 700;
+        font-size: var(--fs-sm);
+        letter-spacing: -0.01em;
+      }
+      .tools .t-desc {
+        margin-top: 3px;
+        font-weight: 500;
+        font-size: var(--fs-xs);
+      }
       .sponsors {
         padding: 44px 24px 56px;
         text-align: center;
@@ -426,6 +466,12 @@
     </article>
   </header>
   <main>
+    <section class="tools" id="tools" aria-label="Tools">
+      <div class="t-label">Tools</div>
+      <ul>
+        <li><a href="/extract-audio/"><div class="t-name">Extract audio from video</div><div class="t-desc">Video → MP3, WAV, FLAC, OGG, AAC · in your browser, no upload</div></a></li>
+      </ul>
+    </section>
     <section class="sponsors" id="sponsors" aria-label="Sponsors">
       <div class="s-label">Sponsors</div>
       <div class="s-logos"></div>

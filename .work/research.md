@@ -68,6 +68,7 @@ IDEA: make openly available JS packages have classified analogs compiled with JZ
 * https://g-meh.com/
 * https://github.com/blechdom/webgpuaudio/tree/main
 * https://www.soundcn.xyz/
+* https://x-minus.pro/ai
 
 **Algorithm sources** (implementation references for stubs): [musicdsp](https://github.com/bdejong/musicdsp/tree/master/source) · [sndkit](https://github.com/paulbatchelor/sndkit) · [essentia reference](http://essentia.upf.edu/algorithms_reference.html) · [JSFX](https://github.com/JoepVanlier/JSFX) + [renzol2/fx](https://github.com/renzol2/fx) (effect recipes) · [klangfreund LUFSMeter](https://github.com/klangfreund/LUFSMeter/blob/master/Ebu128LoudnessMeter.cpp) + [x42 meters.lv2](https://github.com/x42/meters.lv2) (loudness differential-test targets) · viznut/pelulamu/erlehmann bytebeat collections · Farina 2000 (ESS) · Waterschoot & Moonen 2011 (feedback control) · Pink Trombone / gmoe-voder (voice) · [sonic](https://github.com/waywardgeek/sonic) (speech-rate WSOLA tuning) · livecoding engines as integration targets, not atoms: strudel, kabelsalat, genish.js, glitch, noisecraft, Teasynth.
 
