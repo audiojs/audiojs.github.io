@@ -112,8 +112,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css">
-  <link rel="modulepreload" href="/util/util.js">
+  <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
+  <link rel="modulepreload" href="/util/util.js?v=15e6fe0b">
 </head>
 <body>
   <header class="top">
@@ -175,7 +175,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=15e6fe0b'
     const stft = import('https://esm.sh/@audio/stft@1.0.5')
     const spectral = import('https://esm.sh/@audio/spectral@1.2.3')
     tool({

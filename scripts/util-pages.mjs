@@ -1,10 +1,14 @@
 // Renders util/<slug>/index.html for every utility, util/index.html, sitemap.xml and robots.txt.
 // Run: node scripts/util-pages.mjs
-import { writeFileSync, mkdirSync } from 'fs'
+import { writeFileSync, mkdirSync, readFileSync } from 'fs'
+import { createHash } from 'crypto'
 import { fileURLToPath } from 'url'
 
 const SITE = 'https://audiojs.dev'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
+// content-hashed asset URLs: browsers and CDNs drop the old shell the moment it changes
+const hash = f => createHash('sha256').update(readFileSync(`${ROOT}util/${f}`)).digest('hex').slice(0, 8)
+const CSS = `/util/util.css?v=${hash('util.css')}`, JS = `/util/util.js?v=${hash('util.js')}`
 const ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E`
 const WAVE = `<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>`
 const drop = (text, accept = 'audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts') => `
@@ -690,8 +694,8 @@ const head = (p) => `<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css">
-  <link rel="modulepreload" href="/util/util.js">
+  <link rel="stylesheet" href="${CSS}">
+  <link rel="modulepreload" href="${JS}">
 </head>`
 
 const header = (repo) => `
@@ -724,7 +728,7 @@ ${p.body}
     </section>
   </main>${footer}
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '${JS}'
     ${p.script.trim()}
   </script>
 </body>
