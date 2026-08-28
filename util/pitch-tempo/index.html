@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Change pitch or tempo of a song: transpose, slow down or speed up without artifacts · audiojs</title>
+  <meta name="description" content="Transpose a song by semitones or change its tempo without changing pitch, in your browser. Slow down music to practice, speed up lectures, pitch a backing track to your voice. No upload.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/pitch-tempo/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/pitch-tempo/">
+  <meta property="og:title" content="Change pitch or tempo of a song: transpose, slow down or speed up without artifacts">
+  <meta property="og:description" content="Transpose a song by semitones or change its tempo without changing pitch, in your browser. Slow down music to practice, speed up lectures, pitch a backing track to your voice. No upload.">
+  <meta property="og:site_name" content="audiojs">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/pitch-tempo/#app",
+        "name": "Pitch and tempo changer",
+        "url": "https://audiojs.dev/util/pitch-tempo/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Transpose a song by semitones or change its tempo without changing pitch, in your browser. Slow down music to practice, speed up lectures, pitch a backing track to your voice. No upload.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/stretch"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Pitch and tempo changer",
+            "item": "https://audiojs.dev/util/pitch-tempo/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does changing tempo change the pitch?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Time stretching keeps the pitch while changing duration, and pitch shifting keeps the duration while transposing. Both use transient-preserving phase vocoders, so drums stay sharp."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How far can I transpose?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Up to an octave either way. Small moves (up to 3 or 4 semitones) are transparent; larger ones start to sound processed, as with any real-time algorithm."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is it good for?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Slowing a solo down to learn it, transposing a backing track to your vocal range, speeding up a lecture or audiobook, matching two songs for a mix."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is the audio uploaded?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. @audio/shift and @audio/stretch run in your browser."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css">
+  <link rel="modulepreload" href="/util/util.js">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/stretch" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Pitch and tempo changer</h1>
+      <p>Drop a track. Transpose it, slow it down or speed it up, keep the rest intact.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a song or recording here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <form class="opts" id="opts">
+      <label>Pitch <input type="range" name="semitones" min="-12" max="12" step="1" value="0"> <output>0</output> semitones</label>
+      <label>Tempo <input type="range" name="tempo" min="50" max="200" step="5" value="100"> <output>100</output> %</label>
+    </form>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/shift" target="_blank" rel="noopener"><code>@audio/shift</code></a> and <a href="https://npmjs.com/package/@audio/stretch" target="_blank" rel="noopener"><code>@audio/stretch</code></a>.</p>
+    <section class="seo">
+      <h2>Transpose and time-stretch in the browser</h2>
+      <p>The two sliders drive <code>@audio/shift</code> (pitch) and <code>@audio/stretch</code> (tempo), open-source transient-aware phase vocoder implementations from audiojs. Nothing is uploaded, nothing is watermarked, and the result saves as MP3, WAV, FLAC, OGG, Opus or AAC.</p>
+      <h3>Slow down music to practice</h3>
+      <p>Set tempo to 50 to 75 % and the solo stays at the original pitch, so you can play along. Speed up to 125 to 200 % for lectures and podcasts.</p>
+      <h3>Transpose a backing track</h3>
+      <p>Shift by whole semitones up to an octave. Duration stays the same, so the track still lines up with a video or a click.</p>
+      <h3>Quality notes</h3>
+      <p>Transient detection keeps drum hits from smearing, the usual weakness of phase vocoders. Extreme settings (an octave, or 200 %) are audible on any algorithm; moderate settings are hard to tell from the original.</p>
+      <h3>Questions</h3>
+      <p><strong>Does changing tempo change the pitch?</strong> No. Time stretching keeps the pitch while changing duration, and pitch shifting keeps the duration while transposing. Both use transient-preserving phase vocoders, so drums stay sharp.</p>
+      <p><strong>How far can I transpose?</strong> Up to an octave either way. Small moves (up to 3 or 4 semitones) are transparent; larger ones start to sound processed, as with any real-time algorithm.</p>
+      <p><strong>What is it good for?</strong> Slowing a solo down to learn it, transposing a backing track to your vocal range, speeding up a lecture or audiobook, matching two songs for a mix.</p>
+      <p><strong>Is the audio uploaded?</strong> No. @audio/shift and @audio/stretch run in your browser.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    const shift = import('https://esm.sh/@audio/shift@1.1.3')
+    const stretch = import('https://esm.sh/@audio/stretch@2.0.4')
+    tool({
+      busy: 'Processing…',
+      async process(a, o, ui) {
+        const semis = +o.semitones || 0, tempo = (+o.tempo || 100) / 100, fs = a.sampleRate
+        if (!semis && tempo === 1) return { audio: a, report: [{ k: 'Unchanged', v: '0 st · 100 %', note: 'Move a slider to transpose or change tempo.' }] }
+        const channelData = []
+        for (let c = 0; c < a.channels; c++) {
+          let ch = a.channelData[c]
+          if (semis) { ui.status('Transposing ' + (semis > 0 ? '+' : '') + semis + ' st' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await shift).transient(ch, { semitones: semis, fs }) }
+          if (tempo !== 1) { ui.status('Stretching to ' + Math.round(tempo * 100) + ' %' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await stretch).transient(ch, { factor: 1 / tempo, fs }) }
+          channelData.push(ch)
+        }
+        return { audio: { channelData, sampleRate: fs }, suffix: (semis ? (semis > 0 ? '+' : '') + semis + 'st' : '') + (tempo !== 1 ? '-' + Math.round(tempo * 100) + 'pct' : ''),
+          report: [{ k: 'Pitch', v: (semis > 0 ? '+' : '') + semis + '<small>semitones</small>' }, { k: 'Tempo', v: Math.round(tempo * 100) + '<small>%</small>' }, { k: 'New length', v: fmtTime(channelData[0].length / fs) }] }
+      }
+    })
+  </script>
+</body>
+</html>

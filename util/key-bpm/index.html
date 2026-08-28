@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Key and BPM finder: detect the key, tempo and chords of any song · audiojs</title>
+  <meta name="description" content="Find the musical key, Camelot code, BPM and chord progression of a song in your browser. Drop an MP3, WAV, FLAC or video; nothing is uploaded.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/key-bpm/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/key-bpm/">
+  <meta property="og:title" content="Key and BPM finder: detect the key, tempo and chords of any song">
+  <meta property="og:description" content="Find the musical key, Camelot code, BPM and chord progression of a song in your browser. Drop an MP3, WAV, FLAC or video; nothing is uploaded.">
+  <meta property="og:site_name" content="audiojs">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/key-bpm/#app",
+        "name": "Key and BPM finder",
+        "url": "https://audiojs.dev/util/key-bpm/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Find the musical key, Camelot code, BPM and chord progression of a song in your browser. Drop an MP3, WAV, FLAC or video; nothing is uploaded.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/mir"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Key and BPM finder",
+            "item": "https://audiojs.dev/util/key-bpm/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How accurate is key detection?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Chroma features over the first two minutes are matched against Krumhansl key profiles, the same approach as desktop DJ software. Clear tonal music lands the right key most of the time; ambiguous or modal material may report the relative major or minor, which shares every note."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is a Camelot code?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A wheel notation DJs use for harmonic mixing: 1A to 12A are minor keys, 1B to 12B their relative majors. Tracks that are one step apart on the wheel, or share a number, mix without clashing."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why is the BPM double or half what I expect?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tempo has an octave ambiguity: a 90 BPM groove with strong eighth notes also fits 180. The report lists both. Pick the one that matches how you count."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it upload my music?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Analysis runs in your browser with @audio/mir and @audio/beat, open-source music information retrieval libraries."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css">
+  <link rel="modulepreload" href="/util/util.js">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/mir" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Key and BPM finder</h1>
+      <p>Drop a song. Get its key, Camelot code, BPM and chords in seconds.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a song here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/mir" target="_blank" rel="noopener"><code>@audio/mir</code></a> and <a href="https://npmjs.com/package/@audio/beat" target="_blank" rel="noopener"><code>@audio/beat</code></a>.</p>
+    <section class="seo">
+      <h2>Song key and tempo, found on your device</h2>
+      <p>Key finders on the web upload your track to a server. This one runs <code>@audio/mir</code> (chroma, key, chord estimation) and <code>@audio/beat</code> (onset detection and beat tracking) in your browser. Drop an MP3, WAV, FLAC, M4A or a video and read the key, its Camelot code for harmonic mixing, the BPM, and the chord sequence.</p>
+      <h3>For DJs</h3>
+      <p>The Camelot code tells you which tracks mix harmonically: same number, one step around the wheel, or the A/B partner. The BPM is estimated from the beat grid; the report also gives the half and double time in case your genre counts differently.</p>
+      <h3>For musicians and producers</h3>
+      <p>The chord progression is read from the same chroma frames, smoothed to suppress passing notes. Use it as a starting point for a lead sheet or to find a sample's key before pitching it.</p>
+      <h3>How it works</h3>
+      <p>Chroma vectors (12 pitch classes per frame) are matched against major and minor key profiles; the best-scoring key wins with a confidence figure. Tempo comes from spectral-flux onsets and a comb-filter tempogram, then a beat tracker aligns the grid.</p>
+      <h3>Questions</h3>
+      <p><strong>How accurate is key detection?</strong> Chroma features over the first two minutes are matched against Krumhansl key profiles, the same approach as desktop DJ software. Clear tonal music lands the right key most of the time; ambiguous or modal material may report the relative major or minor, which shares every note.</p>
+      <p><strong>What is a Camelot code?</strong> A wheel notation DJs use for harmonic mixing: 1A to 12A are minor keys, 1B to 12B their relative majors. Tracks that are one step apart on the wheel, or share a number, mix without clashing.</p>
+      <p><strong>Why is the BPM double or half what I expect?</strong> Tempo has an octave ambiguity: a 90 BPM groove with strong eighth notes also fits 180. The report lists both. Pick the one that matches how you count.</p>
+      <p><strong>Does it upload my music?</strong> No. Analysis runs in your browser with @audio/mir and @audio/beat, open-source music information retrieval libraries.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    const mir = import('https://esm.sh/@audio/mir@1.1.2')
+    const beat = import('https://esm.sh/@audio/beat@2.1.2')
+    const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B']
+    const CAMELOT_MAJOR = ['8B', '3B', '10B', '5B', '12B', '7B', '2B', '9B', '4B', '11B', '6B', '1B']
+    const CAMELOT_MINOR = ['5A', '12A', '7A', '2A', '9A', '4A', '11A', '6A', '1A', '8A', '3A', '10A']
+    tool({
+      busy: 'Listening for key and tempo…',
+      async process(a, o, ui) {
+        const fs = a.sampleRate
+        const n = a.channelData[0].length, mono = new Float32Array(n)
+        for (const ch of a.channelData) for (let i = 0; i < n; i++) mono[i] += ch[i] / a.channelData.length
+        const { chroma, key, smoothChords } = await mir
+        const span = Math.min(n, fs * 120) // first two minutes are enough for key
+        const frames = []
+        for (let i = 0; i + 4096 <= span; i += 4096) frames.push(chroma(mono.subarray(i, i + 4096), { fs }))
+        const k = key(frames)
+        ui.status('Tracking the beat…')
+        await new Promise(r => setTimeout(r, 20))
+        const { detect } = await beat
+        const b = detect(mono.subarray(0, Math.min(n, fs * 90)), { fs })
+        let chords = []
+        try { chords = smoothChords(frames, { selfProb: 0.5 }) } catch {}
+        const seq = []
+        for (const c of chords) { const label = c?.label ?? c; if (label && seq[seq.length - 1] !== label) seq.push(label) }
+        const camelot = (k.mode === 'minor' ? CAMELOT_MINOR : CAMELOT_MAJOR)[k.tonic]
+        return { report: [
+          { k: 'Key', v: NAMES[k.tonic] + ' ' + k.mode + '<small>' + Math.round(k.confidence * 100) + '% sure</small>' },
+          { k: 'Camelot', v: camelot, note: 'Mix with ' + camelot + ', ' + neighbours(camelot).join(', ') + ' for harmonic mixing.' },
+          { k: 'Tempo', v: Math.round(b.bpm) + '<small>BPM</small>', note: b.confidence < 0.4 ? 'Low confidence: the beat is soft or the tempo drifts. Half or double time is possible.' : 'Alternatives: ' + Math.round(b.bpm / 2) + ' or ' + Math.round(b.bpm * 2) + ' BPM if you count half or double time.' },
+          ...(seq.length ? [{ k: 'Chord progression', v: '<span style="font-size:.7em">' + seq.slice(0, 24).join(' · ') + (seq.length > 24 ? ' …' : '') + '</span>' }] : []),
+        ] }
+        function neighbours(c) { const num = parseInt(c), l = c.slice(-1); return [((num + 10) % 12 + 1) + l, (num % 12 + 1) + l, num + (l === 'A' ? 'B' : 'A')] }
+      }
+    })
+  </script>
+</body>
+</html>

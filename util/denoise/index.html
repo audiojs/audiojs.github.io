@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remove background noise from audio online, free, no upload · audiojs</title>
+  <meta name="description" content="Remove background noise, mains hum, clicks, crackle, wind and plosives from a recording in your browser. Automatic method selection with a visible plan. No upload, no account, no length limit.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/denoise/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/denoise/">
+  <meta property="og:title" content="Remove background noise from audio online, free, no upload">
+  <meta property="og:description" content="Remove background noise, mains hum, clicks, crackle, wind and plosives from a recording in your browser. Automatic method selection with a visible plan. No upload, no account, no length limit.">
+  <meta property="og:site_name" content="audiojs">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/denoise/#app",
+        "name": "Noise remover",
+        "url": "https://audiojs.dev/util/denoise/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Remove background noise, mains hum, clicks, crackle, wind and plosives from a recording in your browser. Automatic method selection with a visible plan. No upload, no account, no length limit.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/denoise"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Noise remover",
+            "item": "https://audiojs.dev/util/denoise/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does automatic mode choose?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A classifier measures the recording: hum energy at 50/60 Hz and harmonics, click density, low-frequency rumble, noise-floor stationarity and sibilance. It picks the specialised method that scored highest and shows the plan."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which noises can it remove?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Steady background noise (fans, hiss, air conditioning), mains hum, clicks and pops, vinyl crackle, clipping, wind rumble, microphone plosives, sibilance, room reverb and noise between phrases."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is this AI noise removal?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Every method is classical signal processing: Wiener and OM-LSA spectral gain, spectral subtraction, adaptive notch filters, LPC click interpolation. It runs instantly on any device and never sends audio anywhere. For heavy speech-over-noise, ML models can do better; for hum, clicks, wind and hiss, these are the same algorithms the professional tools use."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it work on music?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes for hum, clicks, crackle and clipping. Broadband denoising on music is gentler than on speech; use it lightly and compare with the original in the player."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css">
+  <link rel="modulepreload" href="/util/util.js">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/denoise" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Noise remover</h1>
+      <p>Drop a recording. The classifier picks the right method, shows why, and lets you save the clean file.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a noisy recording here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <form class="opts" id="opts">
+      <label>Method <select name="method">
+        <option value="">auto (classify the noise)</option>
+        <option value="wiener">wiener: steady broadband noise</option>
+        <option value="omlsa">omlsa: noise under speech</option>
+        <option value="specsub">specsub: spectral subtraction</option>
+        <option value="dehum">dehum: mains hum 50/60 Hz</option>
+        <option value="declick">declick: clicks and pops</option>
+        <option value="decrackle">decrackle: vinyl crackle</option>
+        <option value="declip">declip: repair clipping</option>
+        <option value="dewind">dewind: wind rumble</option>
+        <option value="deplosive">deplosive: microphone pops</option>
+        <option value="deesser">deesser: harsh sibilance</option>
+        <option value="dereverb">dereverb: room echo</option>
+        <option value="gate">gate: silence between phrases</option>
+      </select></label>
+    </form>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/denoise" target="_blank" rel="noopener"><code>@audio/denoise</code></a>.</p>
+    <section class="seo">
+      <h2>Noise removal that shows its work</h2>
+      <p>Cloud noise removers hide what they do and charge per minute. This page runs <code>@audio/denoise</code>, thirteen open-source restoration methods plus a classifier, in your browser. Drop a file, read which method was chosen and why, listen, save. Nothing leaves your device.</p>
+      <h3>Background noise, hum, clicks, wind, plosives, reverb</h3>
+      <ul>
+        <li><strong>Hiss and fans</strong>: Wiener / MMSE-LSA gain with decision-directed SNR tracking, or OM-LSA when speech is present.</li>
+        <li><strong>Mains hum</strong>: adaptive notch bank on 50 or 60 Hz and harmonics, tracking drift.</li>
+        <li><strong>Clicks, pops, crackle</strong>: detection and LPC interpolation, the same family as vinyl restoration tools.</li>
+        <li><strong>Clipping</strong>: auto-detected clip level, waveform reconstruction.</li>
+        <li><strong>Wind, plosives, sibilance, reverb</strong>: dedicated dewind, deplosive, de-esser and dereverb stages.</li>
+      </ul>
+      <h3>When to pick a method by hand</h3>
+      <p>Automatic mode handles the common cases. If you know the problem, choose the method: dehum for a ground loop, declick for a scratched record, declip for a hot recording, gate for silence between takes. The output plays in the page so you can compare before saving.</p>
+      <h3>Questions</h3>
+      <p><strong>How does automatic mode choose?</strong> A classifier measures the recording: hum energy at 50/60 Hz and harmonics, click density, low-frequency rumble, noise-floor stationarity and sibilance. It picks the specialised method that scored highest and shows the plan.</p>
+      <p><strong>Which noises can it remove?</strong> Steady background noise (fans, hiss, air conditioning), mains hum, clicks and pops, vinyl crackle, clipping, wind rumble, microphone plosives, sibilance, room reverb and noise between phrases.</p>
+      <p><strong>Is this AI noise removal?</strong> No. Every method is classical signal processing: Wiener and OM-LSA spectral gain, spectral subtraction, adaptive notch filters, LPC click interpolation. It runs instantly on any device and never sends audio anywhere. For heavy speech-over-noise, ML models can do better; for hum, clicks, wind and hiss, these are the same algorithms the professional tools use.</p>
+      <p><strong>Does it work on music?</strong> Yes for hum, clicks, crackle and clipping. Broadband denoising on music is gentler than on speech; use it lightly and compare with the original in the player.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    const lib = import('https://esm.sh/@audio/denoise@0.3.7')
+    const WHY = { wiener: 'steady broadband noise floor', omlsa: 'noise under speech, speech-presence tracking', specsub: 'stationary noise, spectral subtraction', dehum: 'mains hum and harmonics', declick: 'impulsive clicks', decrackle: 'dense crackle', declip: 'clipped peaks', dewind: 'low-frequency wind rumble', deplosive: 'plosive pops', deesser: 'sibilance', dereverb: 'room reverberation', gate: 'noise between phrases' }
+    tool({
+      busy: 'Analyzing noise…',
+      async process(a, o, ui) {
+        const m = await lib, fs = a.sampleRate
+        let plan = null
+        const channelData = []
+        for (let c = 0; c < a.channelData.length; c++) {
+          ui.status((o.method ? 'Applying ' + o.method : 'Classifying and cleaning') + (a.channelData.length > 1 ? ' · channel ' + (c + 1) : '') + '…')
+          await new Promise(r => setTimeout(r, 20))
+          const src = a.channelData[c].slice()
+          if (o.method) channelData.push(m[o.method](src, { fs }))
+          else { const r = m.denoise(src, { fs, returnPlan: true }); plan ??= r.plan; channelData.push(r.out) }
+        }
+        const method = o.method || plan?.method || 'wiener'
+        const scores = plan?.scores ? Object.entries(plan.scores).filter(([k, v]) => typeof v === 'number' && k !== 'humFreq').map(([k, v]) => k + ' ' + v.toFixed(1)).join(' · ') : ''
+        return {
+          report: [{ k: o.method ? 'Method' : 'Method chosen by the classifier', v: method, note: (WHY[method] || '') + (scores ? '. Detector scores: ' + scores : '') }],
+          audio: { channelData, sampleRate: fs }, suffix: '-' + method
+        }
+      }
+    })
+  </script>
+</body>
+</html>

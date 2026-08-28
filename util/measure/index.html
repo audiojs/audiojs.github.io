@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Measure your speakers and room: frequency response and RT60 in the browser · audiojs</title>
+  <meta name="description" content="Play a sine sweep through your speakers, record it with your microphone, and get the frequency response, reverberation time (RT60) and system latency. Runs in the browser with no software to install.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/measure/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/measure/">
+  <meta property="og:title" content="Measure your speakers and room: frequency response and RT60 in the browser">
+  <meta property="og:description" content="Play a sine sweep through your speakers, record it with your microphone, and get the frequency response, reverberation time (RT60) and system latency. Runs in the browser with no software to install.">
+  <meta property="og:site_name" content="audiojs">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/measure/#app",
+        "name": "Room and speaker measurement",
+        "url": "https://audiojs.dev/util/measure/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Play a sine sweep through your speakers, record it with your microphone, and get the frequency response, reverberation time (RT60) and system latency. Runs in the browser with no software to install.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/measure"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Room and speaker measurement",
+            "item": "https://audiojs.dev/util/measure/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What do I need?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Speakers or headphones and a microphone in the same room. A laptop measures itself; for real speaker data use an external microphone, ideally an omni measurement mic, at the listening position."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is RT60?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The time the sound field takes to decay by 60 dB after the source stops. It is estimated from the impulse response by Schroeder backward integration and extrapolated from the -5 to -25 dB slope (T20)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does the response look wild below 200 Hz?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Room modes: standing waves between walls create peaks and dips of 10 dB or more. That is the room, not the speaker. Move the microphone and compare."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is anything uploaded?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The sweep, the recording and the analysis stay in your browser."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css">
+  <link rel="modulepreload" href="/util/util.js">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/measure" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Room and speaker measurement</h1>
+      <p>A sine sweep plays through your speakers and is recorded by your microphone. You get the frequency response, RT60 and latency.</p>
+    </section>
+
+    <div class="live" id="live">
+      <div class="sub" id="msg">Turn the volume to a comfortable level, place the microphone where you listen, then press start. The sweep lasts 3 seconds.</div>
+      <div class="meter" style="max-width:420px"><i id="peak" style="left:0"></i></div>
+      <div class="actions">
+        <button class="btn" id="start" type="button">Start measurement</button>
+        <label style="display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-sm)">Sweep level <select id="gain"><option value="0.1">-20 dB</option><option value="0.3" selected>-10 dB</option><option value="0.6">-4 dB</option></select></label>
+      </div>
+    </div>
+    <section class="panel" id="panel" hidden>
+      <div class="row report" id="report"></div>
+      <div class="row viz" id="viz"></div>
+    </section>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/measure" target="_blank" rel="noopener"><code>@audio/measure</code></a>, <a href="https://npmjs.com/package/@audio/synth" target="_blank" rel="noopener"><code>@audio/synth</code></a>, <a href="https://npmjs.com/package/@audio/mic" target="_blank" rel="noopener"><code>@audio/mic</code></a>.</p>
+    <section class="seo">
+      <h2>Room acoustics measurement, no software to install</h2>
+      <p>The page plays a logarithmic sine sweep from 20 Hz to 20 kHz through your speakers, records it with your microphone and computes the impulse response by deconvolution with <code>@audio/measure</code>. From the impulse response it derives the frequency response (1/6-octave smoothed, normalized at 1 kHz), the reverberation time RT60 and the round-trip latency. Everything runs in the browser.</p>
+      <h3>How to get a useful measurement</h3>
+      <ul>
+        <li>Put the microphone at ear height in the listening position, pointing up or at the speakers.</li>
+        <li>Set the volume so the sweep is clearly louder than the room noise, but not shouting; the level meter should reach the green zone.</li>
+        <li>Measure a few positions 20 to 30 cm apart. Dips that move are room modes; dips that stay are the speaker or its placement.</li>
+      </ul>
+      <h3>Reading the result</h3>
+      <p>A response within ±3 dB from 100 Hz to 10 kHz is good for an untreated room. RT60 below 0.4 s is what mixing rooms aim for; living rooms sit around 0.5 s. Latency includes your audio interface and operating system, so it is not a pure acoustic figure, but it is stable for the same setup.</p>
+      <h3>Questions</h3>
+      <p><strong>What do I need?</strong> Speakers or headphones and a microphone in the same room. A laptop measures itself; for real speaker data use an external microphone, ideally an omni measurement mic, at the listening position.</p>
+      <p><strong>What is RT60?</strong> The time the sound field takes to decay by 60 dB after the source stops. It is estimated from the impulse response by Schroeder backward integration and extrapolated from the -5 to -25 dB slope (T20).</p>
+      <p><strong>Why does the response look wild below 200 Hz?</strong> Room modes: standing waves between walls create peaks and dips of 10 dB or more. That is the room, not the speaker. Move the microphone and compare.</p>
+      <p><strong>Is anything uploaded?</strong> No. The sweep, the recording and the analysis stay in your browser.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    const lib = import('https://esm.sh/@audio/measure@1.1.2')
+    const chirpLib = import('https://esm.sh/@audio/synth-chirp')
+    const start = $('start'), msg = $('msg'), peak = $('peak'), panel = $('panel'), report = $('report'), viz = $('viz'), gainSel = $('gain')
+    start.addEventListener('click', async () => {
+      start.disabled = true; panel.hidden = true
+      try {
+        const fs = 48000, f0 = 20, f1 = 20000, duration = 3
+        const [{ ir, response, latency }, chirp] = await Promise.all([lib, chirpLib])
+        const sweep = chirp.default({ f0, f1, duration, fs })
+        const ctx = new AudioContext({ sampleRate: fs }); await ctx.resume()
+        const chunks = []; let received = 0, preroll = 0
+        msg.textContent = 'asking for the microphone…'
+        const stop = await mic((c, rate) => { if (rate !== fs) throw Error('rate'); chunks.push(c); received += c.length; let p = 0; for (const x of c) p = Math.max(p, Math.abs(x)); peak.style.left = Math.min(100, p * 100) + '%'; peak.classList.toggle('ok', p > 0.02 && p < 0.9) }, { sampleRate: fs })
+        await new Promise(r => setTimeout(r, 500)) // settle
+        const pad = fs // one second of room tail after the sweep
+        const buf = ctx.createBuffer(1, sweep.length + pad, fs); buf.getChannelData(0).set(sweep)
+        const src = ctx.createBufferSource(); src.buffer = buf; const g = ctx.createGain(); g.gain.value = +gainSel.value; src.connect(g).connect(ctx.destination)
+        msg.textContent = 'playing the sweep…'
+        const done = new Promise(r => src.onended = r); src.start(); preroll = received; await done
+        await new Promise(r => setTimeout(r, 300)); stop(); ctx.close()
+        const n = chunks.reduce((s, c) => s + c.length, 0), rec = new Float32Array(n); let off = 0; for (const c of chunks) { rec.set(c, off); off += c.length }
+        let pk = 0; for (const x of rec) pk = Math.max(pk, Math.abs(x))
+        if (pk < 0.01) throw Error('The microphone heard almost nothing. Raise the volume or move the microphone closer.')
+        msg.textContent = 'computing…'
+        const lat = latency(rec, sweep, { fs }); lat.seconds = Math.max(0, lat.samples - preroll) / fs
+        const h = ir(rec, { sweep, f0, f1, fs, length: fs })
+        const { freqs, db } = response(h, { fs, n: 16384 })
+        // RT60 via Schroeder backward integration on the IR, T20 extrapolated
+        let hs = 0, tail = new Float64Array(h.length); for (let i = h.length - 1; i >= 0; i--) { hs += h[i] * h[i]; tail[i] = hs }
+        const edc = i => 10 * Math.log10(tail[i] / tail[0] + 1e-30)
+        let i5 = 0; while (i5 < h.length && edc(i5) > -5) i5++
+        let i25 = i5; while (i25 < h.length && edc(i25) > -25) i25++
+        const rt60 = (i25 - i5) / fs * 3
+        // 1/6-octave smoothed response from 30 Hz to 20 kHz, normalized at 1 kHz
+        const W = 1200, H = 360, canvas = el('canvas'); canvas.width = W; canvas.height = H; const c2 = canvas.getContext('2d')
+        c2.fillStyle = '#0d1014'; c2.fillRect(0, 0, W, H)
+        const fx = f => W * Math.log(f / 30) / Math.log(20000 / 30)
+        const smooth = f => { let s = 0, m = 0; const lo = f / Math.pow(2, 1 / 12), hi = f * Math.pow(2, 1 / 12); for (let k = 0; k < freqs.length; k++) if (freqs[k] >= lo && freqs[k] <= hi) { s += Math.pow(10, db[k] / 10); m++ } return m ? 10 * Math.log10(s / m) : -100 }
+        const ref = smooth(1000), pts = []
+        for (let x = 0; x < W; x += 2) { const f = 30 * Math.pow(20000 / 30, x / W); pts.push([x, smooth(f) - ref]) }
+        c2.strokeStyle = 'rgba(237,235,228,.25)'; c2.fillStyle = 'rgba(237,235,228,.8)'; c2.font = '600 12px Manrope, sans-serif'
+        for (const f of [50, 100, 200, 500, 1000, 2000, 5000, 10000]) { const x = fx(f); c2.beginPath(); c2.moveTo(x, 0); c2.lineTo(x, H); c2.stroke(); c2.fillText(f >= 1000 ? f / 1000 + 'k' : f, x + 4, H - 6) }
+        for (const d of [20, 10, 0, -10, -20]) { const y = H / 2 - d * (H / 60); c2.beginPath(); c2.moveTo(0, y); c2.lineTo(W, y); c2.stroke(); c2.fillText((d > 0 ? '+' : '') + d + ' dB', 6, y - 4) }
+        c2.strokeStyle = '#00a4b8'; c2.lineWidth = 2; c2.beginPath()
+        pts.forEach(([x, d], i) => { const y = H / 2 - Math.max(-30, Math.min(30, d)) * (H / 60); i ? c2.lineTo(x, y) : c2.moveTo(x, y) }); c2.stroke()
+        const band = (lo, hi) => { const v = []; for (const [x, d] of pts) { const f = 30 * Math.pow(20000 / 30, x / W); if (f >= lo && f <= hi) v.push(d) } return v }
+        const dev = v => { const m = v.reduce((a, b) => a + b, 0) / v.length; return Math.sqrt(v.reduce((a, b) => a + (b - m) ** 2, 0) / v.length) }
+        const rows = [
+          { k: 'Reverb time RT60', v: rt60.toFixed(2) + '<small>s</small>', note: rt60 < 0.3 ? 'Dry, treated-room territory.' : rt60 < 0.6 ? 'Typical living room or small studio.' : 'Live room: expect smeared bass and blurred stereo image.' },
+          { k: 'Response deviation 100 Hz to 10 kHz', v: '±' + dev(band(100, 10000)).toFixed(1) + '<small>dB</small>', note: 'Standard deviation of the 1/6-octave smoothed response. Below ±3 dB is very flat; room modes usually dominate below 300 Hz.' },
+          { k: 'Loop latency', v: (lat.seconds * 1000).toFixed(1) + '<small>ms</small>', note: 'Speaker to microphone, including the audio stack. Divide the acoustic part by 0.343 m/ms for distance.' },
+        ]
+        report.replaceChildren(...rows.map(r => el('div', {}, el('div', { class: 'k' }, r.k), el('div', { class: 'v', html: r.v }), el('div', { class: 'note' }, r.note))))
+        viz.replaceChildren(canvas); panel.hidden = false
+        msg.textContent = 'Done. Press start to measure again from another spot.'
+      } catch (e) { msg.textContent = e.message === 'rate' ? 'The microphone runs at a different sample rate than playback; try another browser.' : (e.message || 'Measurement failed') }
+      start.disabled = false
+    })
+  </script>
+</body>
+</html>

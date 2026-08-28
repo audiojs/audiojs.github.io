@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free audio utilities that run in your browser · audiojs</title>
+  <meta name="description" content="Extract audio from video, convert formats, measure loudness, remove noise, find key and BPM, remove vocals, change pitch and tempo, tune, record, view spectrograms and measure your room. Every tool runs in the browser on audiojs open-source packages; nothing is uploaded.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/">
+  <meta property="og:title" content="Free audio utilities that run in your browser">
+  <meta property="og:description" content="Extract audio from video, convert formats, measure loudness, remove noise, find key and BPM, remove vocals, change pitch and tempo, tune, record, view spectrograms and measure your room. Every tool runs in the browser on audiojs open-source packages; nothing is uploaded.">
+  <meta property="og:site_name" content="audiojs">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/#app",
+        "name": "Audio utilities",
+        "url": "https://audiojs.dev/util/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Extract audio from video, convert formats, measure loudness, remove noise, find key and BPM, remove vocals, change pitch and tempo, tune, record, view spectrograms and measure your room. Every tool runs in the browser on audiojs open-source packages; nothing is uploaded.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css">
+  <link rel="modulepreload" href="/util/util.js">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Audio utilities</h1>
+      <p>Each one runs in your browser on an open-source audiojs package. Nothing is uploaded.</p>
+    </section>
+    <ul class="index">
+      <li><a href="/util/extract-audio/"><div class="n">Extract audio from video</div><div class="d">Video → MP3, WAV, FLAC, OGG, Opus, AAC</div><div class="p"><code>@audio/decode</code> · <code>@audio/encode</code></div></a></li>
+      <li><a href="/util/convert-audio/"><div class="n">Audio converter</div><div class="d">MP3, WAV, FLAC, OGG, Opus, AAC, M4A in any direction</div><div class="p"><code>@audio/decode</code> · <code>@audio/encode</code></div></a></li>
+      <li><a href="/util/loudness/"><div class="n">Loudness meter and normalizer</div><div class="d">LUFS, true peak, loudness range; normalize for Spotify, YouTube, podcasts</div><div class="p"><code>@audio/loudness</code> · <code>@audio/dynamics</code></div></a></li>
+      <li><a href="/util/denoise/"><div class="n">Noise remover</div><div class="d">Background noise, hum, clicks, wind, plosives, reverb</div><div class="p"><code>@audio/denoise</code></div></a></li>
+      <li><a href="/util/key-bpm/"><div class="n">Key and BPM finder</div><div class="d">Musical key, Camelot code, tempo, chords</div><div class="p"><code>@audio/mir</code> · <code>@audio/beat</code></div></a></li>
+      <li><a href="/util/vocal-remover/"><div class="n">Vocal remover</div><div class="d">Karaoke track or isolated vocal from a stereo mix</div><div class="p"><code>@audio/vocals</code></div></a></li>
+      <li><a href="/util/pitch-tempo/"><div class="n">Pitch and tempo changer</div><div class="d">Transpose semitones, change speed without changing pitch</div><div class="p"><code>@audio/shift</code> · <code>@audio/stretch</code></div></a></li>
+      <li><a href="/util/tuner/"><div class="n">Tuner</div><div class="d">Chromatic tuner for guitar, bass, violin, voice</div><div class="p"><code>@audio/pitch</code> · <code>@audio/note</code> · <code>@audio/mic</code></div></a></li>
+      <li><a href="/util/recorder/"><div class="n">Audio recorder</div><div class="d">Record from the microphone, save as MP3, WAV, FLAC, Opus</div><div class="p"><code>@audio/mic</code> · <code>@audio/encode</code></div></a></li>
+      <li><a href="/util/spectrogram/"><div class="n">Spectrogram</div><div class="d">Frequency-over-time image of any recording</div><div class="p"><code>@audio/stft</code> · <code>@audio/spectral</code></div></a></li>
+      <li><a href="/util/measure/"><div class="n">Room and speaker measurement</div><div class="d">Frequency response, reverb time (RT60), latency, via a sine sweep</div><div class="p"><code>@audio/measure</code> · <code>@audio/synth</code> · <code>@audio/mic</code></div></a></li>
+    </ul>
+    <section class="seo">
+      <h2>Why these run on your device</h2>
+      <p>audiojs is a set of JavaScript and WebAssembly packages for decoding, encoding, measuring and processing audio. The same packages power these pages: <code>@audio/decode</code> reads the file, the tool's package does the work, <code>@audio/encode</code> writes the result. No server sees your audio, so there is no size limit, no queue and nothing to delete. Every page links the package it demonstrates; the code is on <a href="https://github.com/audiojs" target="_blank" rel="noopener">GitHub</a> and <a href="https://www.npmjs.com/org/audio" target="_blank" rel="noopener">npm</a>.</p>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+</body>
+</html>

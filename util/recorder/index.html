@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online voice recorder: record audio and save as MP3, WAV, FLAC or Opus · audiojs</title>
+  <meta name="description" content="Record audio from your microphone in the browser and save it as MP3, WAV, FLAC, OGG, Opus or AAC. No account, no upload, no time limit; the recording stays on your device.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/recorder/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/recorder/">
+  <meta property="og:title" content="Online voice recorder: record audio and save as MP3, WAV, FLAC or Opus">
+  <meta property="og:description" content="Record audio from your microphone in the browser and save it as MP3, WAV, FLAC, OGG, Opus or AAC. No account, no upload, no time limit; the recording stays on your device.">
+  <meta property="og:site_name" content="audiojs">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/recorder/#app",
+        "name": "Audio recorder",
+        "url": "https://audiojs.dev/util/recorder/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Record audio from your microphone in the browser and save it as MP3, WAV, FLAC, OGG, Opus or AAC. No account, no upload, no time limit; the recording stays on your device.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/mic"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Audio recorder",
+            "item": "https://audiojs.dev/util/recorder/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Where is the recording stored?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "In the tab memory only. When you press Save the file goes to your downloads folder. Close the tab and it is gone; nothing is uploaded."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a time limit?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. A minute of mono audio at 48 kHz uses about 11 MB of memory, so an hour is fine on any laptop."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which formats can I save?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "MP3, WAV (lossless), FLAC (lossless, compressed), OGG Vorbis, Opus (smallest) and AAC. Encoding runs in the browser with @audio/encode."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does the meter turn red?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The dot turns green in a healthy range and stays grey when the level is too low or clipping. Move closer to or further from the microphone."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css">
+  <link rel="modulepreload" href="/util/util.js">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/mic" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Audio recorder</h1>
+      <p>Record from your microphone. Save as MP3, WAV, FLAC, OGG, Opus or AAC.</p>
+    </section>
+
+    <div class="live" id="live">
+      <div class="time" id="time">0:00</div>
+      <div class="sub" id="level">press record</div>
+      <div class="meter" style="max-width:420px"><i id="peak" style="left:0"></i></div>
+      <div class="actions">
+        <button class="btn rec" id="rec" type="button">● Record</button>
+      </div>
+    </div>
+    <section class="panel" id="panel" hidden>
+      <div class="row out" id="out">
+        <audio id="player" controls preload="metadata"></audio>
+        <label class="fmt">Format <select id="fmt"></select></label>
+        <span class="spacer"></span>
+        <a class="btn" id="save" download><span id="saveLabel">Save</span></a>
+      </div>
+      <div class="row" id="progress" hidden><div class="status" id="status"></div></div>
+    </section>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/mic" target="_blank" rel="noopener"><code>@audio/mic</code></a> and <a href="https://npmjs.com/package/@audio/encode" target="_blank" rel="noopener"><code>@audio/encode</code></a>.</p>
+    <section class="seo">
+      <h2>A voice recorder that keeps recordings on your device</h2>
+      <p>Browser recorders usually upload to a server or hand you a WebM file nobody wants. This page captures the microphone with <code>@audio/mic</code> as uncompressed float audio and encodes to the format you pick with <code>@audio/encode</code>: MP3 for sharing, WAV or FLAC for editing, Opus for the smallest file. No account, no ads, no watermark.</p>
+      <h3>Voice memos, podcast takes, lecture notes</h3>
+      <p>Press record, speak, press stop, save. The level meter shows when you are too quiet or clipping. Recordings are mono at your device sample rate, usually 48 kHz.</p>
+      <h3>After recording</h3>
+      <p>Drop the file into the <a href="/util/denoise/">noise remover</a> to clean it, or the <a href="/util/loudness/">loudness normalizer</a> to bring it to the -16 LUFS podcast standard.</p>
+      <h3>Questions</h3>
+      <p><strong>Where is the recording stored?</strong> In the tab memory only. When you press Save the file goes to your downloads folder. Close the tab and it is gone; nothing is uploaded.</p>
+      <p><strong>Is there a time limit?</strong> No. A minute of mono audio at 48 kHz uses about 11 MB of memory, so an hour is fine on any laptop.</p>
+      <p><strong>Which formats can I save?</strong> MP3, WAV (lossless), FLAC (lossless, compressed), OGG Vorbis, Opus (smallest) and AAC. Encoding runs in the browser with @audio/encode.</p>
+      <p><strong>Why does the meter turn red?</strong> The dot turns green in a healthy range and stays grey when the level is too low or clipping. Move closer to or further from the microphone.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    const rec = $('rec'), time = $('time'), level = $('level'), peak = $('peak'), panel = $('panel'), player = $('player'), fmt = $('fmt'), save = $('save'), saveLabel = $('saveLabel'), progress = $('progress'), status = $('status')
+    for (const [k, f] of Object.entries(FORMATS)) fmt.append(el('option', { value: k }, f.label))
+    fmt.value = 'mp3'
+    let stop = null, chunks = [], t0 = 0, timer = 0, audio = null, fs = 48000
+    rec.addEventListener('click', async () => {
+      if (stop) { stop(); stop = null; clearInterval(timer); rec.textContent = '● Record'; rec.classList.add('rec'); finish(); return }
+      rec.disabled = true; level.textContent = 'asking for the microphone…'
+      try {
+        chunks = []; panel.hidden = true
+        stop = await mic((chunk, rate) => { fs = rate; chunks.push(chunk); let p = 0; for (const x of chunk) p = Math.max(p, Math.abs(x)); peak.style.left = Math.min(100, p * 100) + '%'; peak.classList.toggle('ok', p > 0.02 && p < 0.9) })
+        t0 = performance.now(); timer = setInterval(() => time.textContent = fmtTime((performance.now() - t0) / 1000), 250)
+        rec.textContent = '■ Stop'; rec.classList.remove('rec'); level.textContent = 'recording'
+      } catch (e) { level.textContent = 'Microphone access is needed: ' + e.message }
+      rec.disabled = false
+    })
+    fmt.addEventListener('change', () => audio && encode())
+    async function finish() {
+      const n = chunks.reduce((s, c) => s + c.length, 0); if (!n) return
+      const d = new Float32Array(n); let off = 0; for (const c of chunks) { d.set(c, off); off += c.length }
+      audio = { channelData: [d], sampleRate: fs }
+      level.textContent = fmtTime(n / fs) + ' recorded · ' + (fs / 1000) + ' kHz mono'
+      panel.hidden = false; encode()
+    }
+    async function encode() {
+      const f = fmt.value
+      progress.hidden = false; status.textContent = f === 'wav' ? 'Writing WAV…' : 'Encoding ' + f.toUpperCase() + '…'; save.style.visibility = 'hidden'
+      try {
+        const blob = await encodeAudio(f, audio)
+        saveBlob(save, blob, 'recording-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.' + FORMATS[f].ext)
+        player.src = save.href; saveLabel.textContent = 'Save ' + FORMATS[f].ext.toUpperCase() + ' · ' + fmtSize(blob.size); save.style.visibility = ''; progress.hidden = true
+      } catch (e) { status.textContent = f.toUpperCase() + ' is not available in this browser. Pick another format.' }
+    }
+  </script>
+</body>
+</html>

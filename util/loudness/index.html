@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LUFS meter: measure loudness and normalize for Spotify, YouTube, podcasts · audiojs</title>
+  <meta name="description" content="Measure integrated loudness (LUFS), true peak (dBTP) and loudness range per ITU-R BS.1770-4 / EBU R128, in your browser. Normalize to -14, -16 or -23 LUFS with a true-peak limiter and save the file. No upload.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/loudness/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/loudness/">
+  <meta property="og:title" content="LUFS meter: measure loudness and normalize for Spotify, YouTube, podcasts">
+  <meta property="og:description" content="Measure integrated loudness (LUFS), true peak (dBTP) and loudness range per ITU-R BS.1770-4 / EBU R128, in your browser. Normalize to -14, -16 or -23 LUFS with a true-peak limiter and save the file. No upload.">
+  <meta property="og:site_name" content="audiojs">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/loudness/#app",
+        "name": "Loudness meter and normalizer",
+        "url": "https://audiojs.dev/util/loudness/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Measure integrated loudness (LUFS), true peak (dBTP) and loudness range per ITU-R BS.1770-4 / EBU R128, in your browser. Normalize to -14, -16 or -23 LUFS with a true-peak limiter and save the file. No upload.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/loudness"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Loudness meter and normalizer",
+            "item": "https://audiojs.dev/util/loudness/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is LUFS?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Loudness Units relative to Full Scale, the perceptual loudness measure defined by ITU-R BS.1770. Integrated LUFS describes the whole file with gating, so silence does not pull it down. Streaming services normalize to a LUFS target."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What loudness should I master to?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Spotify, YouTube and Tidal play back at -14 LUFS, Apple Music and most podcast platforms at -16, EBU broadcast at -23 with a -1 dBTP ceiling. A louder master is simply turned down on playback."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is true peak?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The peak level after 4× oversampling, which reveals inter-sample peaks that clip in DACs and lossy codecs. Keep it at or below -1 dBTP for streaming."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is the measurement standard-compliant?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. @audio/loudness implements ITU-R BS.1770-4 K-weighting with absolute and relative gating, EBU R128 loudness range (EBU Tech 3342) and 4× oversampled true peak, and is verified against the EBU test vectors."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css">
+  <link rel="modulepreload" href="/util/util.js">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/loudness" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Loudness meter and normalizer</h1>
+      <p>Drop a track. Get LUFS, true peak and loudness range, then normalize to a platform target.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop an audio or video file here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <form class="opts" id="opts">
+      <label>Normalize to <select name="target"><option value="">measure only</option><option value="-14">-14 LUFS · Spotify, YouTube, Tidal</option><option value="-16">-16 LUFS · Apple Music, podcasts</option><option value="-18">-18 LUFS · SoundCloud, Amazon</option><option value="-23">-23 LUFS · EBU R128 broadcast</option><option value="-24">-24 LKFS · ATSC A/85 broadcast</option></select></label>
+      <label>True-peak ceiling <select name="ceiling"><option value="-1">-1 dBTP</option><option value="-2">-2 dBTP</option><option value="-0.3">-0.3 dBTP</option></select></label>
+    </form>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/loudness" target="_blank" rel="noopener"><code>@audio/loudness</code></a> and <a href="https://npmjs.com/package/@audio/dynamics" target="_blank" rel="noopener"><code>@audio/dynamics</code></a>.</p>
+    <section class="seo">
+      <h2>An EBU R128 loudness meter that runs on your device</h2>
+      <p>Online LUFS meters upload your master. This one measures in the browser with <code>@audio/loudness</code>, an open-source ITU-R BS.1770-4 implementation verified against the EBU test set: integrated loudness with gating, loudness range and 4× oversampled true peak. Drop a WAV, FLAC, MP3 or even a video and read the numbers in seconds.</p>
+      <h3>Normalize for Spotify, YouTube, Apple Music and podcasts</h3>
+      <p>Choose a target and the page applies the exact gain, then a true-peak limiter at the ceiling you set, re-measures, and lets you save the result as WAV, FLAC, MP3, OGG, Opus or AAC. The report shows what each platform will do to your file on playback, so you can stop chasing loudness that gets undone anyway.</p>
+      <h3>Targets in one place</h3>
+      <ul>
+        <li>Spotify, YouTube, Tidal, Deezer: -14 LUFS, -1 dBTP</li>
+        <li>Apple Music, Apple Podcasts, most podcast hosts: -16 LUFS, -1 dBTP</li>
+        <li>Amazon Music, SoundCloud: about -18 LUFS</li>
+        <li>EBU R128 broadcast: -23 LUFS, -1 dBTP; ATSC A/85 (US): -24 LKFS, -2 dBTP</li>
+      </ul>
+      <h3>What the numbers mean</h3>
+      <p><strong>Integrated LUFS</strong> is the loudness of the whole program. <strong>Loudness range (LRA)</strong> in LU describes how much the loudness varies; speech sits around 3 to 8 LU, dynamic music above 10. <strong>True peak</strong> catches inter-sample overs that a sample-peak meter misses.</p>
+      <h3>Questions</h3>
+      <p><strong>What is LUFS?</strong> Loudness Units relative to Full Scale, the perceptual loudness measure defined by ITU-R BS.1770. Integrated LUFS describes the whole file with gating, so silence does not pull it down. Streaming services normalize to a LUFS target.</p>
+      <p><strong>What loudness should I master to?</strong> Spotify, YouTube and Tidal play back at -14 LUFS, Apple Music and most podcast platforms at -16, EBU broadcast at -23 with a -1 dBTP ceiling. A louder master is simply turned down on playback.</p>
+      <p><strong>What is true peak?</strong> The peak level after 4× oversampling, which reveals inter-sample peaks that clip in DACs and lossy codecs. Keep it at or below -1 dBTP for streaming.</p>
+      <p><strong>Is the measurement standard-compliant?</strong> Yes. @audio/loudness implements ITU-R BS.1770-4 K-weighting with absolute and relative gating, EBU R128 loudness range (EBU Tech 3342) and 4× oversampled true peak, and is verified against the EBU test vectors.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    const lib = import('https://esm.sh/@audio/loudness@1.2.0')
+    const dyn = import('https://esm.sh/@audio/dynamics@0.2.5')
+    const TARGETS = [['Spotify', -14], ['YouTube', -14], ['Apple Music', -16], ['Podcasts', -16], ['EBU R128', -23]]
+    const db = (x, d = 1) => (x > 0 ? '+' : '') + x.toFixed(d)
+    tool({
+      busy: 'Measuring loudness…',
+      defaultFormat: 'wav',
+      async process(a, o, ui) {
+        const { lufs, truepeak, lra } = await lib
+        const fs = a.sampleRate
+        const L = lufs(a.channelData, { fs }), tp = truepeak(a.channelData, { fs }), range = lra(a.channelData, { fs })
+        const report = [
+          { k: 'Integrated loudness', v: db(L) + '<small>LUFS</small>' },
+          { k: 'True peak', v: db(tp) + '<small>dBTP</small>', cls: tp > -1 ? 'warn' : '' },
+          { k: 'Loudness range', v: range.toFixed(1) + '<small>LU</small>' },
+          { k: 'Platform playback', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L)).join(' · '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
+        ]
+        if (!o.target) return { report }
+        const target = +o.target, gain = target - L, g = Math.pow(10, gain / 20)
+        ui.status('Normalizing to ' + target + ' LUFS…')
+        const { limiter } = await dyn
+        const channelData = a.channelData.map(ch => { const out = new Float32Array(ch.length); for (let i = 0; i < ch.length; i++) out[i] = ch[i] * g; return out })
+        const limited = channelData.map(ch => limiter(ch, { ceiling: +o.ceiling, fs }))
+        const after = lufs(limited, { fs }), tp2 = truepeak(limited, { fs })
+        report.push({ k: 'Applied gain', v: db(gain) + '<small>dB</small>' }, { k: 'Result', v: db(after) + '<small>LUFS</small>' + ' / ' + db(tp2) + '<small>dBTP</small>', cls: 'ok', note: Math.abs(after - target) > 0.5 ? 'The true-peak limiter pulled the level below target: the material is too dense for this target at this ceiling.' : 'Within 0.5 LU of target after limiting.' })
+        return { report, audio: { channelData: limited, sampleRate: fs }, suffix: '-' + Math.abs(target) + 'lufs' }
+      }
+    })
+  </script>
+</body>
+</html>

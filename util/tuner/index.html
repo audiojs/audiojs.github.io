@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online tuner: chromatic tuner for guitar, bass, ukulele, violin and voice · audiojs</title>
+  <meta name="description" content="Free chromatic tuner in your browser. Uses your microphone, shows the note and cents, works for guitar, bass, ukulele, violin and singing. Adjustable A4 reference. No app, no upload.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/tuner/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/tuner/">
+  <meta property="og:title" content="Online tuner: chromatic tuner for guitar, bass, ukulele, violin and voice">
+  <meta property="og:description" content="Free chromatic tuner in your browser. Uses your microphone, shows the note and cents, works for guitar, bass, ukulele, violin and singing. Adjustable A4 reference. No app, no upload.">
+  <meta property="og:site_name" content="audiojs">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/tuner/#app",
+        "name": "Tuner",
+        "url": "https://audiojs.dev/util/tuner/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Free chromatic tuner in your browser. Uses your microphone, shows the note and cents, works for guitar, bass, ukulele, violin and singing. Adjustable A4 reference. No app, no upload.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/pitch"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Tuner",
+            "item": "https://audiojs.dev/util/tuner/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I tune a guitar with it?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Standard tuning is E2 A2 D3 G3 B3 E4. Play one string at a time, let it ring, and turn the peg until the needle sits in the green zone (within 5 cents)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which instruments does it work for?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Anything that produces a clear pitch: guitar, bass, ukulele, violin, cello, brass, woodwinds, voice. Detection uses the YIN algorithm on a 4096-sample window."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I change the reference pitch?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. A4 defaults to 440 Hz; set 432, 415 (baroque) or 442 to 443 (many orchestras)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my microphone recorded?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Audio is analysed in the tab and discarded. Nothing is stored or sent."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css">
+  <link rel="modulepreload" href="/util/util.js">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/pitch" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Tuner</h1>
+      <p>Play a note. The tuner shows the nearest pitch and how many cents you are off.</p>
+    </section>
+
+    <div class="live" id="live">
+      <div class="big" id="note">–</div>
+      <div class="sub" id="hz">press start, then play a note</div>
+      <div class="meter"><i id="needle"></i></div>
+      <div class="actions">
+        <button class="btn" id="start" type="button">Start tuner</button>
+        <label style="display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-sm)">A4 <input type="number" id="a4" value="440" min="415" max="466" step="1" style="width:5em;font:inherit;padding:8px;border:1px solid var(--c-rule);border-radius:6px"> Hz</label>
+      </div>
+    </div>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/pitch" target="_blank" rel="noopener"><code>@audio/pitch</code></a>, <a href="https://npmjs.com/package/@audio/note" target="_blank" rel="noopener"><code>@audio/note</code></a>, <a href="https://npmjs.com/package/@audio/mic" target="_blank" rel="noopener"><code>@audio/mic</code></a>.</p>
+    <section class="seo">
+      <h2>A chromatic tuner with nothing to install</h2>
+      <p>The tuner reads your microphone with <code>@audio/mic</code>, estimates pitch with <code>@audio/pitch</code> (YIN) and names the note with <code>@audio/note</code>. The needle shows cents from the nearest semitone; green means within 5 cents. Works on phones and laptops in any modern browser.</p>
+      <h3>Standard tunings</h3>
+      <ul>
+        <li>Guitar: E2 A2 D3 G3 B3 E4. Drop D: D2 A2 D3 G3 B3 E4</li>
+        <li>Bass: E1 A1 D2 G2</li>
+        <li>Ukulele: G4 C4 E4 A4</li>
+        <li>Violin: G3 D4 A4 E5. Viola and cello: C G D A</li>
+      </ul>
+      <h3>Reference pitch</h3>
+      <p>Most music uses A4 = 440 Hz. Orchestras often tune to 442 or 443, baroque ensembles to 415, and some players prefer 432. Set the field and every reading follows.</p>
+      <h3>Questions</h3>
+      <p><strong>How do I tune a guitar with it?</strong> Standard tuning is E2 A2 D3 G3 B3 E4. Play one string at a time, let it ring, and turn the peg until the needle sits in the green zone (within 5 cents).</p>
+      <p><strong>Which instruments does it work for?</strong> Anything that produces a clear pitch: guitar, bass, ukulele, violin, cello, brass, woodwinds, voice. Detection uses the YIN algorithm on a 4096-sample window.</p>
+      <p><strong>Can I change the reference pitch?</strong> Yes. A4 defaults to 440 Hz; set 432, 415 (baroque) or 442 to 443 (many orchestras).</p>
+      <p><strong>Is my microphone recorded?</strong> No. Audio is analysed in the tab and discarded. Nothing is stored or sent.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    const pitch = import('https://esm.sh/@audio/pitch@2.0.3')
+    const note = import('https://esm.sh/@audio/note@1.0.1')
+    const start = $('start'), noteEl = $('note'), hzEl = $('hz'), needle = $('needle'), a4 = $('a4')
+    let stop = null, ring = new Float32Array(4096), filled = 0, last = 0
+    start.addEventListener('click', async () => {
+      if (stop) { stop(); stop = null; start.textContent = 'Start tuner'; noteEl.textContent = '–'; hzEl.textContent = 'stopped'; return }
+      start.disabled = true; hzEl.textContent = 'asking for the microphone…'
+      try {
+        const [{ yin }, { cents }] = await Promise.all([pitch, note])
+        stop = await mic((chunk, fs) => {
+          ring.copyWithin(0, chunk.length); ring.set(chunk, ring.length - chunk.length); filled = Math.min(ring.length, filled + chunk.length)
+          const now = performance.now(); if (filled < ring.length || now - last < 80) return; last = now
+          let rms = 0; for (const x of ring) rms += x * x; rms = Math.sqrt(rms / ring.length)
+          if (rms < 0.005) { hzEl.textContent = 'listening…'; needle.classList.remove('ok'); return }
+          const r = yin(ring, { fs })
+          if (!r || r.clarity < 0.85) return
+          const ref = +a4.value || 440
+          const c = cents(r.freq * 440 / ref)
+          noteEl.textContent = c.name.replace(/(\d)$/, '<sub style="font-size:.4em">$1</sub>'); noteEl.innerHTML = noteEl.textContent
+          hzEl.textContent = r.freq.toFixed(1) + ' Hz · ' + (c.cents > 0 ? '+' : '') + c.cents.toFixed(0) + ' cents'
+          needle.style.left = (50 + Math.max(-50, Math.min(50, c.cents))) + '%'
+          needle.classList.toggle('ok', Math.abs(c.cents) < 5)
+        })
+        start.textContent = 'Stop'; hzEl.textContent = 'listening…'
+      } catch (e) { hzEl.textContent = 'Microphone access is needed: ' + e.message }
+      start.disabled = false
+    })
+  </script>
+</body>
+</html>

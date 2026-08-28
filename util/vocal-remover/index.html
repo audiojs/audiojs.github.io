@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocal remover: make a karaoke track or isolate the vocal, free, in your browser · audiojs</title>
+  <meta name="description" content="Remove vocals from a song to make a karaoke or instrumental track, or isolate the center vocal. Runs in your browser on the stereo mix; nothing is uploaded.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/vocal-remover/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/vocal-remover/">
+  <meta property="og:title" content="Vocal remover: make a karaoke track or isolate the vocal, free, in your browser">
+  <meta property="og:description" content="Remove vocals from a song to make a karaoke or instrumental track, or isolate the center vocal. Runs in your browser on the stereo mix; nothing is uploaded.">
+  <meta property="og:site_name" content="audiojs">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/vocal-remover/#app",
+        "name": "Vocal remover",
+        "url": "https://audiojs.dev/util/vocal-remover/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Remove vocals from a song to make a karaoke or instrumental track, or isolate the center vocal. Runs in your browser on the stereo mix; nothing is uploaded.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/vocals"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Vocal remover",
+            "item": "https://audiojs.dev/util/vocal-remover/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does it remove the vocal?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Mid/side processing. In most mixes the lead vocal is panned dead center, so subtracting the right channel from the left cancels it while side-panned instruments remain. The isolate mode keeps the center instead."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why can I still hear some vocal?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Reverb, delays and doubled harmonies are usually panned wide and survive cancellation. Bass and kick, also centered, are reduced along with the vocal. AI separation handles these better; this method is instant, private and works on any device."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it work on mono files?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Center extraction needs a stereo image. A mono file has no sides to keep."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my song uploaded?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The processing runs in your browser with @audio/vocals, an open-source library. Nothing leaves your device."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css">
+  <link rel="modulepreload" href="/util/util.js">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/vocals" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Vocal remover</h1>
+      <p>Drop a stereo song. Remove the center vocal for karaoke, or keep only the vocal.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a stereo song here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <form class="opts" id="opts">
+      <label><input type="radio" name="mode" value="remove" checked> Remove vocals (karaoke)</label>
+      <label><input type="radio" name="mode" value="isolate"> Isolate vocals</label>
+    </form>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/vocals" target="_blank" rel="noopener"><code>@audio/vocals</code></a>.</p>
+    <section class="seo">
+      <h2>Karaoke tracks without uploading your music</h2>
+      <p>Drop a stereo song and the page cancels the center channel with <code>@audio/vocals</code>, the mid/side complement to SoX's classic <code>oops</code> effect. Save the result as MP3, WAV, FLAC, OGG, Opus or AAC. Flip the mode to keep only the center for an a cappella reference.</p>
+      <h3>What to expect</h3>
+      <p>Center cancellation is honest about its limits: it removes what is panned center and leaves the rest. On a typical pop mix the lead vocal drops by 20 dB or more while guitars, keys and wide backing vocals stay. Bass and kick lose level too, because they sit in the center as well. For studio-grade separation you need a neural model; for a quick karaoke version, a sing-along practice track or checking a vocal's timing, this is the tool.</p>
+      <h3>Tips</h3>
+      <ul>
+        <li>Use the original stereo release, not a mono or YouTube rip with collapsed stereo.</li>
+        <li>Older recordings with hard-panned instruments separate the cleanest.</li>
+        <li>Save as WAV or FLAC if you plan to process further.</li>
+      </ul>
+      <h3>Questions</h3>
+      <p><strong>How does it remove the vocal?</strong> Mid/side processing. In most mixes the lead vocal is panned dead center, so subtracting the right channel from the left cancels it while side-panned instruments remain. The isolate mode keeps the center instead.</p>
+      <p><strong>Why can I still hear some vocal?</strong> Reverb, delays and doubled harmonies are usually panned wide and survive cancellation. Bass and kick, also centered, are reduced along with the vocal. AI separation handles these better; this method is instant, private and works on any device.</p>
+      <p><strong>Does it work on mono files?</strong> No. Center extraction needs a stereo image. A mono file has no sides to keep.</p>
+      <p><strong>Is my song uploaded?</strong> No. The processing runs in your browser with @audio/vocals, an open-source library. Nothing leaves your device.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js'
+    const lib = import('https://esm.sh/@audio/vocals@1.0.4')
+    tool({
+      busy: 'Separating center and sides…',
+      async process(a, o) {
+        if (a.channels < 2) throw Error('This needs a stereo file: center-channel extraction has nothing to work with in mono.')
+        const { remove, isolate } = await lib
+        const [L, R] = [a.channelData[0].slice(), a.channelData[1].slice()]
+        const out = (o.mode === 'isolate' ? isolate : remove)([L, R])
+        return { audio: { channelData: out, sampleRate: a.sampleRate }, suffix: o.mode === 'isolate' ? '-vocals' : '-karaoke',
+          report: [{ k: o.mode === 'isolate' ? 'Kept' : 'Removed', v: 'center channel', note: 'Mid/side separation: whatever is panned dead center (usually the lead vocal, often also bass and kick) is ' + (o.mode === 'isolate' ? 'kept' : 'cancelled') + '. Wide reverb and doubled vocals remain. This is the classic phase-cancellation method, not AI source separation.' }] }
+      }
+    })
+  </script>
+</body>
+</html>
