@@ -9,7 +9,6 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url))
 // content-hashed asset URLs: browsers and CDNs drop the old shell the moment it changes
 const hash = f => createHash('sha256').update(readFileSync(`${ROOT}util/${f}`)).digest('hex').slice(0, 8)
 const CSS = `/util/util.css?v=${hash('util.css')}`, JS = `/util/util.js?v=${hash('util.js')}`
-const ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%230d1014'/%3E%3Cpath d='M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7' stroke='%23edebe4' fill='none'/%3E%3Cline x1='3.36' y1='24.36' x2='44.64' y2='24.36' stroke='%23edebe4'/%3E%3C/svg%3E`
 const WAVE = `<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>`
 const drop = (text, accept = 'audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts') => `
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
@@ -672,19 +671,25 @@ const head = (p) => `<!DOCTYPE html>
   <meta name="theme-color" content="#0d1014">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="${SITE}/util/${p.slug}/">
-  <link rel="icon" type="image/svg+xml" href="${ICON}">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="${SITE}/util/${p.slug}/">
   <meta property="og:title" content="${esc(p.title)}">
   <meta property="og:description" content="${esc(p.description)}">
   <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="${SITE}/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
   <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="${SITE}/icon-512.png">
   <meta name="twitter:site" content="@audio_js">
   <script type="application/ld+json">
   ${JSON.stringify({
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'WebApplication', '@id': `${SITE}/util/${p.slug}/#app`, name: p.name, url: `${SITE}/util/${p.slug}/`, applicationCategory: 'MultimediaApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript and Web Audio', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, description: p.description, author: { '@type': 'Organization', name: 'audiojs', url: SITE + '/' }, softwareHelp: { '@type': 'CreativeWork', url: p.repo } },
+      { '@type': 'WebApplication', '@id': `${SITE}/util/${p.slug}/#app`, name: p.name, url: `${SITE}/util/${p.slug}/`, applicationCategory: 'MultimediaApplication', operatingSystem: 'Any', browserRequirements: 'Requires JavaScript and Web Audio', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, description: p.description, author: { '@type': 'Organization', name: 'audiojs', url: SITE + '/', logo: SITE + '/icon-512.png' }, softwareHelp: { '@type': 'CreativeWork', url: p.repo } },
       { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'audiojs', item: SITE + '/' }, { '@type': 'ListItem', position: 2, name: 'Utilities', item: SITE + '/util/' }, ...(p.slug ? [{ '@type': 'ListItem', position: 3, name: p.name, item: `${SITE}/util/${p.slug}/` }] : [])] },
       ...(p.faq.length ? [{ '@type': 'FAQPage', mainEntity: p.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }] : []),
     ]
