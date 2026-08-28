@@ -106,7 +106,7 @@ export const pages = [
           { k: 'Integrated loudness', v: db(L) + '<small>LUFS</small>' },
           { k: 'True peak', v: db(tp) + '<small>dBTP</small>', cls: tp > -1 ? 'warn' : '' },
           { k: 'Loudness range', v: range.toFixed(1) + '<small>LU</small>' },
-          { k: 'Platform playback', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L)).join(' · '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
+          { k: 'Platform playback', cls: 'list wide', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L) + ' dB').join(' · '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
         ]
         if (!o.target) return { report }
         const target = +o.target, gain = target - L, g = Math.pow(10, gain / 20)
@@ -115,7 +115,7 @@ export const pages = [
         const channelData = a.channelData.map(ch => { const out = new Float32Array(ch.length); for (let i = 0; i < ch.length; i++) out[i] = ch[i] * g; return out })
         const limited = channelData.map(ch => limiter(ch, { ceiling: +o.ceiling, fs }))
         const after = lufs(limited, { fs }), tp2 = truepeak(limited, { fs })
-        report.push({ k: 'Applied gain', v: db(gain) + '<small>dB</small>' }, { k: 'Result', v: db(after) + '<small>LUFS</small>' + ' / ' + db(tp2) + '<small>dBTP</small>', cls: 'ok', note: Math.abs(after - target) > 0.5 ? 'The true-peak limiter pulled the level below target: the material is too dense for this target at this ceiling.' : 'Within 0.5 LU of target after limiting.' })
+        report.push({ k: 'Applied gain', v: db(gain) + '<small>dB</small>' }, { k: 'Result loudness', v: db(after) + '<small>LUFS</small>', cls: 'ok' }, { k: 'Result true peak', v: db(tp2) + '<small>dBTP</small>', cls: 'ok', note: Math.abs(after - target) > 0.5 ? 'The true-peak limiter pulled the level below target: the material is too dense for this target at this ceiling.' : 'Within 0.5 LU of target after limiting.' })
         return { report, audio: { channelData: limited, sampleRate: fs }, suffix: '-' + Math.abs(target) + 'lufs' }
       }
     })`,
@@ -245,7 +245,7 @@ export const pages = [
           { k: 'Key', v: NAMES[k.tonic] + ' ' + k.mode + '<small>' + Math.round(k.confidence * 100) + '% sure</small>' },
           { k: 'Camelot', v: camelot, note: 'Mix with ' + camelot + ', ' + neighbours(camelot).join(', ') + ' for harmonic mixing.' },
           { k: 'Tempo', v: Math.round(b.bpm) + '<small>BPM</small>', note: b.confidence < 0.4 ? 'Low confidence: the beat is soft or the tempo drifts. Half or double time is possible.' : 'Alternatives: ' + Math.round(b.bpm / 2) + ' or ' + Math.round(b.bpm * 2) + ' BPM if you count half or double time.' },
-          ...(seq.length ? [{ k: 'Chord progression', v: '<span style="font-size:.7em">' + seq.slice(0, 24).join(' · ') + (seq.length > 24 ? ' …' : '') + '</span>' }] : []),
+          ...(seq.length ? [{ k: 'Chord progression', cls: 'list wide', v: seq.slice(0, 32).join(' · ') + (seq.length > 32 ? ' …' : '') }] : []),
         ] }
         function neighbours(c) { const num = parseInt(c), l = c.slice(-1); return [((num + 10) % 12 + 1) + l, (num % 12 + 1) + l, num + (l === 'A' ? 'B' : 'A')] }
       }

@@ -57,6 +57,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .report .v small { font-size: var(--fs-xs); font-weight: 600; color: var(--c-mute); margin-left: .3em; }
 .report .v.ok { color: var(--c-ok); }
 .report .v.warn { color: var(--c-err); }
+.report .v.list { font-size: var(--fs-sm); font-weight: 600; line-height: 1.5; letter-spacing: 0; }
+.report .wide { grid-column: 1 / -1; }
 .report .note { grid-column: 1 / -1; font-size: var(--fs-xs); font-weight: 500; color: var(--c-mute); }
 .viz { display: block; width: 100%; padding: 0; }
 .viz canvas { display: block; width: 100%; height: auto; }

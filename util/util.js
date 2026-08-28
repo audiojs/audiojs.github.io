@@ -146,7 +146,7 @@ export function tool(cfg) {
     try {
       result = await cfg.process(audio, ui.opts(), ui)
       if (id !== run) return
-      if (result.report) { report.replaceChildren(...result.report.map(r => el('div', {}, el('div', { class: 'k' }, r.k), el('div', { class: 'v' + (r.cls ? ' ' + r.cls : ''), html: r.v }), ...(r.note ? [el('div', { class: 'note' }, r.note)] : [])))); report.hidden = false }
+      if (result.report) { report.replaceChildren(...result.report.map(r => el('div', { class: /\bwide\b/.test(r.cls || '') ? 'wide' : '' }, el('div', { class: 'k' }, r.k), el('div', { class: 'v' + (r.cls ? ' ' + r.cls : ''), html: r.v }), ...(r.note ? [el('div', { class: 'note' }, r.note)] : [])))); report.hidden = false }
       if (result.viz) { viz.replaceChildren(result.viz); viz.hidden = false }
       if (result.audio) await encode(id)
       else progress.hidden = true
