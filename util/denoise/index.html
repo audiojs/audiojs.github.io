@@ -120,7 +120,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=15e6fe0b">
+  <link rel="modulepreload" href="/util/util.js?v=71be793d">
 </head>
 <body>
   <header class="top">
@@ -196,30 +196,8 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=15e6fe0b'
-    const lib = import('https://esm.sh/@audio/denoise@0.3.7')
-    const WHY = { wiener: 'steady broadband noise floor', omlsa: 'noise under speech, speech-presence tracking', specsub: 'stationary noise, spectral subtraction', dehum: 'mains hum and harmonics', declick: 'impulsive clicks', decrackle: 'dense crackle', declip: 'clipped peaks', dewind: 'low-frequency wind rumble', deplosive: 'plosive pops', deesser: 'sibilance', dereverb: 'room reverberation', gate: 'noise between phrases' }
-    tool({
-      busy: 'Analyzing noise…',
-      async process(a, o, ui) {
-        const m = await lib, fs = a.sampleRate
-        let plan = null
-        const channelData = []
-        for (let c = 0; c < a.channelData.length; c++) {
-          ui.status((o.method ? 'Applying ' + o.method : 'Classifying and cleaning') + (a.channelData.length > 1 ? ' · channel ' + (c + 1) : '') + '…')
-          await new Promise(r => setTimeout(r, 20))
-          const src = a.channelData[c].slice()
-          if (o.method) channelData.push(m[o.method](src, { fs }))
-          else { const r = m.denoise(src, { fs, returnPlan: true }); plan ??= r.plan; channelData.push(r.out) }
-        }
-        const method = o.method || plan?.method || 'wiener'
-        const scores = plan?.scores ? Object.entries(plan.scores).filter(([k, v]) => typeof v === 'number' && k !== 'humFreq').map(([k, v]) => k + ' ' + v.toFixed(1)).join(' · ') : ''
-        return {
-          report: [{ k: o.method ? 'Method' : 'Method chosen by the classifier', v: method, note: (WHY[method] || '') + (scores ? '. Detector scores: ' + scores : '') }],
-          audio: { channelData, sampleRate: fs }, suffix: '-' + method
-        }
-      }
-    })
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=71be793d'
+    tool({ process: '/util/denoise/process.js?v=5c02f474', ...{"busy":"Analyzing noise…"} })
   </script>
 </body>
 </html>

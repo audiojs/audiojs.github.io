@@ -120,7 +120,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=15e6fe0b">
+  <link rel="modulepreload" href="/util/util.js?v=71be793d">
 </head>
 <body>
   <header class="top">
@@ -184,35 +184,8 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=15e6fe0b'
-    const lib = import('https://esm.sh/@audio/loudness@1.2.0')
-    const dyn = import('https://esm.sh/@audio/dynamics@0.2.5')
-    const TARGETS = [['Spotify', -14], ['YouTube', -14], ['Apple Music', -16], ['Podcasts', -16], ['EBU R128', -23]]
-    const db = (x, d = 1) => (x > 0 ? '+' : '') + x.toFixed(d)
-    tool({
-      busy: 'Measuring loudness…',
-      defaultFormat: 'wav',
-      async process(a, o, ui) {
-        const { lufs, truepeak, lra } = await lib
-        const fs = a.sampleRate
-        const L = lufs(a.channelData, { fs }), tp = truepeak(a.channelData, { fs }), range = lra(a.channelData, { fs })
-        const report = [
-          { k: 'Integrated loudness', v: db(L) + '<small>LUFS</small>' },
-          { k: 'True peak', v: db(tp) + '<small>dBTP</small>', cls: tp > -1 ? 'warn' : '' },
-          { k: 'Loudness range', v: range.toFixed(1) + '<small>LU</small>' },
-          { k: 'Platform playback', cls: 'list wide', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L) + ' dB').join(' · '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
-        ]
-        if (!o.target) return { report }
-        const target = +o.target, gain = target - L, g = Math.pow(10, gain / 20)
-        ui.status('Normalizing to ' + target + ' LUFS…')
-        const { limiter } = await dyn
-        const channelData = a.channelData.map(ch => { const out = new Float32Array(ch.length); for (let i = 0; i < ch.length; i++) out[i] = ch[i] * g; return out })
-        const limited = channelData.map(ch => limiter(ch, { ceiling: +o.ceiling, fs }))
-        const after = lufs(limited, { fs }), tp2 = truepeak(limited, { fs })
-        report.push({ k: 'Applied gain', v: db(gain) + '<small>dB</small>' }, { k: 'Result loudness', v: db(after) + '<small>LUFS</small>', cls: 'ok' }, { k: 'Result true peak', v: db(tp2) + '<small>dBTP</small>', cls: 'ok', note: Math.abs(after - target) > 0.5 ? 'The true-peak limiter pulled the level below target: the material is too dense for this target at this ceiling.' : 'Within 0.5 LU of target after limiting.' })
-        return { report, audio: { channelData: limited, sampleRate: fs }, suffix: '-' + Math.abs(target) + 'lufs' }
-      }
-    })
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=71be793d'
+    tool({ process: '/util/loudness/process.js?v=8caa65ec', ...{"busy":"Measuring loudness…","defaultFormat":"wav"} })
   </script>
 </body>
 </html>

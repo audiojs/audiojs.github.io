@@ -120,7 +120,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=15e6fe0b">
+  <link rel="modulepreload" href="/util/util.js?v=71be793d">
 </head>
 <body>
   <header class="top">
@@ -179,25 +179,8 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=15e6fe0b'
-    const shift = import('https://esm.sh/@audio/shift@1.1.3')
-    const stretch = import('https://esm.sh/@audio/stretch@2.0.4')
-    tool({
-      busy: 'Processing…',
-      async process(a, o, ui) {
-        const semis = +o.semitones || 0, tempo = (+o.tempo || 100) / 100, fs = a.sampleRate
-        if (!semis && tempo === 1) return { audio: a, report: [{ k: 'Unchanged', v: '0 st · 100 %', note: 'Move a slider to transpose or change tempo.' }] }
-        const channelData = []
-        for (let c = 0; c < a.channels; c++) {
-          let ch = a.channelData[c]
-          if (semis) { ui.status('Transposing ' + (semis > 0 ? '+' : '') + semis + ' st' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await shift).transient(ch, { semitones: semis, fs }) }
-          if (tempo !== 1) { ui.status('Stretching to ' + Math.round(tempo * 100) + ' %' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await stretch).transient(ch, { factor: 1 / tempo, fs }) }
-          channelData.push(ch)
-        }
-        return { audio: { channelData, sampleRate: fs }, suffix: (semis ? (semis > 0 ? '+' : '') + semis + 'st' : '') + (tempo !== 1 ? '-' + Math.round(tempo * 100) + 'pct' : ''),
-          report: [{ k: 'Pitch', v: (semis > 0 ? '+' : '') + semis + '<small>semitones</small>' }, { k: 'Tempo', v: Math.round(tempo * 100) + '<small>%</small>' }, { k: 'New length', v: fmtTime(channelData[0].length / fs) }] }
-      }
-    })
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=71be793d'
+    tool({ process: '/util/pitch-tempo/process.js?v=32d664df', ...{"busy":"Processing…"} })
   </script>
 </body>
 </html>

@@ -1,0 +1,13 @@
+{
+  "name": "audiojs.dev",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/util-pages.mjs",
+    "test": "node scripts/util-test.mjs",
+    "test:all": "node scripts/util-test.mjs chromium firefox webkit"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.0"
+  }
+}

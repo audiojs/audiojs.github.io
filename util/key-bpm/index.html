@@ -120,7 +120,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=15e6fe0b">
+  <link rel="modulepreload" href="/util/util.js?v=71be793d">
 </head>
 <body>
   <header class="top">
@@ -175,41 +175,8 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=15e6fe0b'
-    const mir = import('https://esm.sh/@audio/mir@1.1.2')
-    const beat = import('https://esm.sh/@audio/beat@2.1.2')
-    const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B']
-    const CAMELOT_MAJOR = ['8B', '3B', '10B', '5B', '12B', '7B', '2B', '9B', '4B', '11B', '6B', '1B']
-    const CAMELOT_MINOR = ['5A', '12A', '7A', '2A', '9A', '4A', '11A', '6A', '1A', '8A', '3A', '10A']
-    tool({
-      busy: 'Listening for key and tempo…',
-      async process(a, o, ui) {
-        const fs = a.sampleRate
-        const n = a.channelData[0].length, mono = new Float32Array(n)
-        for (const ch of a.channelData) for (let i = 0; i < n; i++) mono[i] += ch[i] / a.channelData.length
-        const { chroma, key, smoothChords } = await mir
-        const span = Math.min(n, fs * 120) // first two minutes are enough for key
-        const frames = []
-        for (let i = 0; i + 4096 <= span; i += 4096) frames.push(chroma(mono.subarray(i, i + 4096), { fs }))
-        const k = key(frames)
-        ui.status('Tracking the beat…')
-        await new Promise(r => setTimeout(r, 20))
-        const { detect } = await beat
-        const b = detect(mono.subarray(0, Math.min(n, fs * 90)), { fs })
-        let chords = []
-        try { chords = smoothChords(frames, { selfProb: 0.5 }) } catch {}
-        const seq = []
-        for (const c of chords) { const label = c?.label ?? c; if (label && seq[seq.length - 1] !== label) seq.push(label) }
-        const camelot = (k.mode === 'minor' ? CAMELOT_MINOR : CAMELOT_MAJOR)[k.tonic]
-        return { report: [
-          { k: 'Key', v: NAMES[k.tonic] + ' ' + k.mode + '<small>' + Math.round(k.confidence * 100) + '% sure</small>' },
-          { k: 'Camelot', v: camelot, note: 'Mix with ' + camelot + ', ' + neighbours(camelot).join(', ') + ' for harmonic mixing.' },
-          { k: 'Tempo', v: Math.round(b.bpm) + '<small>BPM</small>', note: b.confidence < 0.4 ? 'Low confidence: the beat is soft or the tempo drifts. Half or double time is possible.' : 'Alternatives: ' + Math.round(b.bpm / 2) + ' or ' + Math.round(b.bpm * 2) + ' BPM if you count half or double time.' },
-          ...(seq.length ? [{ k: 'Chord progression', cls: 'list wide', v: seq.slice(0, 32).join(' · ') + (seq.length > 32 ? ' …' : '') }] : []),
-        ] }
-        function neighbours(c) { const num = parseInt(c), l = c.slice(-1); return [((num + 10) % 12 + 1) + l, (num % 12 + 1) + l, num + (l === 'A' ? 'B' : 'A')] }
-      }
-    })
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=71be793d'
+    tool({ process: '/util/key-bpm/process.js?v=027933d1', ...{"busy":"Listening for key and tempo…"} })
   </script>
 </body>
 </html>

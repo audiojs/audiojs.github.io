@@ -120,7 +120,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=15e6fe0b">
+  <link rel="modulepreload" href="/util/util.js?v=71be793d">
 </head>
 <body>
   <header class="top">
@@ -181,19 +181,8 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=15e6fe0b'
-    const lib = import('https://esm.sh/@audio/vocals@1.0.4')
-    tool({
-      busy: 'Separating center and sides…',
-      async process(a, o) {
-        if (a.channels < 2) throw Error('This needs a stereo file: center-channel extraction has nothing to work with in mono.')
-        const { remove, isolate } = await lib
-        const [L, R] = [a.channelData[0].slice(), a.channelData[1].slice()]
-        const out = (o.mode === 'isolate' ? isolate : remove)([L, R])
-        return { audio: { channelData: out, sampleRate: a.sampleRate }, suffix: o.mode === 'isolate' ? '-vocals' : '-karaoke',
-          report: [{ k: o.mode === 'isolate' ? 'Kept' : 'Removed', v: 'center channel', note: 'Mid/side separation: whatever is panned dead center (usually the lead vocal, often also bass and kick) is ' + (o.mode === 'isolate' ? 'kept' : 'cancelled') + '. Wide reverb and doubled vocals remain. This is the classic phase-cancellation method, not AI source separation.' }] }
-      }
-    })
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=71be793d'
+    tool({ process: '/util/vocal-remover/process.js?v=1b74c64f', ...{"busy":"Separating center and sides…"} })
   </script>
 </body>
 </html>

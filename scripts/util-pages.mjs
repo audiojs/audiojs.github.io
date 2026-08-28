@@ -7,7 +7,8 @@ import { fileURLToPath } from 'url'
 const SITE = 'https://audiojs.dev'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 // content-hashed asset URLs: browsers and CDNs drop the old shell the moment it changes
-const hash = f => createHash('sha256').update(readFileSync(`${ROOT}util/${f}`)).digest('hex').slice(0, 8)
+const sha = text => createHash('sha256').update(text).digest('hex').slice(0, 8)
+const hash = f => sha(readFileSync(`${ROOT}util/${f}`))
 const CSS = `/util/util.css?v=${hash('util.css')}`, JS = `/util/util.js?v=${hash('util.js')}`
 const WAVE = `<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>`
 const drop = (text, accept = 'audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts') => `
@@ -29,7 +30,11 @@ export const pages = [
     lead: 'Drop a video or audio file. Save its sound as MP3, WAV, FLAC, OGG, Opus or AAC.',
     powered: ['@audio/decode', '@audio/encode'], repo: 'https://github.com/audiojs/decode',
     body: drop('Drop a video or audio file here'),
-    script: `tool({ process: a => ({ audio: a }) })`,
+    worker: `
+export default async function process(a) { return { audio: a } }
+`,
+    tool: {},
+    script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['Is the video uploaded anywhere?', 'No. Decoding and encoding run in your browser with open-source JavaScript and WebAssembly codecs. The file never leaves your device, so there is no size limit, no queue and nothing to delete afterwards.'],
       ['Which video formats are supported?', 'Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR.'],
@@ -65,7 +70,11 @@ export const pages = [
     lead: 'Drop an audio file. Save it as MP3, WAV, FLAC, OGG, Opus or AAC.',
     powered: ['@audio/decode', '@audio/encode'], repo: 'https://github.com/audiojs/encode',
     body: drop('Drop an audio file here', 'audio/*,video/*,.m4a,.flac,.opus,.wma,.amr,.caf,.aiff,.ac3,.dts'),
-    script: `tool({ process: a => ({ audio: a }) })`,
+    worker: `
+export default async function process(a) { return { audio: a } }
+`,
+    tool: {},
+    script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['Which formats can I convert from?', 'MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, M4A, ALAC, AIFF, CAF, WMA, AMR, AC-3, DTS and QOA, plus the audio track of MP4, MOV, MKV, WebM and AVI video.'],
       ['Which formats can I convert to?', 'MP3 (256 kbps), WAV (16-bit), FLAC, OGG Vorbis, Opus and AAC.'],
@@ -93,35 +102,36 @@ export const pages = [
       <label>Normalize to <select name="target"><option value="">measure only</option><option value="-14">-14 LUFS · Spotify, YouTube, Tidal</option><option value="-16">-16 LUFS · Apple Music, podcasts</option><option value="-18">-18 LUFS · SoundCloud, Amazon</option><option value="-23">-23 LUFS · EBU R128 broadcast</option><option value="-24">-24 LKFS · ATSC A/85 broadcast</option></select></label>
       <label>True-peak ceiling <select name="ceiling"><option value="-1">-1 dBTP</option><option value="-2">-2 dBTP</option><option value="-0.3">-0.3 dBTP</option></select></label>
     </form>`,
-    script: `
-    const lib = import('https://esm.sh/@audio/loudness@1.2.0')
-    const dyn = import('https://esm.sh/@audio/dynamics@0.2.5')
-    const TARGETS = [['Spotify', -14], ['YouTube', -14], ['Apple Music', -16], ['Podcasts', -16], ['EBU R128', -23]]
-    const db = (x, d = 1) => (x > 0 ? '+' : '') + x.toFixed(d)
-    tool({
-      busy: 'Measuring loudness…',
-      defaultFormat: 'wav',
-      async process(a, o, ui) {
-        const { lufs, truepeak, lra } = await lib
-        const fs = a.sampleRate
-        const L = lufs(a.channelData, { fs }), tp = truepeak(a.channelData, { fs }), range = lra(a.channelData, { fs })
-        const report = [
-          { k: 'Integrated loudness', v: db(L) + '<small>LUFS</small>' },
-          { k: 'True peak', v: db(tp) + '<small>dBTP</small>', cls: tp > -1 ? 'warn' : '' },
-          { k: 'Loudness range', v: range.toFixed(1) + '<small>LU</small>' },
-          { k: 'Platform playback', cls: 'list wide', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L) + ' dB').join(' · '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
-        ]
-        if (!o.target) return { report }
-        const target = +o.target, gain = target - L, g = Math.pow(10, gain / 20)
-        ui.status('Normalizing to ' + target + ' LUFS…')
-        const { limiter } = await dyn
-        const channelData = a.channelData.map(ch => { const out = new Float32Array(ch.length); for (let i = 0; i < ch.length; i++) out[i] = ch[i] * g; return out })
-        const limited = channelData.map(ch => limiter(ch, { ceiling: +o.ceiling, fs }))
-        const after = lufs(limited, { fs }), tp2 = truepeak(limited, { fs })
-        report.push({ k: 'Applied gain', v: db(gain) + '<small>dB</small>' }, { k: 'Result loudness', v: db(after) + '<small>LUFS</small>', cls: 'ok' }, { k: 'Result true peak', v: db(tp2) + '<small>dBTP</small>', cls: 'ok', note: Math.abs(after - target) > 0.5 ? 'The true-peak limiter pulled the level below target: the material is too dense for this target at this ceiling.' : 'Within 0.5 LU of target after limiting.' })
-        return { report, audio: { channelData: limited, sampleRate: fs }, suffix: '-' + Math.abs(target) + 'lufs' }
-      }
-    })`,
+    worker: `
+
+const lib = import('https://esm.sh/@audio/loudness@1.2.0')
+const dyn = import('https://esm.sh/@audio/dynamics@0.2.5')
+const TARGETS = [['Spotify', -14], ['YouTube', -14], ['Apple Music', -16], ['Podcasts', -16], ['EBU R128', -23]]
+const db = (x, d = 1) => (x > 0 ? '+' : '') + x.toFixed(d)
+
+export default async function process(a, o, ui) {
+  const { lufs, truepeak, lra } = await lib
+  const fs = a.sampleRate
+  const L = lufs(a.channelData, { fs }), tp = truepeak(a.channelData, { fs }), range = lra(a.channelData, { fs })
+  const report = [
+{ k: 'Integrated loudness', v: db(L) + '<small>LUFS</small>' },
+{ k: 'True peak', v: db(tp) + '<small>dBTP</small>', cls: tp > -1 ? 'warn' : '' },
+{ k: 'Loudness range', v: range.toFixed(1) + '<small>LU</small>' },
+{ k: 'Platform playback', cls: 'list wide', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L) + ' dB').join(' · '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
+  ]
+  if (!o.target) return { report }
+  const target = +o.target, gain = target - L, g = Math.pow(10, gain / 20)
+  ui.status('Normalizing to ' + target + ' LUFS…')
+  const { limiter } = await dyn
+  const channelData = a.channelData.map(ch => { const out = new Float32Array(ch.length); for (let i = 0; i < ch.length; i++) out[i] = ch[i] * g; return out })
+  const limited = channelData.map(ch => limiter(ch, { ceiling: +o.ceiling, fs }))
+  const after = lufs(limited, { fs }), tp2 = truepeak(limited, { fs })
+  report.push({ k: 'Applied gain', v: db(gain) + '<small>dB</small>' }, { k: 'Result loudness', v: db(after) + '<small>LUFS</small>', cls: 'ok' }, { k: 'Result true peak', v: db(tp2) + '<small>dBTP</small>', cls: 'ok', note: Math.abs(after - target) > 0.5 ? 'The true-peak limiter pulled the level below target: the material is too dense for this target at this ceiling.' : 'Within 0.5 LU of target after limiting.' })
+  return { report, audio: { channelData: limited, sampleRate: fs }, suffix: '-' + Math.abs(target) + 'lufs' }
+}
+`,
+    tool: { busy: 'Measuring loudness…', defaultFormat: 'wav' },
+    script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['What is LUFS?', 'Loudness Units relative to Full Scale, the perceptual loudness measure defined by ITU-R BS.1770. Integrated LUFS describes the whole file with gating, so silence does not pull it down. Streaming services normalize to a LUFS target.'],
       ['What loudness should I master to?', 'Spotify, YouTube and Tidal play back at -14 LUFS, Apple Music and most podcast platforms at -16, EBU broadcast at -23 with a -1 dBTP ceiling. A louder master is simply turned down on playback.'],
@@ -167,30 +177,32 @@ export const pages = [
         <option value="gate">gate: silence between phrases</option>
       </select></label>
     </form>`,
-    script: `
-    const lib = import('https://esm.sh/@audio/denoise@0.3.7')
-    const WHY = { wiener: 'steady broadband noise floor', omlsa: 'noise under speech, speech-presence tracking', specsub: 'stationary noise, spectral subtraction', dehum: 'mains hum and harmonics', declick: 'impulsive clicks', decrackle: 'dense crackle', declip: 'clipped peaks', dewind: 'low-frequency wind rumble', deplosive: 'plosive pops', deesser: 'sibilance', dereverb: 'room reverberation', gate: 'noise between phrases' }
-    tool({
-      busy: 'Analyzing noise…',
-      async process(a, o, ui) {
-        const m = await lib, fs = a.sampleRate
-        let plan = null
-        const channelData = []
-        for (let c = 0; c < a.channelData.length; c++) {
-          ui.status((o.method ? 'Applying ' + o.method : 'Classifying and cleaning') + (a.channelData.length > 1 ? ' · channel ' + (c + 1) : '') + '…')
-          await new Promise(r => setTimeout(r, 20))
-          const src = a.channelData[c].slice()
-          if (o.method) channelData.push(m[o.method](src, { fs }))
-          else { const r = m.denoise(src, { fs, returnPlan: true }); plan ??= r.plan; channelData.push(r.out) }
-        }
-        const method = o.method || plan?.method || 'wiener'
-        const scores = plan?.scores ? Object.entries(plan.scores).filter(([k, v]) => typeof v === 'number' && k !== 'humFreq').map(([k, v]) => k + ' ' + v.toFixed(1)).join(' · ') : ''
-        return {
-          report: [{ k: o.method ? 'Method' : 'Method chosen by the classifier', v: method, note: (WHY[method] || '') + (scores ? '. Detector scores: ' + scores : '') }],
-          audio: { channelData, sampleRate: fs }, suffix: '-' + method
-        }
-      }
-    })`,
+    worker: `
+
+const lib = import('https://esm.sh/@audio/denoise@0.3.7')
+const WHY = { wiener: 'steady broadband noise floor', omlsa: 'noise under speech, speech-presence tracking', specsub: 'stationary noise, spectral subtraction', dehum: 'mains hum and harmonics', declick: 'impulsive clicks', decrackle: 'dense crackle', declip: 'clipped peaks', dewind: 'low-frequency wind rumble', deplosive: 'plosive pops', deesser: 'sibilance', dereverb: 'room reverberation', gate: 'noise between phrases' }
+
+export default async function process(a, o, ui) {
+  const m = await lib, fs = a.sampleRate
+  let plan = null
+  const channelData = []
+  for (let c = 0; c < a.channelData.length; c++) {
+ui.status((o.method ? 'Applying ' + o.method : 'Classifying and cleaning') + (a.channelData.length > 1 ? ' · channel ' + (c + 1) : '') + '…')
+await new Promise(r => setTimeout(r, 20))
+const src = a.channelData[c].slice()
+if (o.method) channelData.push(m[o.method](src, { fs }))
+else { const r = m.denoise(src, { fs, returnPlan: true }); plan ??= r.plan; channelData.push(r.out) }
+  }
+  const method = o.method || plan?.method || 'wiener'
+  const scores = plan?.scores ? Object.entries(plan.scores).filter(([k, v]) => typeof v === 'number' && k !== 'humFreq').map(([k, v]) => k + ' ' + v.toFixed(1)).join(' · ') : ''
+  return {
+report: [{ k: o.method ? 'Method' : 'Method chosen by the classifier', v: method, note: (WHY[method] || '') + (scores ? '. Detector scores: ' + scores : '') }],
+audio: { channelData, sampleRate: fs }, suffix: '-' + method
+  }
+}
+`,
+    tool: { busy: 'Analyzing noise…' },
+    script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['How does automatic mode choose?', 'A classifier measures the recording: hum energy at 50/60 Hz and harmonics, click density, low-frequency rumble, noise-floor stationarity and sibilance. It picks the specialised method that scored highest and shows the plan.'],
       ['Which noises can it remove?', 'Steady background noise (fans, hiss, air conditioning), mains hum, clicks and pops, vinyl crackle, clipping, wind rumble, microphone plosives, sibilance, room reverb and noise between phrases.'],
@@ -218,41 +230,43 @@ export const pages = [
     lead: 'Drop a song. Get its key, Camelot code, BPM and chords in seconds.',
     powered: ['@audio/mir', '@audio/beat'], repo: 'https://github.com/audiojs/mir',
     body: drop('Drop a song here'),
-    script: `
-    const mir = import('https://esm.sh/@audio/mir@1.1.2')
-    const beat = import('https://esm.sh/@audio/beat@2.1.2')
-    const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B']
-    const CAMELOT_MAJOR = ['8B', '3B', '10B', '5B', '12B', '7B', '2B', '9B', '4B', '11B', '6B', '1B']
-    const CAMELOT_MINOR = ['5A', '12A', '7A', '2A', '9A', '4A', '11A', '6A', '1A', '8A', '3A', '10A']
-    tool({
-      busy: 'Listening for key and tempo…',
-      async process(a, o, ui) {
-        const fs = a.sampleRate
-        const n = a.channelData[0].length, mono = new Float32Array(n)
-        for (const ch of a.channelData) for (let i = 0; i < n; i++) mono[i] += ch[i] / a.channelData.length
-        const { chroma, key, smoothChords } = await mir
-        const span = Math.min(n, fs * 120) // first two minutes are enough for key
-        const frames = []
-        for (let i = 0; i + 4096 <= span; i += 4096) frames.push(chroma(mono.subarray(i, i + 4096), { fs }))
-        const k = key(frames)
-        ui.status('Tracking the beat…')
-        await new Promise(r => setTimeout(r, 20))
-        const { detect } = await beat
-        const b = detect(mono.subarray(0, Math.min(n, fs * 90)), { fs })
-        let chords = []
-        try { chords = smoothChords(frames, { selfProb: 0.5 }) } catch {}
-        const seq = []
-        for (const c of chords) { const label = c?.label ?? c; if (label && seq[seq.length - 1] !== label) seq.push(label) }
-        const camelot = (k.mode === 'minor' ? CAMELOT_MINOR : CAMELOT_MAJOR)[k.tonic]
-        return { report: [
-          { k: 'Key', v: NAMES[k.tonic] + ' ' + k.mode + '<small>' + Math.round(k.confidence * 100) + '% sure</small>' },
-          { k: 'Camelot', v: camelot, note: 'Mix with ' + camelot + ', ' + neighbours(camelot).join(', ') + ' for harmonic mixing.' },
-          { k: 'Tempo', v: Math.round(b.bpm) + '<small>BPM</small>', note: b.confidence < 0.4 ? 'Low confidence: the beat is soft or the tempo drifts. Half or double time is possible.' : 'Alternatives: ' + Math.round(b.bpm / 2) + ' or ' + Math.round(b.bpm * 2) + ' BPM if you count half or double time.' },
-          ...(seq.length ? [{ k: 'Chord progression', cls: 'list wide', v: seq.slice(0, 32).join(' · ') + (seq.length > 32 ? ' …' : '') }] : []),
-        ] }
-        function neighbours(c) { const num = parseInt(c), l = c.slice(-1); return [((num + 10) % 12 + 1) + l, (num % 12 + 1) + l, num + (l === 'A' ? 'B' : 'A')] }
-      }
-    })`,
+    worker: `
+
+const mir = import('https://esm.sh/@audio/mir@1.1.2')
+const beat = import('https://esm.sh/@audio/beat@2.1.2')
+const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B']
+const CAMELOT_MAJOR = ['8B', '3B', '10B', '5B', '12B', '7B', '2B', '9B', '4B', '11B', '6B', '1B']
+const CAMELOT_MINOR = ['5A', '12A', '7A', '2A', '9A', '4A', '11A', '6A', '1A', '8A', '3A', '10A']
+
+export default async function process(a, o, ui) {
+  const fs = a.sampleRate
+  const n = a.channelData[0].length, mono = new Float32Array(n)
+  for (const ch of a.channelData) for (let i = 0; i < n; i++) mono[i] += ch[i] / a.channelData.length
+  const { chroma, key, smoothChords } = await mir
+  const span = Math.min(n, fs * 120) // first two minutes are enough for key
+  const frames = []
+  for (let i = 0; i + 4096 <= span; i += 4096) frames.push(chroma(mono.subarray(i, i + 4096), { fs }))
+  const k = key(frames)
+  ui.status('Tracking the beat…')
+  await new Promise(r => setTimeout(r, 20))
+  const { detect } = await beat
+  const b = detect(mono.subarray(0, Math.min(n, fs * 90)), { fs })
+  let chords = []
+  try { chords = smoothChords(frames, { selfProb: 0.5 }) } catch {}
+  const seq = []
+  for (const c of chords) { const label = c?.label ?? c; if (label && seq[seq.length - 1] !== label) seq.push(label) }
+  const camelot = (k.mode === 'minor' ? CAMELOT_MINOR : CAMELOT_MAJOR)[k.tonic]
+  return { report: [
+{ k: 'Key', v: NAMES[k.tonic] + ' ' + k.mode + '<small>' + Math.round(k.confidence * 100) + '% sure</small>' },
+{ k: 'Camelot', v: camelot, note: 'Mix with ' + camelot + ', ' + neighbours(camelot).join(', ') + ' for harmonic mixing.' },
+{ k: 'Tempo', v: Math.round(b.bpm) + '<small>BPM</small>', note: b.confidence < 0.4 ? 'Low confidence: the beat is soft or the tempo drifts. Half or double time is possible.' : 'Alternatives: ' + Math.round(b.bpm / 2) + ' or ' + Math.round(b.bpm * 2) + ' BPM if you count half or double time.' },
+...(seq.length ? [{ k: 'Chord progression', cls: 'list wide', v: seq.slice(0, 32).join(' · ') + (seq.length > 32 ? ' …' : '') }] : []),
+  ] }
+  function neighbours(c) { const num = parseInt(c), l = c.slice(-1); return [((num + 10) % 12 + 1) + l, (num % 12 + 1) + l, num + (l === 'A' ? 'B' : 'A')] }
+}
+`,
+    tool: { busy: 'Listening for key and tempo…' },
+    script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['How accurate is key detection?', 'Chroma features over the first two minutes are matched against Krumhansl key profiles, the same approach as desktop DJ software. Clear tonal music lands the right key most of the time; ambiguous or modal material may report the relative major or minor, which shares every note.'],
       ['What is a Camelot code?', 'A wheel notation DJs use for harmonic mixing: 1A to 12A are minor keys, 1B to 12B their relative majors. Tracks that are one step apart on the wheel, or share a number, mix without clashing.'],
@@ -280,19 +294,21 @@ export const pages = [
       <label><input type="radio" name="mode" value="remove" checked> Remove vocals (karaoke)</label>
       <label><input type="radio" name="mode" value="isolate"> Isolate vocals</label>
     </form>`,
-    script: `
-    const lib = import('https://esm.sh/@audio/vocals@1.0.4')
-    tool({
-      busy: 'Separating center and sides…',
-      async process(a, o) {
-        if (a.channels < 2) throw Error('This needs a stereo file: center-channel extraction has nothing to work with in mono.')
-        const { remove, isolate } = await lib
-        const [L, R] = [a.channelData[0].slice(), a.channelData[1].slice()]
-        const out = (o.mode === 'isolate' ? isolate : remove)([L, R])
-        return { audio: { channelData: out, sampleRate: a.sampleRate }, suffix: o.mode === 'isolate' ? '-vocals' : '-karaoke',
-          report: [{ k: o.mode === 'isolate' ? 'Kept' : 'Removed', v: 'center channel', note: 'Mid/side separation: whatever is panned dead center (usually the lead vocal, often also bass and kick) is ' + (o.mode === 'isolate' ? 'kept' : 'cancelled') + '. Wide reverb and doubled vocals remain. This is the classic phase-cancellation method, not AI source separation.' }] }
-      }
-    })`,
+    worker: `
+
+const lib = import('https://esm.sh/@audio/vocals@1.0.4')
+
+export default async function process(a, o) {
+  if (a.channels < 2) throw Error('This needs a stereo file: center-channel extraction has nothing to work with in mono.')
+  const { remove, isolate } = await lib
+  const [L, R] = [a.channelData[0].slice(), a.channelData[1].slice()]
+  const out = (o.mode === 'isolate' ? isolate : remove)([L, R])
+  return { audio: { channelData: out, sampleRate: a.sampleRate }, suffix: o.mode === 'isolate' ? '-vocals' : '-karaoke',
+report: [{ k: o.mode === 'isolate' ? 'Kept' : 'Removed', v: 'center channel', note: 'Mid/side separation: whatever is panned dead center (usually the lead vocal, often also bass and kick) is ' + (o.mode === 'isolate' ? 'kept' : 'cancelled') + '. Wide reverb and doubled vocals remain. This is the classic phase-cancellation method, not AI source separation.' }] }
+}
+`,
+    tool: { busy: 'Separating center and sides…' },
+    script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['How does it remove the vocal?', 'Mid/side processing. In most mixes the lead vocal is panned dead center, so subtracting the right channel from the left cancels it while side-panned instruments remain. The isolate mode keeps the center instead.'],
       ['Why can I still hear some vocal?', 'Reverb, delays and doubled harmonies are usually panned wide and survive cancellation. Bass and kick, also centered, are reduced along with the vocal. AI separation handles these better; this method is instant, private and works on any device.'],
@@ -322,25 +338,27 @@ export const pages = [
       <label>Pitch <input type="range" name="semitones" min="-12" max="12" step="1" value="0"> <output>0</output> semitones</label>
       <label>Tempo <input type="range" name="tempo" min="50" max="200" step="5" value="100"> <output>100</output> %</label>
     </form>`,
-    script: `
-    const shift = import('https://esm.sh/@audio/shift@1.1.3')
-    const stretch = import('https://esm.sh/@audio/stretch@2.0.4')
-    tool({
-      busy: 'Processing…',
-      async process(a, o, ui) {
-        const semis = +o.semitones || 0, tempo = (+o.tempo || 100) / 100, fs = a.sampleRate
-        if (!semis && tempo === 1) return { audio: a, report: [{ k: 'Unchanged', v: '0 st · 100 %', note: 'Move a slider to transpose or change tempo.' }] }
-        const channelData = []
-        for (let c = 0; c < a.channels; c++) {
-          let ch = a.channelData[c]
-          if (semis) { ui.status('Transposing ' + (semis > 0 ? '+' : '') + semis + ' st' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await shift).transient(ch, { semitones: semis, fs }) }
-          if (tempo !== 1) { ui.status('Stretching to ' + Math.round(tempo * 100) + ' %' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await stretch).transient(ch, { factor: 1 / tempo, fs }) }
-          channelData.push(ch)
-        }
-        return { audio: { channelData, sampleRate: fs }, suffix: (semis ? (semis > 0 ? '+' : '') + semis + 'st' : '') + (tempo !== 1 ? '-' + Math.round(tempo * 100) + 'pct' : ''),
-          report: [{ k: 'Pitch', v: (semis > 0 ? '+' : '') + semis + '<small>semitones</small>' }, { k: 'Tempo', v: Math.round(tempo * 100) + '<small>%</small>' }, { k: 'New length', v: fmtTime(channelData[0].length / fs) }] }
-      }
-    })`,
+    worker: `
+
+const shift = import('https://esm.sh/@audio/shift@1.1.3')
+const stretch = import('https://esm.sh/@audio/stretch@2.0.4')
+
+export default async function process(a, o, ui) {
+  const semis = +o.semitones || 0, tempo = (+o.tempo || 100) / 100, fs = a.sampleRate
+  if (!semis && tempo === 1) return { audio: a, report: [{ k: 'Unchanged', v: '0 st · 100 %', note: 'Move a slider to transpose or change tempo.' }] }
+  const channelData = []
+  for (let c = 0; c < a.channels; c++) {
+let ch = a.channelData[c]
+if (semis) { ui.status('Transposing ' + (semis > 0 ? '+' : '') + semis + ' st' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await shift).transient(ch, { semitones: semis, fs }) }
+if (tempo !== 1) { ui.status('Stretching to ' + Math.round(tempo * 100) + ' %' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await stretch).transient(ch, { factor: 1 / tempo, fs }) }
+channelData.push(ch)
+  }
+  return { audio: { channelData, sampleRate: fs }, suffix: (semis ? (semis > 0 ? '+' : '') + semis + 'st' : '') + (tempo !== 1 ? '-' + Math.round(tempo * 100) + 'pct' : ''),
+report: [{ k: 'Pitch', v: (semis > 0 ? '+' : '') + semis + '<small>semitones</small>' }, { k: 'Tempo', v: Math.round(tempo * 100) + '<small>%</small>' }, { k: 'New length', v: fmtTime(channelData[0].length / fs) }] }
+}
+`,
+    tool: { busy: 'Processing…' },
+    script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['Does changing tempo change the pitch?', 'No. Time stretching keeps the pitch while changing duration, and pitch shifting keeps the duration while transposing. Both use transient-preserving phase vocoders, so drums stay sharp.'],
       ['How far can I transpose?', 'Up to an octave either way. Small moves (up to 3 or 4 semitones) are transparent; larger ones start to sound processed, as with any real-time algorithm.'],
@@ -502,48 +520,50 @@ export const pages = [
       <label>Frequency axis <select name="scale"><option value="log">logarithmic</option><option value="linear">linear</option></select></label>
       <label>Window <select name="frame"><option value="2048">2048 (balanced)</option><option value="4096">4096 (finer pitch)</option><option value="1024">1024 (finer time)</option></select></label>
     </form>`,
-    script: `
-    const stft = import('https://esm.sh/@audio/stft@1.0.5')
-    const spectral = import('https://esm.sh/@audio/spectral@1.2.3')
-    tool({
-      busy: 'Computing spectrogram…',
-      async process(a, o) {
-        const { stftAnalyse } = await stft, { centroid } = await spectral
-        const fs = a.sampleRate, n = a.channelData[0].length, mono = new Float32Array(n)
-        for (const ch of a.channelData) for (let i = 0; i < n; i++) mono[i] += ch[i] / a.channels
-        const frameSize = +o.frame || 2048, W = 1200, H = 400
-        const hopSize = Math.max(frameSize / 8, Math.ceil(n / W))
-        const frames = [], peaks = new Float64Array(frameSize / 2 + 1); let cent = 0, count = 0
-        stftAnalyse(mono, mag => { frames.push(Float32Array.from(mag)); for (let k = 0; k < mag.length; k++) peaks[k] = Math.max(peaks[k], mag[k]); try { const c = centroid(mag, { fs }); if (c > 0) { cent += c; count++ } } catch {} }, { fs, frameSize, hopSize })
-        const canvas = el('canvas'); canvas.width = W; canvas.height = H
-        const ctx = canvas.getContext('2d'), img = ctx.createImageData(W, H)
-        const bins = frameSize / 2 + 1, nyq = fs / 2, fmin = 20, log = o.scale !== 'linear'
-        let maxDb = -Infinity; for (const f of frames) for (let k = 1; k < bins; k++) { const v = f[k]; if (v > 0) { const d = 20 * Math.log10(v); if (d > maxDb) maxDb = d } }
-        for (let x = 0; x < W; x++) {
-          const f = frames[Math.min(frames.length - 1, Math.floor(x / W * frames.length))]
-          for (let y = 0; y < H; y++) {
-            const fr = log ? fmin * Math.pow(nyq / fmin, 1 - y / H) : nyq * (1 - y / H)
-            const k = Math.min(bins - 1, Math.round(fr / nyq * (bins - 1)))
-            const db = f[k] > 0 ? 20 * Math.log10(f[k]) - maxDb : -120
-            const t = Math.max(0, Math.min(1, (db + 90) / 90)) // 90 dB range
-            const i = (y * W + x) * 4
-            img.data[i] = 13 + 240 * Math.pow(t, 1.6); img.data[i + 1] = 16 + 150 * Math.pow(t, 2.2); img.data[i + 2] = 20 + 90 * t; img.data[i + 3] = 255
-          }
-        }
-        ctx.putImageData(img, 0, 0)
-        ctx.fillStyle = 'rgba(237,235,228,.85)'; ctx.font = '600 12px Manrope, sans-serif'
-        for (const fr of (log ? [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000] : [2000, 5000, 10000, 15000, 20000])) { if (fr >= nyq) continue; const y = log ? H * (1 - Math.log(fr / fmin) / Math.log(nyq / fmin)) : H * (1 - fr / nyq); ctx.fillRect(0, y, W, 1); ctx.fillText(fr >= 1000 ? fr / 1000 + ' kHz' : fr + ' Hz', 6, y - 3) }
-        let pk = 1; for (let k = 2; k < bins; k++) if (peaks[k] > peaks[pk]) pk = k
-        let hi = bins - 1; while (hi > 1 && 20 * Math.log10(peaks[hi] / peaks[pk] || 1e-9) < -60) hi--
-        return { viz: canvas, report: [
-          { k: 'Strongest frequency', v: fmtHz(pk / (bins - 1) * nyq) },
-          { k: 'Content extends to', v: fmtHz(hi / (bins - 1) * nyq), note: 'Highest frequency within 60 dB of the peak. A hard wall below 16 kHz usually means a lossy source; content to 20 kHz means a lossless or high-bitrate one.' },
-          ...(count ? [{ k: 'Spectral centroid', v: fmtHz(cent / count), note: 'Average brightness: where the energy balances.' }] : []),
-          { k: 'Resolution', v: (fs / frameSize).toFixed(1) + '<small>Hz</small> / ' + (hopSize / fs * 1000).toFixed(0) + '<small>ms</small>' },
-        ] }
-        function fmtHz(f) { return f >= 1000 ? (f / 1000).toFixed(2) + '<small>kHz</small>' : f.toFixed(0) + '<small>Hz</small>' }
-      }
-    })`,
+    worker: `
+
+const stft = import('https://esm.sh/@audio/stft@1.0.5')
+const spectral = import('https://esm.sh/@audio/spectral@1.2.3')
+
+export default async function process(a, o) {
+  const { stftAnalyse } = await stft, { centroid } = await spectral
+  const fs = a.sampleRate, n = a.channelData[0].length, mono = new Float32Array(n)
+  for (const ch of a.channelData) for (let i = 0; i < n; i++) mono[i] += ch[i] / a.channels
+  const frameSize = +o.frame || 2048, W = 1200, H = 400
+  const hopSize = Math.max(frameSize / 8, Math.ceil(n / W))
+  const frames = [], peaks = new Float64Array(frameSize / 2 + 1); let cent = 0, count = 0
+  stftAnalyse(mono, mag => { frames.push(Float32Array.from(mag)); for (let k = 0; k < mag.length; k++) peaks[k] = Math.max(peaks[k], mag[k]); try { const c = centroid(mag, { fs }); if (c > 0) { cent += c; count++ } } catch {} }, { fs, frameSize, hopSize })
+  const canvas = new OffscreenCanvas(W, H)
+  const ctx = canvas.getContext('2d'), img = ctx.createImageData(W, H)
+  const bins = frameSize / 2 + 1, nyq = fs / 2, fmin = 20, log = o.scale !== 'linear'
+  let maxDb = -Infinity; for (const f of frames) for (let k = 1; k < bins; k++) { const v = f[k]; if (v > 0) { const d = 20 * Math.log10(v); if (d > maxDb) maxDb = d } }
+  for (let x = 0; x < W; x++) {
+const f = frames[Math.min(frames.length - 1, Math.floor(x / W * frames.length))]
+for (let y = 0; y < H; y++) {
+  const fr = log ? fmin * Math.pow(nyq / fmin, 1 - y / H) : nyq * (1 - y / H)
+  const k = Math.min(bins - 1, Math.round(fr / nyq * (bins - 1)))
+  const db = f[k] > 0 ? 20 * Math.log10(f[k]) - maxDb : -120
+  const t = Math.max(0, Math.min(1, (db + 90) / 90)) // 90 dB range
+  const i = (y * W + x) * 4
+  img.data[i] = 13 + 240 * Math.pow(t, 1.6); img.data[i + 1] = 16 + 150 * Math.pow(t, 2.2); img.data[i + 2] = 20 + 90 * t; img.data[i + 3] = 255
+}
+  }
+  ctx.putImageData(img, 0, 0)
+  ctx.fillStyle = 'rgba(237,235,228,.85)'; ctx.font = '600 12px Manrope, sans-serif'
+  for (const fr of (log ? [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000] : [2000, 5000, 10000, 15000, 20000])) { if (fr >= nyq) continue; const y = log ? H * (1 - Math.log(fr / fmin) / Math.log(nyq / fmin)) : H * (1 - fr / nyq); ctx.fillRect(0, y, W, 1); ctx.fillText(fr >= 1000 ? fr / 1000 + ' kHz' : fr + ' Hz', 6, y - 3) }
+  let pk = 1; for (let k = 2; k < bins; k++) if (peaks[k] > peaks[pk]) pk = k
+  let hi = bins - 1; while (hi > 1 && 20 * Math.log10(peaks[hi] / peaks[pk] || 1e-9) < -60) hi--
+  return { viz: { width: W, height: H, data: ctx.getImageData(0, 0, W, H).data }, report: [
+{ k: 'Strongest frequency', v: fmtHz(pk / (bins - 1) * nyq) },
+{ k: 'Content extends to', v: fmtHz(hi / (bins - 1) * nyq), note: 'Highest frequency within 60 dB of the peak. A hard wall below 16 kHz usually means a lossy source; content to 20 kHz means a lossless or high-bitrate one.' },
+...(count ? [{ k: 'Spectral centroid', v: fmtHz(cent / count), note: 'Average brightness: where the energy balances.' }] : []),
+{ k: 'Resolution', v: (fs / frameSize).toFixed(1) + '<small>Hz</small> / ' + (hopSize / fs * 1000).toFixed(0) + '<small>ms</small>' },
+  ] }
+  function fmtHz(f) { return f >= 1000 ? (f / 1000).toFixed(2) + '<small>kHz</small>' : f.toFixed(0) + '<small>Hz</small>' }
+}
+`,
+    tool: { busy: 'Computing spectrogram…' },
+    script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['What does a spectrogram show?', 'Time runs left to right, frequency bottom to top, brightness is level. Harmonics appear as stacked lines, drums as vertical stripes, noise as a wash.'],
       ['How do I spot a fake lossless file?', 'A hard cutoff at 16 kHz is the MP3 128 kbps signature, 19 to 20 kHz suggests 320 kbps or AAC. True CD-quality material reaches 22 kHz with a natural roll-off.'],
@@ -734,7 +754,7 @@ ${p.body}
   </main>${footer}
   <script type="module">
     import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '${JS}'
-    ${p.script.trim()}
+    ${p.script.trim().replace('PROCESS', `'/util/${p.slug}/process.js?v=${p.worker ? sha(p.worker) : ''}'`).replace('TOOL', JSON.stringify(p.tool || {}))}
   </script>
 </body>
 </html>
@@ -776,7 +796,8 @@ Disallow: /index-v4.html
 Sitemap: ${SITE}/sitemap.xml
 `
 
-for (const p of pages) { mkdirSync(`${ROOT}util/${p.slug}`, { recursive: true }); writeFileSync(`${ROOT}util/${p.slug}/index.html`, page(p)) }
+const workerModule = src => `// Generated by scripts/util-pages.mjs — runs in a module Worker (see util/worker.js)\nimport { fmtTime } from '/util/util.js'\n${src.trim()}\n`
+for (const p of pages) { mkdirSync(`${ROOT}util/${p.slug}`, { recursive: true }); writeFileSync(`${ROOT}util/${p.slug}/index.html`, page(p)); if (p.worker) writeFileSync(`${ROOT}util/${p.slug}/process.js`, workerModule(p.worker)) }
 writeFileSync(`${ROOT}util/index.html`, index())
 writeFileSync(`${ROOT}sitemap.xml`, sitemap())
 writeFileSync(`${ROOT}robots.txt`, robots())

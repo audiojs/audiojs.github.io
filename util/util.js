@@ -4,6 +4,7 @@
 const DECODE = 'https://esm.sh/@audio/decode@3.14.0?deps=@audio/decode-mp4@1.1.0,@audio/decode-avi@1.1.0,@audio/decode-webm@1.6.0,@audio/decode-aac@1.5.0,@audio/decode-ac3@1.0.0,@audio/decode-dts@1.0.0'
 const ENCODE = 'https://esm.sh/@audio/encode@1.6.3'
 const MIC = 'https://esm.sh/@audio/mic@1.1.2'
+const WORKER = new URL('./worker.js', import.meta.url)
 
 export const FORMATS = {
   mp3: { label: 'MP3 · 256 kbps', ext: 'mp3', mime: 'audio/mpeg', opts: { bitrate: 256 } },
@@ -75,11 +76,40 @@ export async function encodeAudio(fmt, audio) {
   return new Blob([bytes], { type: f.mime })
 }
 
+function toCanvas({ width, height, data }) {
+  const c = el('canvas'); c.width = width; c.height = height
+  c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(data.buffer), width, height), 0, 0)
+  return c
+}
+
 export const audioBuffer = ({ channelData, sampleRate }) => ({ channelData, sampleRate, duration: channelData[0].length / sampleRate, channels: channelData.length })
 
+// ── off-thread processing: cfg.process may be a module URL whose default export is process(audio, opts, ui) ──
+function workerRunner(url) {
+  const worker = new Worker(WORKER, { type: 'module' })
+  let seq = 0, pending = null
+  worker.onmessage = e => {
+    const { id, type } = e.data
+    if (!pending || id !== pending.id) return
+    if (type === 'status') pending.ui.status(e.data.msg)
+    else if (type === 'progress') pending.ui.progress(e.data.p)
+    else if (type === 'done') { const { resolve } = pending; pending = null; resolve(e.data.result) }
+    else if (type === 'error') { const { reject } = pending; pending = null; reject(Error(e.data.message)) }
+  }
+  worker.onerror = e => { if (pending) { const { reject } = pending; pending = null; reject(Error(e.message || 'Worker failed')) } }
+  return (audio, opts, ui) => new Promise((resolve, reject) => {
+    const id = ++seq
+    pending = { id, ui, resolve, reject }
+    // structured clone keeps the main-thread copy for re-runs when options change
+    worker.postMessage({ id, url, audio: { channelData: audio.channelData, sampleRate: audio.sampleRate, duration: audio.duration, channels: audio.channels }, opts })
+  })
+}
+
 // ── file tool ──
-// cfg.process(audio, opts, ui) → { audio?, report?: [{ k, v, cls?, note? }], viz?: Node, suffix? }
+// cfg.process: (audio, opts, ui) → { audio?, report?: [{ k, v, cls?, note? }], viz?: Node | ImageData-like, suffix? }
+//   or a module URL run in a Worker (default export with the same signature)
 export function tool(cfg) {
+  const execute = typeof cfg.process === 'string' ? workerRunner(cfg.process) : cfg.process
   const drop = $('drop'), input = $('file'), opts = $('opts')
   const panel = el('section', { class: 'panel', id: 'panel', hidden: '', 'aria-live': 'polite' })
   const name = el('div', { class: 'n' }), meta = el('div', { class: 'm' })
@@ -144,10 +174,10 @@ export function tool(cfg) {
     report.hidden = viz.hidden = out.hidden = true
     await yieldUI()
     try {
-      result = await cfg.process(audio, ui.opts(), ui)
+      result = await execute(audio, ui.opts(), ui)
       if (id !== run) return
       if (result.report) { report.replaceChildren(...result.report.map(r => el('div', { class: /\bwide\b/.test(r.cls || '') ? 'wide' : '' }, el('div', { class: 'k' }, r.k), el('div', { class: 'v' + (r.cls ? ' ' + r.cls : ''), html: r.v }), ...(r.note ? [el('div', { class: 'note' }, r.note)] : [])))); report.hidden = false }
-      if (result.viz) { viz.replaceChildren(result.viz); viz.hidden = false }
+      if (result.viz) { viz.replaceChildren(result.viz instanceof Node ? result.viz : toCanvas(result.viz)); viz.hidden = false }
       if (result.audio) await encode(id)
       else progress.hidden = true
     } catch (e) {
