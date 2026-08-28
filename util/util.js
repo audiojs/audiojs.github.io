@@ -2,7 +2,9 @@
 // Pages call tool({ process }) for file tools; live tools use mic() and the helpers.
 
 const DECODE = 'https://esm.sh/@audio/decode@3.14.0?deps=@audio/decode-mp4@1.1.0,@audio/decode-avi@1.1.0,@audio/decode-webm@1.6.0,@audio/decode-aac@1.5.0,@audio/decode-ac3@1.0.0,@audio/decode-dts@1.0.0'
-const ENCODE = 'https://esm.sh/@audio/encode@1.6.3'
+const ENCODE = 'https://esm.sh/@audio/encode@1.6.5'
+const META = 'https://esm.sh/@audio/decode@3.14.0/meta'
+const TYPE = 'https://esm.sh/audio-type@2.6.0'
 const MIC = 'https://esm.sh/@audio/mic@1.1.2'
 const WORKER = new URL('./worker.js', import.meta.url)
 
@@ -11,14 +13,31 @@ export const FORMATS = {
   wav: { label: 'WAV · 16-bit', ext: 'wav', mime: 'audio/wav', opts: { bitDepth: 16 } },
   flac: { label: 'FLAC · lossless', ext: 'flac', mime: 'audio/flac', opts: {} },
   ogg: { label: 'OGG Vorbis', ext: 'ogg', mime: 'audio/ogg', opts: { quality: 6 } },
-  opus: { label: 'Opus', ext: 'opus', mime: 'audio/ogg', opts: { bitrate: 128 } },
+  opus: { label: 'Opus', ext: 'opus', mime: 'audio/ogg; codecs=opus', opts: { bitrate: 128 } },
   aac: { label: 'AAC', ext: 'aac', mime: 'audio/aac', opts: { bitrate: 192 } },
+  webm: { label: 'WebM · Opus', ext: 'webm', mime: 'audio/webm; codecs=opus', opts: { bitrate: 128 } },
+  aiff: { label: 'AIFF · 16-bit', ext: 'aiff', mime: 'audio/aiff', opts: { bitDepth: 16 } },
+  caf: { label: 'CAF · 16-bit', ext: 'caf', mime: 'audio/x-caf', opts: { bitDepth: 16 } },
+  qoa: { label: 'QOA', ext: 'qoa', mime: 'audio/qoa', opts: {} },
 }
 
-let decodeP, encodeP, micP
+let decodeP, encodeP, micP, metaP
 export const decodeLib = () => decodeP ??= import(DECODE).then(m => m.default)
 export const encodeLib = () => encodeP ??= import(ENCODE).then(m => m.default)
 export const micLib = () => micP ??= import(MIC).then(m => m.default)
+const metaLib = () => metaP ??= Promise.all([import(META), import(TYPE)]).then(([parsers, type]) => ({ parsers, type: type.default }))
+
+// container tags (title, artist, album, cover art…) — parsed from the source bytes, carried to the encoder
+async function readMeta(bytes) {
+  try {
+    const { parsers, type } = await metaLib()
+    const parse = parsers[type(bytes)]
+    const meta = parse?.(bytes)?.meta
+    if (!meta) return null
+    const { raw, ...tags } = meta   // `raw` is the parser's block dump; encoders take the tag keys + pictures
+    return Object.keys(tags).some(k => k !== 'pictures' || tags.pictures?.length) ? tags : null
+  } catch (e) { console.warn('meta:', e.message); return null }
+}
 
 export const $ = id => document.getElementById(id)
 export const fmtSize = n => n < 1e6 ? (n / 1e3).toFixed(0) + ' KB' : n < 1e9 ? (n / 1e6).toFixed(1) + ' MB' : (n / 1e9).toFixed(2) + ' GB'
@@ -29,16 +48,17 @@ export const el = (tag, attrs = {}, ...children) => { const e = document.createE
 // ── decode: @audio/decode (JS/WASM demux + codecs) → browser decoder → real-time capture ──
 export async function decodeFile(file, onProgress) {
   const bytes = new Uint8Array(await file.arrayBuffer())
+  const meta = readMeta(bytes)   // tags parse alongside the decode; never rejects
   try {
     const { channelData, sampleRate } = await (await decodeLib())(bytes)
     if (!channelData.length) throw Error('empty')
-    return { channelData, sampleRate }
+    return { channelData, sampleRate, meta: await meta }
   } catch (e) { console.warn('@audio/decode:', e.message) }
   try {
     const b = await new OfflineAudioContext(1, 1, 48000).decodeAudioData(bytes.buffer.slice(0))
-    return { channelData: Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c)), sampleRate: b.sampleRate }
+    return { channelData: Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c)), sampleRate: b.sampleRate, meta: await meta }
   } catch (e) { console.warn('decodeAudioData:', e.message) }
-  return capture(file, onProgress)
+  return { ...await capture(file, onProgress), meta: await meta }
 }
 
 // last resort: play the file silently through the audio graph and record PCM in real time
@@ -70,9 +90,9 @@ async function capture(f, onProgress) {
   } finally { video.remove(); URL.revokeObjectURL(src); ctx.close() }
 }
 
-export async function encodeAudio(fmt, audio) {
+export async function encodeAudio(fmt, audio, opts = {}) {
   const f = FORMATS[fmt], enc = await encodeLib()
-  const bytes = await enc[fmt](audio.channelData, { sampleRate: audio.sampleRate, ...f.opts })
+  const bytes = await enc[fmt](audio.channelData, { sampleRate: audio.sampleRate, ...f.opts, ...(audio.meta && { meta: audio.meta }), ...opts })
   return new Blob([bytes], { type: f.mime })
 }
 
@@ -82,7 +102,7 @@ function toCanvas({ width, height, data }) {
   return c
 }
 
-export const audioBuffer = ({ channelData, sampleRate }) => ({ channelData, sampleRate, duration: channelData[0].length / sampleRate, channels: channelData.length })
+export const audioBuffer = ({ channelData, sampleRate, meta = null }) => ({ channelData, sampleRate, meta, duration: channelData[0].length / sampleRate, channels: channelData.length })
 
 // ── off-thread processing: cfg.process may be a module URL whose default export is process(audio, opts, ui) ──
 function workerRunner(url) {
@@ -108,6 +128,7 @@ function workerRunner(url) {
 // ── file tool ──
 // cfg.process: (audio, opts, ui) → { audio?, report?: [{ k, v, cls?, note? }], viz?: Node | ImageData-like, suffix? }
 //   or a module URL run in a Worker (default export with the same signature)
+// cfg.formats: subset of FORMATS keys · cfg.encodeOpts(fmt, opts) → extra encoder options · cfg.onFormat(fmt) on init and change
 export function tool(cfg) {
   const execute = typeof cfg.process === 'string' ? workerRunner(cfg.process) : cfg.process
   const drop = $('drop'), input = $('file'), opts = $('opts')
@@ -121,11 +142,13 @@ export function tool(cfg) {
   const player = el('audio', { controls: '', preload: 'metadata' })
   const fmt = el('select', {}, ...Object.entries(FORMATS).filter(([k]) => !cfg.formats || cfg.formats.includes(k)).map(([k, f]) => el('option', { value: k }, f.label)))
   const saveLabel = el('span', {}, 'Save')
+  const previewNote = el('div', { class: 'note', hidden: '' })
   const save = el('a', { class: 'btn', download: '' }, el('span', { html: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M2.5 13.5h11"/></svg>' }), saveLabel)
-  const out = el('div', { class: 'row out', hidden: '' }, player, el('label', { class: 'fmt' }, 'Format ', fmt), el('span', { class: 'spacer' }), save)
+  const out = el('div', { class: 'row out', hidden: '' }, player, previewNote, el('label', { class: 'fmt' }, 'Format ', fmt), el('span', { class: 'spacer' }), save)
   panel.append(el('div', { class: 'row' }, el('div', { class: 'file' }, name, meta), reset), progress, report, viz, out)
   ;(opts || drop).after(panel)
   fmt.value = cfg.defaultFormat || 'mp3'
+  cfg.onFormat?.(fmt.value)
 
   let run = 0, file = null, audio = null, result = null, url = null
   const pick = f => { if (f) load(f) }
@@ -137,7 +160,7 @@ export function tool(cfg) {
   document.addEventListener('drop', e => pick(e.dataTransfer.files[0]))
   document.addEventListener('paste', e => pick(e.clipboardData?.files[0]))
   reset.addEventListener('click', () => { run++; release(); panel.hidden = true; drop.focus() })
-  fmt.addEventListener('change', () => result?.audio && encode())
+  fmt.addEventListener('change', () => { cfg.onFormat?.(fmt.value); result?.audio && encode() })
   opts?.addEventListener('change', () => audio && process())
   opts?.addEventListener('input', e => { const o = e.target.closest('label')?.querySelector('output'); if (o && e.target.type === 'range') o.value = e.target.value })
 
@@ -147,7 +170,7 @@ export function tool(cfg) {
     error(msg) { progress.hidden = false; status.textContent = msg; status.classList.add('err'); bar.hidden = true },
     opts: () => opts ? Object.fromEntries(new FormData(opts)) : {},
   }
-  const release = () => { if (url) URL.revokeObjectURL(url); url = null; player.removeAttribute('src'); audio = result = null }
+  const release = () => { if (url) URL.revokeObjectURL(url); url = null; if (player.src.startsWith('blob:')) URL.revokeObjectURL(player.src); player.removeAttribute('src'); previewNote.hidden = true; audio = result = null }
   const yieldUI = () => new Promise(r => setTimeout(r, 30))
 
   async function load(f) {
@@ -160,7 +183,8 @@ export function tool(cfg) {
       const a = audioBuffer(await decodeFile(f, p => id === run && (status.textContent = 'Capturing playback… ' + (p * 100 | 0) + '%', ui.progress(p))))
       if (id !== run) return
       audio = a
-      meta.textContent = `${fmtSize(f.size)} · ${fmtTime(a.duration)} · ${chLabel(a.channels)} · ${a.sampleRate / 1000} kHz`
+      const tags = [a.meta?.title, a.meta?.artist].filter(Boolean).join(' — ')
+      meta.textContent = `${fmtSize(f.size)} · ${fmtTime(a.duration)} · ${chLabel(a.channels)} · ${a.sampleRate / 1000} kHz${tags ? ' · ' + tags : ''}`
       await process(id)
     } catch (e) {
       if (id !== run) return
@@ -192,13 +216,19 @@ export function tool(cfg) {
     out.hidden = true
     ui.status(f === 'wav' ? 'Writing WAV…' : `Encoding ${f.toUpperCase()}…`)
     try {
-      const blob = await encodeAudio(f, result.audio)
+      // source tags ride along unless the processor set its own (or `meta: null` to drop them); worker results arrive without them
+      const blob = await encodeAudio(f, { meta: audio?.meta, ...result.audio }, cfg.encodeOpts?.(f, ui.opts()) || {})
       if (id !== run) return
       if (url) URL.revokeObjectURL(url)
       url = URL.createObjectURL(blob)
-      player.src = url
       save.href = url
-      save.download = file.name.replace(/\.[^.]+$/, '') + (result.suffix || '') + '.' + FORMATS[f].ext
+      // preview: a browser that cannot play the target (Safari with Ogg Opus) gets a WAV copy of the same audio
+      if (player.src.startsWith('blob:') && player.src !== url) URL.revokeObjectURL(player.src)
+      if (player.canPlayType(FORMATS[f].mime)) { player.src = url; previewNote.hidden = true }
+      else { player.src = URL.createObjectURL(await encodeAudio('wav', result.audio)); previewNote.textContent = 'This browser cannot play ' + FORMATS[f].ext.toUpperCase() + ' in the preview; you are hearing a WAV copy of the same audio. The saved file is ' + FORMATS[f].ext.toUpperCase() + '.'; previewNote.hidden = false }
+      let base = file.name.replace(/\.[^.]+$/, '') + (result.suffix || '')
+      if (!result.suffix && file.name.toLowerCase() === (base + '.' + FORMATS[f].ext).toLowerCase()) base += '-converted'
+      save.download = base + '.' + FORMATS[f].ext
       saveLabel.textContent = `Save ${FORMATS[f].ext.toUpperCase()} · ${fmtSize(blob.size)}`
       progress.hidden = true; out.hidden = false
     } catch (e) {

@@ -109,6 +109,14 @@
               "@type": "Answer",
               "text": "The audio track is decoded to raw PCM at its original sample rate, then encoded to the format you pick. WAV and FLAC keep every decoded sample; MP3, OGG, Opus and AAC re-compress."
             }
+          },
+          {
+            "@type": "Question",
+            "name": "Are the tags kept?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Title, artist, album, year, track number, comment and cover art are read from the source container and written into the MP3, FLAC, OGG, Opus or WAV you save. AAC (raw ADTS) has no tag chunk."
+            }
           }
         ]
       }
@@ -120,7 +128,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=71be793d">
+  <link rel="modulepreload" href="/util/util.js?v=2fcf0d24">
 </head>
 <body>
   <header class="top">
@@ -168,6 +176,7 @@
       <p><strong>Which video formats are supported?</strong> Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR.</p>
       <p><strong>Which output formats can I save?</strong> MP3, WAV, FLAC, OGG Vorbis, Opus and AAC. WAV and FLAC are lossless; MP3, OGG, Opus and AAC are compressed.</p>
       <p><strong>Does it lose quality?</strong> The audio track is decoded to raw PCM at its original sample rate, then encoded to the format you pick. WAV and FLAC keep every decoded sample; MP3, OGG, Opus and AAC re-compress.</p>
+      <p><strong>Are the tags kept?</strong> Yes. Title, artist, album, year, track number, comment and cover art are read from the source container and written into the MP3, FLAC, OGG, Opus or WAV you save. AAC (raw ADTS) has no tag chunk.</p>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -187,8 +196,8 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=71be793d'
-    tool({ process: '/util/extract-audio/process.js?v=85c49385', ...{} })
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=2fcf0d24'
+    tool({ process: '/util/extract-audio/process.js?v=85c49385', ...{"formats":["mp3","wav","flac","ogg","opus","aac"]} })
   </script>
 </body>
 </html>

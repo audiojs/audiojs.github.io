@@ -120,7 +120,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=71be793d">
+  <link rel="modulepreload" href="/util/util.js?v=2fcf0d24">
 </head>
 <body>
   <header class="top">
@@ -184,7 +184,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=71be793d'
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=2fcf0d24'
     const rec = $('rec'), time = $('time'), level = $('level'), peak = $('peak'), panel = $('panel'), player = $('player'), fmt = $('fmt'), save = $('save'), saveLabel = $('saveLabel'), progress = $('progress'), status = $('status')
     for (const [k, f] of Object.entries(FORMATS)) fmt.append(el('option', { value: k }, f.label))
     fmt.value = 'mp3'

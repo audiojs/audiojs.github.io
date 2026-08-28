@@ -33,13 +33,14 @@ export const pages = [
     worker: `
 export default async function process(a) { return { audio: a } }
 `,
-    tool: {},
+    tool: { formats: ['mp3', 'wav', 'flac', 'ogg', 'opus', 'aac'] },
     script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['Is the video uploaded anywhere?', 'No. Decoding and encoding run in your browser with open-source JavaScript and WebAssembly codecs. The file never leaves your device, so there is no size limit, no queue and nothing to delete afterwards.'],
       ['Which video formats are supported?', 'Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR.'],
       ['Which output formats can I save?', 'MP3, WAV, FLAC, OGG Vorbis, Opus and AAC. WAV and FLAC are lossless; MP3, OGG, Opus and AAC are compressed.'],
       ['Does it lose quality?', 'The audio track is decoded to raw PCM at its original sample rate, then encoded to the format you pick. WAV and FLAC keep every decoded sample; MP3, OGG, Opus and AAC re-compress.'],
+      ['Are the tags kept?', 'Yes. Title, artist, album, year, track number, comment and cover art are read from the source container and written into the MP3, FLAC, OGG, Opus or WAV you save. AAC (raw ADTS) has no tag chunk.'],
     ],
     seo: `
       <h2>A free audio extractor that never sees your file</h2>
@@ -64,30 +65,88 @@ export default async function process(a) { return { audio: a } }
       <p>No. There is no upload, account, watermark or size limit. Close the tab and nothing remains. The decoder and encoder are open source: <a href="https://github.com/audiojs/decode" target="_blank" rel="noopener">read the decoder</a>, <a href="https://github.com/audiojs/encode" target="_blank" rel="noopener">read the encoder</a>.</p>`,
   },
   {
-    slug: 'convert-audio', name: 'Audio converter', short: 'MP3, WAV, FLAC, OGG, Opus, AAC, M4A in any direction',
-    title: 'Audio converter: MP3, WAV, FLAC, OGG, Opus, AAC, free in your browser',
-    description: 'Convert audio between MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, M4A, AIFF, CAF, WMA and AMR in your browser. No upload, no size limit, lossless where the target allows.',
-    lead: 'Drop an audio file. Save it as MP3, WAV, FLAC, OGG, Opus or AAC.',
-    powered: ['@audio/decode', '@audio/encode'], repo: 'https://github.com/audiojs/encode',
-    body: drop('Drop an audio file here', 'audio/*,video/*,.m4a,.flac,.opus,.wma,.amr,.caf,.aiff,.ac3,.dts'),
+    slug: 'convert-audio', name: 'Audio converter', short: 'MP3, WAV, FLAC, OGG, Opus, AAC, AIFF, CAF, WebM, QOA; sample rate, channels, bit depth, bitrate',
+    title: 'Audio converter: MP3, WAV, FLAC, OGG, Opus, AAC, AIFF, free in your browser',
+    description: 'Convert audio between MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, AIFF, CAF, WebM and QOA in your browser. Choose sample rate, channels, bit depth and bitrate; tags carry over. No upload, no size limit.',
+    lead: 'Drop an audio file. Pick the format, sample rate, channels and quality. Tags carry over.',
+    powered: ['@audio/decode', '@audio/encode', '@audio/resample'], repo: 'https://github.com/audiojs/encode',
+    body: drop('Drop an audio file here', 'audio/*,video/*,.m4a,.flac,.opus,.wma,.amr,.caf,.aiff,.ac3,.dts,.qoa') + `
+    <form class="opts" id="opts">
+      <label>Sample rate <select name="rate"><option value="">keep</option><option value="8000">8 kHz</option><option value="16000">16 kHz</option><option value="22050">22.05 kHz</option><option value="32000">32 kHz</option><option value="44100">44.1 kHz</option><option value="48000">48 kHz</option><option value="96000">96 kHz</option></select></label>
+      <label>Channels <select name="channels"><option value="">keep</option><option value="1">mono</option><option value="2">stereo</option></select></label>
+      <label data-for="wav aiff caf flac">Bit depth <select name="bitDepth"><option value="16">16-bit</option><option value="24">24-bit</option><option value="32">32-bit float</option></select></label>
+      <label data-for="mp3 aac opus webm">Bitrate <select name="bitrate"><option value="64">64 kbps</option><option value="96">96 kbps</option><option value="128">128 kbps</option><option value="192">192 kbps</option><option value="256" selected>256 kbps</option><option value="320">320 kbps</option></select></label>
+      <label data-for="ogg">Quality <select name="quality"><option value="3">3 (≈112 kbps)</option><option value="5">5 (≈160 kbps)</option><option value="6" selected>6 (≈192 kbps)</option><option value="8">8 (≈256 kbps)</option><option value="10">10 (≈500 kbps)</option></select></label>
+    </form>`,
     worker: `
-export default async function process(a) { return { audio: a } }
+const resampleLib = import('https://esm.sh/@audio/resample-polyphase@1.0.2')
+const rate = r => r >= 1000 ? (r / 1000) + ' kHz' : r + ' Hz'
+const chs = n => n === 1 ? 'mono' : n === 2 ? 'stereo' : n + ' ch'
+
+export default async function process(a, o, ui) {
+  let { channelData, sampleRate } = a
+  const report = [{ k: 'Source', v: rate(sampleRate) + ' · ' + chs(channelData.length), cls: 'list' }]
+  const want = +o.channels || 0
+  if (want === 1 && channelData.length > 1) {
+    const n = channelData[0].length, mono = new Float32Array(n)
+    for (const ch of channelData) for (let i = 0; i < n; i++) mono[i] += ch[i] / channelData.length
+    channelData = [mono]
+  } else if (want === 2 && channelData.length === 1) channelData = [channelData[0], channelData[0].slice()]
+  else if (want === 2 && channelData.length > 2) channelData = channelData.slice(0, 2)
+  const to = +o.rate || 0
+  if (to && to !== sampleRate) {
+    ui.status('Resampling ' + rate(sampleRate) + ' → ' + rate(to) + '…')
+    const polyphase = (await resampleLib).default
+    channelData = channelData.map(ch => polyphase(ch, { from: sampleRate, to }))
+    sampleRate = to
+  }
+  report.push({ k: 'Output', v: rate(sampleRate) + ' · ' + chs(channelData.length), cls: 'list' })
+  return { audio: { channelData, sampleRate }, report }
+}
 `,
     tool: {},
-    script: `tool({ process: PROCESS, ...TOOL })`,
+    script: `
+    const BITRATES = { mp3: [96, 128, 192, 256, 320], aac: [64, 96, 128, 192, 256], opus: [32, 64, 96, 128, 160, 192], webm: [32, 64, 96, 128, 160, 192] }
+    const DEPTHS = { wav: [16, 24, 32], aiff: [16, 24], caf: [16, 32], flac: [16, 24] }
+    const form = $('opts')
+    const show = (sel, allowed, value) => { for (const opt of sel.options) opt.hidden = !allowed.includes(+opt.value); if (!allowed.includes(+sel.value)) sel.value = allowed[Math.min(allowed.length - 1, Math.floor(allowed.length / 2))] }
+    tool({
+      process: PROCESS, ...TOOL,
+      onFormat(f) {
+        for (const label of form.querySelectorAll('[data-for]')) label.hidden = !label.dataset.for.split(' ').includes(f)
+        if (BITRATES[f]) show(form.querySelector('[name=bitrate]'), BITRATES[f], form.querySelector('[name=bitrate]').value)
+        if (DEPTHS[f]) show(form.querySelector('[name=bitDepth]'), DEPTHS[f])
+        form.querySelector('[name=rate]').closest('label').hidden = f === 'opus' || f === 'webm' // always 48 kHz
+      },
+      encodeOpts(f, o) {
+        if (BITRATES[f]) return { bitrate: +o.bitrate || 128 }
+        if (DEPTHS[f]) return { bitDepth: +o.bitDepth || 16 }
+        if (f === 'ogg') return { quality: +o.quality || 6 }
+        return {}
+      }
+    })`,
     faq: [
       ['Which formats can I convert from?', 'MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, M4A, ALAC, AIFF, CAF, WMA, AMR, AC-3, DTS and QOA, plus the audio track of MP4, MOV, MKV, WebM and AVI video.'],
-      ['Which formats can I convert to?', 'MP3 (256 kbps), WAV (16-bit), FLAC, OGG Vorbis, Opus and AAC.'],
-      ['Is the conversion lossless?', 'WAV and FLAC preserve every decoded sample. Converting between two lossy formats (MP3 to AAC) re-compresses; keep a lossless master when you can.'],
-      ['Is there a file size or length limit?', 'No. The file is processed in your browser, so the only limit is your device memory. Hour-long recordings are fine.'],
+      ['Which formats can I convert to?', 'MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, AIFF, CAF, WebM (Opus) and QOA. Lossy formats take a bitrate (or a quality level for Vorbis); PCM formats take a bit depth of 16, 24 or 32-bit float.'],
+      ['Do the tags survive?', 'Title, artist, album, year and the other common fields are read from MP3, FLAC, WAV, M4A, Ogg and Opus sources and written into WAV, MP3, FLAC, AIFF, OGG and Opus outputs.'],
+      ['Can I change the sample rate or make it mono?', 'Yes. Pick a sample rate from 8 to 96 kHz (polyphase resampling with a Kaiser-windowed filter) and mono or stereo. Opus and WebM always run at 48 kHz internally.'],
+      ['Is the conversion lossless?', 'WAV, FLAC, AIFF and CAF preserve every decoded sample at the chosen bit depth. Converting between two lossy formats re-compresses; keep a lossless master when you can.'],
     ],
     seo: `
       <h2>Convert audio without uploading it</h2>
-      <p>This converter decodes with <code>@audio/decode</code> and encodes with <code>@audio/encode</code>, both open-source JavaScript and WebAssembly libraries from audiojs. Your file stays on your device; the page works offline once loaded. No account, no watermark, no queue.</p>
-      <h3>MP3 to WAV, M4A to MP3, FLAC to MP3, WAV to FLAC</h3>
-      <p>Pick the target format after the file loads. WAV and FLAC are lossless and suit editing, mastering and archiving. MP3 plays everywhere. Opus gives the smallest files for speech and music alike; AAC is the format Apple devices and video containers expect. OGG Vorbis remains common in games and open-source tooling.</p>
-      <h3>Sample rate and channels</h3>
-      <p>Channels and sample rate follow the source: a 44.1 kHz stereo MP3 becomes a 44.1 kHz stereo WAV. Opus always runs at 48 kHz and resamples internally. 5.1 tracks keep six channels in WAV and FLAC.</p>
+      <p>This converter decodes with <code>@audio/decode</code>, resamples with <code>@audio/resample</code> and encodes with <code>@audio/encode</code>, open-source JavaScript and WebAssembly libraries from audiojs. Your file stays on your device; the page works offline once loaded. No account, no watermark, no queue, no size limit.</p>
+      <h3>Ten output formats</h3>
+      <ul>
+        <li><strong>MP3</strong> plays everywhere; 256 kbps is transparent for most material, 320 for archiving.</li>
+        <li><strong>WAV, AIFF, CAF</strong> are uncompressed PCM at 16, 24 or 32-bit float: editing, mastering, sample libraries.</li>
+        <li><strong>FLAC</strong> is lossless at about half the size of WAV; 16 or 24-bit.</li>
+        <li><strong>Opus</strong> and <strong>WebM</strong> give the smallest files at equal quality; 64 kbps Opus speech is already clean. Note that Safari does not play Ogg Opus in a browser player; the file itself is fine everywhere else.</li>
+        <li><strong>AAC</strong> is the format Apple devices and video containers expect. <strong>OGG Vorbis</strong> remains common in games and open-source tooling. <strong>QOA</strong> is a tiny fast lossy codec for games.</li>
+      </ul>
+      <h3>Sample rate, channels, bit depth, bitrate</h3>
+      <p>Everything follows the source unless you change it. Set 16 kHz mono for speech-to-text pipelines, 44.1 kHz for CD-style delivery, 48 kHz for video, 96 kHz to match a session. Mono downmix averages the channels; stereo from mono duplicates.</p>
+      <h3>Tags carry over</h3>
+      <p>Title, artist, album, year, cover art and similar fields are read from the source and written into the target when the target format has a tag chunk (WAV, MP3, FLAC, AIFF, OGG, Opus). The file line shows the title and artist that were found.</p>
       <h3>Video files</h3>
       <p>MP4, MOV, MKV, WebM and AVI files are accepted too: their audio track is extracted and converted. See <a href="/util/extract-audio/">extract audio from video</a> for the details.</p>`,
   },
@@ -130,7 +189,7 @@ export default async function process(a, o, ui) {
   return { report, audio: { channelData: limited, sampleRate: fs }, suffix: '-' + Math.abs(target) + 'lufs' }
 }
 `,
-    tool: { busy: 'Measuring loudness…', defaultFormat: 'wav' },
+    tool: { formats: ['mp3', 'wav', 'flac', 'ogg', 'opus', 'aac'], busy: 'Measuring loudness…', defaultFormat: 'wav' },
     script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['What is LUFS?', 'Loudness Units relative to Full Scale, the perceptual loudness measure defined by ITU-R BS.1770. Integrated LUFS describes the whole file with gating, so silence does not pull it down. Streaming services normalize to a LUFS target.'],
@@ -201,7 +260,7 @@ audio: { channelData, sampleRate: fs }, suffix: '-' + method
   }
 }
 `,
-    tool: { busy: 'Analyzing noise…' },
+    tool: { formats: ['mp3', 'wav', 'flac', 'ogg', 'opus', 'aac'], busy: 'Analyzing noise…' },
     script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['How does automatic mode choose?', 'A classifier measures the recording: hum energy at 50/60 Hz and harmonics, click density, low-frequency rumble, noise-floor stationarity and sibilance. It picks the specialised method that scored highest and shows the plan.'],
@@ -307,7 +366,7 @@ export default async function process(a, o) {
 report: [{ k: o.mode === 'isolate' ? 'Kept' : 'Removed', v: 'center channel', note: 'Mid/side separation: whatever is panned dead center (usually the lead vocal, often also bass and kick) is ' + (o.mode === 'isolate' ? 'kept' : 'cancelled') + '. Wide reverb and doubled vocals remain. This is the classic phase-cancellation method, not AI source separation.' }] }
 }
 `,
-    tool: { busy: 'Separating center and sides…' },
+    tool: { formats: ['mp3', 'wav', 'flac', 'ogg', 'opus', 'aac'], busy: 'Separating center and sides…' },
     script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['How does it remove the vocal?', 'Mid/side processing. In most mixes the lead vocal is panned dead center, so subtracting the right channel from the left cancels it while side-panned instruments remain. The isolate mode keeps the center instead.'],
@@ -357,7 +416,7 @@ channelData.push(ch)
 report: [{ k: 'Pitch', v: (semis > 0 ? '+' : '') + semis + '<small>semitones</small>' }, { k: 'Tempo', v: Math.round(tempo * 100) + '<small>%</small>' }, { k: 'New length', v: fmtTime(channelData[0].length / fs) }] }
 }
 `,
-    tool: { busy: 'Processing…' },
+    tool: { formats: ['mp3', 'wav', 'flac', 'ogg', 'opus', 'aac'], busy: 'Processing…' },
     script: `tool({ process: PROCESS, ...TOOL })`,
     faq: [
       ['Does changing tempo change the pitch?', 'No. Time stretching keeps the pitch while changing duration, and pitch shifting keeps the duration while transposing. Both use transient-preserving phase vocoders, so drums stay sharp.'],
@@ -796,7 +855,8 @@ Disallow: /index-v4.html
 Sitemap: ${SITE}/sitemap.xml
 `
 
-const workerModule = src => `// Generated by scripts/util-pages.mjs — runs in a module Worker (see util/worker.js)\nimport { fmtTime } from '/util/util.js'\n${src.trim()}\n`
+// worker modules: esm.sh imports retry once — Firefox module workers occasionally fail the first dynamic import of a CDN module
+const workerModule = src => `// Generated by scripts/util-pages.mjs — runs in a module Worker (see util/worker.js)\nimport { fmtTime } from '/util/util.js'\nconst load = u => import(u).catch(() => new Promise(r => setTimeout(r, 300)).then(() => import(u)))\n${src.trim().replace(/\bimport\((['"]https:\/\/esm\.sh\/[^'"]+['"])\)/g, 'load($1)')}\n`
 for (const p of pages) { mkdirSync(`${ROOT}util/${p.slug}`, { recursive: true }); writeFileSync(`${ROOT}util/${p.slug}/index.html`, page(p)); if (p.worker) writeFileSync(`${ROOT}util/${p.slug}/process.js`, workerModule(p.worker)) }
 writeFileSync(`${ROOT}util/index.html`, index())
 writeFileSync(`${ROOT}sitemap.xml`, sitemap())

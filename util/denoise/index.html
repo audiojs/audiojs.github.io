@@ -120,7 +120,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=71be793d">
+  <link rel="modulepreload" href="/util/util.js?v=2fcf0d24">
 </head>
 <body>
   <header class="top">
@@ -196,8 +196,8 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=71be793d'
-    tool({ process: '/util/denoise/process.js?v=5c02f474', ...{"busy":"Analyzing noise…"} })
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=2fcf0d24'
+    tool({ process: '/util/denoise/process.js?v=5c02f474', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Analyzing noise…"} })
   </script>
 </body>
 </html>

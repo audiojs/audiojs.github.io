@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Audio converter: MP3, WAV, FLAC, OGG, Opus, AAC, free in your browser · audiojs</title>
-  <meta name="description" content="Convert audio between MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, M4A, AIFF, CAF, WMA and AMR in your browser. No upload, no size limit, lossless where the target allows.">
+  <title>Audio converter: MP3, WAV, FLAC, OGG, Opus, AAC, AIFF, free in your browser · audiojs</title>
+  <meta name="description" content="Convert audio between MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, AIFF, CAF, WebM and QOA in your browser. Choose sample rate, channels, bit depth and bitrate; tags carry over. No upload, no size limit.">
   <meta name="theme-color" content="#0d1014">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://audiojs.dev/util/convert-audio/">
@@ -13,8 +13,8 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://audiojs.dev/util/convert-audio/">
-  <meta property="og:title" content="Audio converter: MP3, WAV, FLAC, OGG, Opus, AAC, free in your browser">
-  <meta property="og:description" content="Convert audio between MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, M4A, AIFF, CAF, WMA and AMR in your browser. No upload, no size limit, lossless where the target allows.">
+  <meta property="og:title" content="Audio converter: MP3, WAV, FLAC, OGG, Opus, AAC, AIFF, free in your browser">
+  <meta property="og:description" content="Convert audio between MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, AIFF, CAF, WebM and QOA in your browser. Choose sample rate, channels, bit depth and bitrate; tags carry over. No upload, no size limit.">
   <meta property="og:site_name" content="audiojs">
   <meta property="og:image" content="https://audiojs.dev/icon-512.png">
   <meta property="og:image:width" content="512">
@@ -40,7 +40,7 @@
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "Convert audio between MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, M4A, AIFF, CAF, WMA and AMR in your browser. No upload, no size limit, lossless where the target allows.",
+        "description": "Convert audio between MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, AIFF, CAF, WebM and QOA in your browser. Choose sample rate, channels, bit depth and bitrate; tags carry over. No upload, no size limit.",
         "author": {
           "@type": "Organization",
           "name": "audiojs",
@@ -91,7 +91,23 @@
             "name": "Which formats can I convert to?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "MP3 (256 kbps), WAV (16-bit), FLAC, OGG Vorbis, Opus and AAC."
+              "text": "MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, AIFF, CAF, WebM (Opus) and QOA. Lossy formats take a bitrate (or a quality level for Vorbis); PCM formats take a bit depth of 16, 24 or 32-bit float."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do the tags survive?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Title, artist, album, year and the other common fields are read from MP3, FLAC, WAV, M4A, Ogg and Opus sources and written into WAV, MP3, FLAC, AIFF, OGG and Opus outputs."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I change the sample rate or make it mono?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Pick a sample rate from 8 to 96 kHz (polyphase resampling with a Kaiser-windowed filter) and mono or stereo. Opus and WebM always run at 48 kHz internally."
             }
           },
           {
@@ -99,15 +115,7 @@
             "name": "Is the conversion lossless?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "WAV and FLAC preserve every decoded sample. Converting between two lossy formats (MP3 to AAC) re-compresses; keep a lossless master when you can."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is there a file size or length limit?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. The file is processed in your browser, so the only limit is your device memory. Hour-long recordings are fine."
+              "text": "WAV, FLAC, AIFF and CAF preserve every decoded sample at the chosen bit depth. Converting between two lossy formats re-compresses; keep a lossless master when you can."
             }
           }
         ]
@@ -120,7 +128,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=71be793d">
+  <link rel="modulepreload" href="/util/util.js?v=2fcf0d24">
 </head>
 <body>
   <header class="top">
@@ -132,30 +140,46 @@
   <main class="inner">
     <section class="hero">
       <h1>Audio converter</h1>
-      <p>Drop an audio file. Save it as MP3, WAV, FLAC, OGG, Opus or AAC.</p>
+      <p>Drop an audio file. Pick the format, sample rate, channels and quality. Tags carry over.</p>
     </section>
 
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
       <div class="t">Drop an audio file here</div>
       <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
-      <input type="file" id="file" accept="audio/*,video/*,.m4a,.flac,.opus,.wma,.amr,.caf,.aiff,.ac3,.dts">
+      <input type="file" id="file" accept="audio/*,video/*,.m4a,.flac,.opus,.wma,.amr,.caf,.aiff,.ac3,.dts,.qoa">
     </div>
-    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/decode" target="_blank" rel="noopener"><code>@audio/decode</code></a> and <a href="https://npmjs.com/package/@audio/encode" target="_blank" rel="noopener"><code>@audio/encode</code></a>.</p>
+    <form class="opts" id="opts">
+      <label>Sample rate <select name="rate"><option value="">keep</option><option value="8000">8 kHz</option><option value="16000">16 kHz</option><option value="22050">22.05 kHz</option><option value="32000">32 kHz</option><option value="44100">44.1 kHz</option><option value="48000">48 kHz</option><option value="96000">96 kHz</option></select></label>
+      <label>Channels <select name="channels"><option value="">keep</option><option value="1">mono</option><option value="2">stereo</option></select></label>
+      <label data-for="wav aiff caf flac">Bit depth <select name="bitDepth"><option value="16">16-bit</option><option value="24">24-bit</option><option value="32">32-bit float</option></select></label>
+      <label data-for="mp3 aac opus webm">Bitrate <select name="bitrate"><option value="64">64 kbps</option><option value="96">96 kbps</option><option value="128">128 kbps</option><option value="192">192 kbps</option><option value="256" selected>256 kbps</option><option value="320">320 kbps</option></select></label>
+      <label data-for="ogg">Quality <select name="quality"><option value="3">3 (≈112 kbps)</option><option value="5">5 (≈160 kbps)</option><option value="6" selected>6 (≈192 kbps)</option><option value="8">8 (≈256 kbps)</option><option value="10">10 (≈500 kbps)</option></select></label>
+    </form>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/decode" target="_blank" rel="noopener"><code>@audio/decode</code></a>, <a href="https://npmjs.com/package/@audio/encode" target="_blank" rel="noopener"><code>@audio/encode</code></a>, <a href="https://npmjs.com/package/@audio/resample" target="_blank" rel="noopener"><code>@audio/resample</code></a>.</p>
     <section class="seo">
       <h2>Convert audio without uploading it</h2>
-      <p>This converter decodes with <code>@audio/decode</code> and encodes with <code>@audio/encode</code>, both open-source JavaScript and WebAssembly libraries from audiojs. Your file stays on your device; the page works offline once loaded. No account, no watermark, no queue.</p>
-      <h3>MP3 to WAV, M4A to MP3, FLAC to MP3, WAV to FLAC</h3>
-      <p>Pick the target format after the file loads. WAV and FLAC are lossless and suit editing, mastering and archiving. MP3 plays everywhere. Opus gives the smallest files for speech and music alike; AAC is the format Apple devices and video containers expect. OGG Vorbis remains common in games and open-source tooling.</p>
-      <h3>Sample rate and channels</h3>
-      <p>Channels and sample rate follow the source: a 44.1 kHz stereo MP3 becomes a 44.1 kHz stereo WAV. Opus always runs at 48 kHz and resamples internally. 5.1 tracks keep six channels in WAV and FLAC.</p>
+      <p>This converter decodes with <code>@audio/decode</code>, resamples with <code>@audio/resample</code> and encodes with <code>@audio/encode</code>, open-source JavaScript and WebAssembly libraries from audiojs. Your file stays on your device; the page works offline once loaded. No account, no watermark, no queue, no size limit.</p>
+      <h3>Ten output formats</h3>
+      <ul>
+        <li><strong>MP3</strong> plays everywhere; 256 kbps is transparent for most material, 320 for archiving.</li>
+        <li><strong>WAV, AIFF, CAF</strong> are uncompressed PCM at 16, 24 or 32-bit float: editing, mastering, sample libraries.</li>
+        <li><strong>FLAC</strong> is lossless at about half the size of WAV; 16 or 24-bit.</li>
+        <li><strong>Opus</strong> and <strong>WebM</strong> give the smallest files at equal quality; 64 kbps Opus speech is already clean. Note that Safari does not play Ogg Opus in a browser player; the file itself is fine everywhere else.</li>
+        <li><strong>AAC</strong> is the format Apple devices and video containers expect. <strong>OGG Vorbis</strong> remains common in games and open-source tooling. <strong>QOA</strong> is a tiny fast lossy codec for games.</li>
+      </ul>
+      <h3>Sample rate, channels, bit depth, bitrate</h3>
+      <p>Everything follows the source unless you change it. Set 16 kHz mono for speech-to-text pipelines, 44.1 kHz for CD-style delivery, 48 kHz for video, 96 kHz to match a session. Mono downmix averages the channels; stereo from mono duplicates.</p>
+      <h3>Tags carry over</h3>
+      <p>Title, artist, album, year, cover art and similar fields are read from the source and written into the target when the target format has a tag chunk (WAV, MP3, FLAC, AIFF, OGG, Opus). The file line shows the title and artist that were found.</p>
       <h3>Video files</h3>
       <p>MP4, MOV, MKV, WebM and AVI files are accepted too: their audio track is extracted and converted. See <a href="/util/extract-audio/">extract audio from video</a> for the details.</p>
       <h3>Questions</h3>
       <p><strong>Which formats can I convert from?</strong> MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, M4A, ALAC, AIFF, CAF, WMA, AMR, AC-3, DTS and QOA, plus the audio track of MP4, MOV, MKV, WebM and AVI video.</p>
-      <p><strong>Which formats can I convert to?</strong> MP3 (256 kbps), WAV (16-bit), FLAC, OGG Vorbis, Opus and AAC.</p>
-      <p><strong>Is the conversion lossless?</strong> WAV and FLAC preserve every decoded sample. Converting between two lossy formats (MP3 to AAC) re-compresses; keep a lossless master when you can.</p>
-      <p><strong>Is there a file size or length limit?</strong> No. The file is processed in your browser, so the only limit is your device memory. Hour-long recordings are fine.</p>
+      <p><strong>Which formats can I convert to?</strong> MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, AIFF, CAF, WebM (Opus) and QOA. Lossy formats take a bitrate (or a quality level for Vorbis); PCM formats take a bit depth of 16, 24 or 32-bit float.</p>
+      <p><strong>Do the tags survive?</strong> Title, artist, album, year and the other common fields are read from MP3, FLAC, WAV, M4A, Ogg and Opus sources and written into WAV, MP3, FLAC, AIFF, OGG and Opus outputs.</p>
+      <p><strong>Can I change the sample rate or make it mono?</strong> Yes. Pick a sample rate from 8 to 96 kHz (polyphase resampling with a Kaiser-windowed filter) and mono or stereo. Opus and WebM always run at 48 kHz internally.</p>
+      <p><strong>Is the conversion lossless?</strong> WAV, FLAC, AIFF and CAF preserve every decoded sample at the chosen bit depth. Converting between two lossy formats re-compresses; keep a lossless master when you can.</p>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -175,8 +199,26 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=71be793d'
-    tool({ process: '/util/convert-audio/process.js?v=85c49385', ...{} })
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=2fcf0d24'
+    const BITRATES = { mp3: [96, 128, 192, 256, 320], aac: [64, 96, 128, 192, 256], opus: [32, 64, 96, 128, 160, 192], webm: [32, 64, 96, 128, 160, 192] }
+    const DEPTHS = { wav: [16, 24, 32], aiff: [16, 24], caf: [16, 32], flac: [16, 24] }
+    const form = $('opts')
+    const show = (sel, allowed, value) => { for (const opt of sel.options) opt.hidden = !allowed.includes(+opt.value); if (!allowed.includes(+sel.value)) sel.value = allowed[Math.min(allowed.length - 1, Math.floor(allowed.length / 2))] }
+    tool({
+      process: '/util/convert-audio/process.js?v=a0ed57ab', ...{},
+      onFormat(f) {
+        for (const label of form.querySelectorAll('[data-for]')) label.hidden = !label.dataset.for.split(' ').includes(f)
+        if (BITRATES[f]) show(form.querySelector('[name=bitrate]'), BITRATES[f], form.querySelector('[name=bitrate]').value)
+        if (DEPTHS[f]) show(form.querySelector('[name=bitDepth]'), DEPTHS[f])
+        form.querySelector('[name=rate]').closest('label').hidden = f === 'opus' || f === 'webm' // always 48 kHz
+      },
+      encodeOpts(f, o) {
+        if (BITRATES[f]) return { bitrate: +o.bitrate || 128 }
+        if (DEPTHS[f]) return { bitDepth: +o.bitDepth || 16 }
+        if (f === 'ogg') return { quality: +o.quality || 6 }
+        return {}
+      }
+    })
   </script>
 </body>
 </html>
