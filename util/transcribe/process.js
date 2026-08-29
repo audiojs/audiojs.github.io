@@ -2,7 +2,7 @@
 import { fmtTime } from '/util/util.js'
 const load = u => import(u).catch(() => new Promise(r => setTimeout(r, 300)).then(() => import(u)))
 const asrLib = import('/util/vendor/neural-asr.js?v=f2678409')
-const subtitleLib = import('/util/vendor/subtitle.js?v=9404dfcf')
+const subtitleLib = load('https://esm.sh/@audio/subtitle@0.1.0')
 
 const MODEL_LABEL = { 'onnx-community/whisper-tiny': 'Tiny', 'onnx-community/whisper-base': 'Base', 'onnx-community/whisper-small': 'Small' }
 // onnx-community's tiny/base/small exports drop cross-attention outputs word-level timestamps need;

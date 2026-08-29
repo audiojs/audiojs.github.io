@@ -4,8 +4,8 @@ const load = u => import(u).catch(() => new Promise(r => setTimeout(r, 300)).the
 const mirLib = load('https://esm.sh/@audio/mir@1.1.3')
 const beatLib = load('https://esm.sh/@audio/beat@2.1.3')
 const midiLib = load('https://esm.sh/@audio/midi@1.0.2')
-const musicxmlLib = import('/util/vendor/musicxml.js?v=86644131')
-const renderLib = import('/util/vendor/midi-render.js?v=46a1da90')
+const musicxmlLib = load('https://esm.sh/@audio/musicxml@0.1.0')
+const renderLib = load('https://esm.sh/@audio/midi-render@0.1.0')
 const noteLib = load('https://esm.sh/@audio/note@1.0.2')
 
 const MAJOR = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']

@@ -232,7 +232,7 @@
   <script type="module">
     import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
     const remuxLib = import('https://esm.sh/@audio/encode-mp4@1.0.0/remux').then(m => m.remux)
-    const decodeLib = import('/util/vendor/decode/index.js?v=9937d5e2').then(m => m.default)
+    const decodeLib = import('https://esm.sh/@audio/decode@3.15.0').then(m => m.default)
 
     const dropA = $('drop'), fileA = $('file'), dropB = $('drop2'), fileB = $('file2'), dropBWrap = $('dropBWrap')
     const form = $('opts'), panel = $('panel'), name = $('name'), meta = $('meta'), reset = $('reset')
