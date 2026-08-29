@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=2fcf0d24">
+  <link rel="stylesheet" href="/util/util.css?v=88caac66">
+  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
 </head>
 <body>
   <header class="top">
@@ -167,14 +167,21 @@
         <h3>More audio utilities</h3>
         <ul>
           <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
           <li><a href="/util/convert-audio/">Audio converter</a></li>
           <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
           <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
           <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
           <li><a href="/util/vocal-remover/">Vocal remover</a></li>
           <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI and sheet music</a></li>
           <li><a href="/util/tuner/">Tuner</a></li>
           <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
           <li><a href="/util/measure/">Room and speaker measurement</a></li>
         </ul>
       </div>
@@ -182,7 +189,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=2fcf0d24'
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
     tool({ process: '/util/spectrogram/process.js?v=8205d3b9', ...{"busy":"Computing spectrogram…"} })
   </script>
 </body>

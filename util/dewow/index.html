@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fix wow and flutter: pitch drift in tape, cassette and vinyl transfers · audiojs</title>
+  <meta name="description" content="Correct wow (slow pitch drift) and flutter (fast wobble) in a tape or vinyl transfer, in your browser. Tracks the music, a hum or a reference tone. No upload.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/dewow/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/dewow/">
+  <meta property="og:title" content="Fix wow and flutter: pitch drift in tape, cassette and vinyl transfers">
+  <meta property="og:description" content="Correct wow (slow pitch drift) and flutter (fast wobble) in a tape or vinyl transfer, in your browser. Tracks the music, a hum or a reference tone. No upload.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/dewow/#app",
+        "name": "Wow and flutter fixer",
+        "url": "https://audiojs.dev/util/dewow/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Correct wow (slow pitch drift) and flutter (fast wobble) in a tape or vinyl transfer, in your browser. Tracks the music, a hum or a reference tone. No upload.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/",
+          "logo": "https://audiojs.dev/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/denoise"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Wow and flutter fixer",
+            "item": "https://audiojs.dev/util/dewow/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is wow and flutter?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Wow is slow pitch drift, below about 6 Hz: a stretched belt, an eccentric capstan, a warped record. Flutter is faster wobble, up to a few tens of Hz: a rough motor, a dirty pinch roller. Both come from a transport that does not turn at a constant speed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does it find the speed without a reference recording?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The default mode tracks stable partials in the music itself: a tone that should hold one frequency reveals the transport's actual speed when it wobbles instead (a phase-vocoder implementation of the technique behind Celemony Capstan). Reference mode does the same on one known tone, mains hum or a calibration tone; pitch mode follows a monophonic voice or instrument."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What can it not fix?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Dropouts, azimuth error (a stereo time skew, not a speed error), and anything with no stable partial or reference tone to lock onto: a cappella breath, pure noise, hard cuts. Pitch mode also cannot tell real musical vibrato from mechanical wow, so it only works well on lightly-inflected material."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does flutter above about 40 Hz not show up?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The speed curve is itself sampled at roughly 86 Hz (sample rate divided by the analysis hop), so anything above its Nyquist, about 43 Hz, cannot be represented at all. Most tape and turntable flutter sits below that."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it work on drum loops or spoken word with no held notes?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Not well. Percussion-only material gives the estimator nothing to lock onto. Pick a passage with a sustained note or vowel, or switch to reference mode if a hum or tone runs through the recording."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css?v=88caac66">
+  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/denoise" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Wow and flutter fixer</h1>
+      <p>Drop a transfer with pitch drift. See the wow and flutter measured, corrected, and the speed curve before and after.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a tape, cassette or vinyl transfer here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <style>#opts label { min-width: 0 } #opts select[name=mode] { min-width: 0; max-width: 100%; text-overflow: ellipsis }</style>
+    <form class="opts" id="opts">
+      <label>Method <select name="mode">
+        <option value="partial" selected>Track the music's own partials</option>
+        <option value="reference">Lock to a reference tone (mains hum, test tone)</option>
+        <option value="pitch">Monophonic pitch (voice, solo instrument)</option>
+      </select></label>
+      <label id="refRow" hidden>Reference frequency <input type="number" name="refFreq" value="50" min="1" max="20000" step="1" style="width:5.5em;font:inherit;padding:8px;border:1px solid var(--c-rule);border-radius:6px"> Hz <span style="color:var(--c-mute);font-size:var(--fs-xs)">60 for US mains, 1000+ for a calibration tone</span></label>
+      <label><input type="checkbox" name="wow" checked> Wow <span style="color:var(--c-mute);font-size:var(--fs-xs)">slow drift</span></label>
+      <label><input type="checkbox" name="flutter" checked> Flutter <span style="color:var(--c-mute);font-size:var(--fs-xs)">fast wobble</span></label>
+    </form>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/denoise-dewow" target="_blank" rel="noopener"><code>@audio/denoise-dewow</code></a>.</p>
+    <section class="seo">
+    <h2>Wow and flutter correction that shows its work</h2>
+    <p>This page runs <code>@audio/denoise-dewow</code>, an open-source phase-vocoder implementation of the classical (non-machine-learning) technique behind tools like Celemony Capstan. It estimates the transport's instantaneous speed over time and corrects it by variable-rate resampling, in your browser. Nothing is uploaded.</p>
+    <h3>Three ways to find the speed</h3>
+    <ul>
+      <li><strong>Track partials</strong> (default): follows several stable tones in the music at once with McAulay-Quatieri partial tracking, combining them into one speed curve. Works on anything with a few seconds of sustained pitched content.</li>
+      <li><strong>Lock to a reference tone</strong>: locks onto one known frequency, such as 50 or 60 Hz mains hum bleeding into the recording, or a calibration tone. Often the most accurate option when a hum is present.</li>
+      <li><strong>Monophonic pitch</strong>: follows a single voice or instrument's fundamental. A functional correction rather than a precise one, since real pitch inflection and mechanical wow are hard to tell apart.</li>
+    </ul>
+    <h3>What the numbers mean</h3>
+    <p>Wow and flutter are reported as unweighted peak deviation from nominal speed, before and after correction: not the IEC 60386 / DIN 45507 figure, which applies a psychoacoustic weighting curve this page does not implement. Confidence is the fraction of the recording with a usable speed reading. The speed curve chart plots the source's drift in grey and the corrected result in the accent color, both against a ±3% scale.</p>
+    <h3>Honest limits</h3>
+    <p>This corrects speed, nothing else. Dropouts and azimuth error (a stereo channel time-skew, not a speed defect) are out of scope, as is anything with no stable tone to track: a cappella breath, pure noise, hard cuts. See the <a href="https://github.com/audiojs/denoise/tree/main/packages/denoise-dewow" target="_blank" rel="noopener">package README</a> for the measured accuracy this method achieves on its own test signal.</p>
+      <h3>Questions</h3>
+      <p><strong>What is wow and flutter?</strong> Wow is slow pitch drift, below about 6 Hz: a stretched belt, an eccentric capstan, a warped record. Flutter is faster wobble, up to a few tens of Hz: a rough motor, a dirty pinch roller. Both come from a transport that does not turn at a constant speed.</p>
+      <p><strong>How does it find the speed without a reference recording?</strong> The default mode tracks stable partials in the music itself: a tone that should hold one frequency reveals the transport's actual speed when it wobbles instead (a phase-vocoder implementation of the technique behind Celemony Capstan). Reference mode does the same on one known tone, mains hum or a calibration tone; pitch mode follows a monophonic voice or instrument.</p>
+      <p><strong>What can it not fix?</strong> Dropouts, azimuth error (a stereo time skew, not a speed error), and anything with no stable partial or reference tone to lock onto: a cappella breath, pure noise, hard cuts. Pitch mode also cannot tell real musical vibrato from mechanical wow, so it only works well on lightly-inflected material.</p>
+      <p><strong>Why does flutter above about 40 Hz not show up?</strong> The speed curve is itself sampled at roughly 86 Hz (sample rate divided by the analysis hop), so anything above its Nyquist, about 43 Hz, cannot be represented at all. Most tape and turntable flutter sits below that.</p>
+      <p><strong>Does it work on drum loops or spoken word with no held notes?</strong> Not well. Percussion-only material gives the estimator nothing to lock onto. Pick a passage with a sustained note or vowel, or switch to reference mode if a hum or tone runs through the recording.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI and sheet music</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    const form = $('opts'), refRow = $('refRow'), mode = form.querySelector('[name=mode]')
+    const syncMode = () => refRow.hidden = mode.value !== 'reference'
+    mode.addEventListener('change', syncMode)
+    syncMode()
+    tool({ process: '/util/dewow/process.js?v=de14c71b', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"defaultFormat":"wav","busy":"Tracking pitch drift…"} })
+  </script>
+</body>
+</html>

@@ -108,7 +108,7 @@ for (const name of engines) {
   })
   for (const [f, r] of Object.entries(conv)) {
     // AAC rides on WebCodecs: Firefox has no encoder, and the page must say so instead of failing silently
-    if (f === 'aac' && name === 'firefox') { ok(/isn't available/.test(String(r)), `convert-audio → aac on firefox: explains the missing encoder`); continue }
+    if ((f === 'aac' || f === 'm4a') && name === 'firefox') { ok(/isn't available/.test(String(r)), `convert-audio → ${f} on firefox: explains the missing encoder`); continue }
     ok(typeof r === 'object' && r.ch === 2 && r.sec > 2.9 && r.sec < 3.2, `convert-audio → ${f}: ${JSON.stringify(r)}`)
   }
   const params = await page.evaluate(async () => {

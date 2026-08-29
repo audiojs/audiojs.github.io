@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transcribe audio to text and subtitles: free speech-to-text in your browser · audiojs</title>
+  <meta name="description" content="Transcribe audio or video to text, SRT and VTT in your browser with Whisper. The model downloads once from huggingface.co, then runs offline. No upload.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/transcribe/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/transcribe/">
+  <meta property="og:title" content="Transcribe audio to text and subtitles: free speech-to-text in your browser">
+  <meta property="og:description" content="Transcribe audio or video to text, SRT and VTT in your browser with Whisper. The model downloads once from huggingface.co, then runs offline. No upload.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/transcribe/#app",
+        "name": "Transcribe audio to text and subtitles",
+        "url": "https://audiojs.dev/util/transcribe/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Transcribe audio or video to text, SRT and VTT in your browser with Whisper. The model downloads once from huggingface.co, then runs offline. No upload.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/",
+          "logo": "https://audiojs.dev/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/neural"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Transcribe audio to text and subtitles",
+            "item": "https://audiojs.dev/util/transcribe/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is the audio uploaded anywhere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Recognition runs in your browser with Whisper through @audio/neural-asr (transformers.js on ONNX Runtime, WASM or WebGPU). Audio never leaves your device. The Whisper model itself downloads once from huggingface.co and is cached by the browser; every transcription after that runs offline."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it detect the language automatically?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The browser Whisper pipeline does not auto-detect language; leaving the selector on Auto quietly assumes English. Pick the spoken language from the list for anything else — the wrong language still produces fluent but wrong text."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which model should I pick?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tiny (91 MB) is fastest, good for a quick draft of clear speech. Base (136 MB) is the default: a real accuracy step up for a modest extra download. Small (285 MB) gets closest to a human transcript but downloads more and runs slower, especially on a phone."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How accurate are word-level timestamps?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "They come from Whisper's cross-attention alignment, documented as accurate to roughly ±100 ms, sometimes worse: short function words can land at the same instant. Sentence timestamps use Whisper's own segment boundaries and are more reliable; pick word-level only when you need karaoke-style captions."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens with silence or music?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Whisper has no explicit silent output. Fed music, noise or long silence it can produce fluent invented text instead of nothing. Trim non-speech sections before transcribing anything you plan to publish as-is."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css?v=88caac66">
+  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/neural" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Transcribe audio to text and subtitles</h1>
+      <p>Drop an audio or video file. Get a transcript plus SRT and VTT subtitle files, entirely on your device.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop an audio or video file here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <form class="opts" id="opts">
+      <label>Language <select name="language">
+        <option value="en">Auto (assumes English)</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="pt">Portuguese</option>
+        <option value="ru">Russian</option>
+        <option value="ja">Japanese</option>
+        <option value="zh">Chinese</option>
+        <option value="ko">Korean</option>
+        <option value="hi">Hindi</option>
+        <option value="ar">Arabic</option>
+      </select></label>
+      <label>Model <select name="model">
+        <option value="onnx-community/whisper-tiny">Tiny · fastest · 91 MB</option>
+        <option value="onnx-community/whisper-base" selected>Base · better · 136 MB</option>
+        <option value="onnx-community/whisper-small">Small · best · 285 MB</option>
+      </select></label>
+      <label>Timestamps <select name="timestamps">
+        <option value="segment">Per sentence</option>
+        <option value="word">Per word</option>
+      </select></label>
+    </form>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/neural-asr" target="_blank" rel="noopener"><code>@audio/neural-asr</code></a> and <a href="https://npmjs.com/package/@audio/subtitle" target="_blank" rel="noopener"><code>@audio/subtitle</code></a>.</p>
+    <section class="seo">
+      <h2>Whisper speech recognition in your browser</h2>
+      <p>This page runs <code>@audio/neural-asr</code>, a wrapper around <a href="https://github.com/huggingface/transformers.js" target="_blank" rel="noopener">transformers.js</a> and ONNX Runtime that drives <a href="https://cdn.openai.com/papers/whisper.pdf" target="_blank" rel="noopener">Whisper</a> (Radford et al., OpenAI 2022) entirely on your device. Drop a file, watch the model download once, read the transcript, save it as text or subtitles. Nothing is sent anywhere.</p>
+      <h3>Three model sizes</h3>
+      <p>Tiny, base and small are the same Whisper architecture at 39M, 74M and 244M parameters, converted to ONNX by the onnx-community project and 4-bit block-quantized (<code>dtype: 'q4'</code>) for a browser-sized download: about 91, 136 and 285 MB. Bigger models make fewer mistakes on accents, background noise and unusual words, at the cost of a longer download and slower inference.</p>
+      <h3>Sentence or word timestamps</h3>
+      <p>Segment timestamps come straight from Whisper's own chunk boundaries and are the reliable default. Word-level timestamps need cross-attention data that only the older Xenova Whisper exports carry, so picking "Per word" switches the model to the matching Xenova conversion automatically.</p>
+      <h3>Transcript, SRT, VTT</h3>
+      <p><code>@audio/subtitle</code> writes the recognised segments (or words, via <code>fromWords</code>, when word timestamps are on) to SubRip (.srt) and WebVTT (.vtt) alongside a plain .txt transcript, ready to attach to a video or feed to an editor.</p>
+      <h3>Questions</h3>
+      <p><strong>Is the audio uploaded anywhere?</strong> No. Recognition runs in your browser with Whisper through @audio/neural-asr (transformers.js on ONNX Runtime, WASM or WebGPU). Audio never leaves your device. The Whisper model itself downloads once from huggingface.co and is cached by the browser; every transcription after that runs offline.</p>
+      <p><strong>Does it detect the language automatically?</strong> No. The browser Whisper pipeline does not auto-detect language; leaving the selector on Auto quietly assumes English. Pick the spoken language from the list for anything else — the wrong language still produces fluent but wrong text.</p>
+      <p><strong>Which model should I pick?</strong> Tiny (91 MB) is fastest, good for a quick draft of clear speech. Base (136 MB) is the default: a real accuracy step up for a modest extra download. Small (285 MB) gets closest to a human transcript but downloads more and runs slower, especially on a phone.</p>
+      <p><strong>How accurate are word-level timestamps?</strong> They come from Whisper's cross-attention alignment, documented as accurate to roughly ±100 ms, sometimes worse: short function words can land at the same instant. Sentence timestamps use Whisper's own segment boundaries and are more reliable; pick word-level only when you need karaoke-style captions.</p>
+      <p><strong>What happens with silence or music?</strong> Whisper has no explicit silent output. Fed music, noise or long silence it can produce fluent invented text instead of nothing. Trim non-speech sections before transcribing anything you plan to publish as-is.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI and sheet music</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    tool({ process: '/util/transcribe/process.js?v=d6105826', ...{"busy":"Loading the speech model…"} })
+  </script>
+</body>
+</html>

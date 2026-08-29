@@ -108,3 +108,6 @@ audio { width: 100%; display: block; }
 footer { padding: 32px 0 48px; text-align: center; font-size: var(--fs-xs); font-weight: 500; color: var(--c-mute); }
 footer a { text-decoration: none; }
 footer a:hover { text-decoration: underline; }
+
+.row.files { display: flex; flex-wrap: wrap; gap: 10px }
+.row.files .btn { flex: 0 1 auto }

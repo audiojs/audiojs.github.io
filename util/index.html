@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Free audio utilities that run in your browser · audiojs</title>
-  <meta name="description" content="Extract audio from video, convert formats, measure loudness, remove noise, find key and BPM, remove vocals, change pitch and tempo, tune, record, view spectrograms and measure your room. Every tool runs in the browser on audiojs open-source packages; nothing is uploaded.">
+  <meta name="description" content="Extract audio from video, replace or remove a video soundtrack, convert formats, transcribe speech to subtitles, measure loudness, remove noise and silence, fix wow and flutter, check whether a FLAC is really lossless, find key and BPM, remove vocals, change pitch and tempo, render MIDI, transcribe audio to MIDI and sheet music, tune, record, view spectrograms and measure your room. Every tool runs in the browser on audiojs open-source packages; nothing is uploaded.">
   <meta name="theme-color" content="#0d1014">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://audiojs.dev/util/">
@@ -14,7 +14,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://audiojs.dev/util/">
   <meta property="og:title" content="Free audio utilities that run in your browser">
-  <meta property="og:description" content="Extract audio from video, convert formats, measure loudness, remove noise, find key and BPM, remove vocals, change pitch and tempo, tune, record, view spectrograms and measure your room. Every tool runs in the browser on audiojs open-source packages; nothing is uploaded.">
+  <meta property="og:description" content="Extract audio from video, replace or remove a video soundtrack, convert formats, transcribe speech to subtitles, measure loudness, remove noise and silence, fix wow and flutter, check whether a FLAC is really lossless, find key and BPM, remove vocals, change pitch and tempo, render MIDI, transcribe audio to MIDI and sheet music, tune, record, view spectrograms and measure your room. Every tool runs in the browser on audiojs open-source packages; nothing is uploaded.">
   <meta property="og:site_name" content="audiojs">
   <meta property="og:image" content="https://audiojs.dev/icon-512.png">
   <meta property="og:image:width" content="512">
@@ -40,7 +40,7 @@
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "Extract audio from video, convert formats, measure loudness, remove noise, find key and BPM, remove vocals, change pitch and tempo, tune, record, view spectrograms and measure your room. Every tool runs in the browser on audiojs open-source packages; nothing is uploaded.",
+        "description": "Extract audio from video, replace or remove a video soundtrack, convert formats, transcribe speech to subtitles, measure loudness, remove noise and silence, fix wow and flutter, check whether a FLAC is really lossless, find key and BPM, remove vocals, change pitch and tempo, render MIDI, transcribe audio to MIDI and sheet music, tune, record, view spectrograms and measure your room. Every tool runs in the browser on audiojs open-source packages; nothing is uploaded.",
         "author": {
           "@type": "Organization",
           "name": "audiojs",
@@ -76,8 +76,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=2fcf0d24">
+  <link rel="stylesheet" href="/util/util.css?v=88caac66">
+  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
 </head>
 <body>
   <header class="top">
@@ -92,15 +92,22 @@
       <p>Each one runs in your browser on an open-source audiojs package. Nothing is uploaded.</p>
     </section>
     <ul class="index">
-      <li><a href="/util/extract-audio/"><div class="n">Extract audio from video</div><div class="d">Video → MP3, WAV, FLAC, OGG, Opus, AAC</div><div class="p"><code>@audio/decode</code> · <code>@audio/encode</code></div></a></li>
-      <li><a href="/util/convert-audio/"><div class="n">Audio converter</div><div class="d">MP3, WAV, FLAC, OGG, Opus, AAC, AIFF, CAF, WebM, QOA; sample rate, channels, bit depth, bitrate</div><div class="p"><code>@audio/decode</code> · <code>@audio/encode</code> · <code>@audio/resample</code></div></a></li>
+      <li><a href="/util/extract-audio/"><div class="n">Extract audio from video</div><div class="d">Video → MP3, WAV, FLAC, M4A, ALAC, OGG, Opus, AAC</div><div class="p"><code>@audio/decode</code> · <code>@audio/encode</code></div></a></li>
+      <li><a href="/util/video-audio/"><div class="n">Remove or replace video audio</div><div class="d">Strip the audio track, or swap in AAC, Opus, ALAC or FLAC — the video is never re-encoded</div><div class="p"><code>@audio/encode-mp4</code> · <code>@audio/decode</code> · <code>@audio/encode</code></div></a></li>
+      <li><a href="/util/convert-audio/"><div class="n">Audio converter</div><div class="d">MP3, WAV, FLAC, M4A, ALAC, WavPack, OGG, Opus, AAC, AIFF, CAF, WebM, QOA; reads APE, TTA, Musepack, DSD, tracker modules too</div><div class="p"><code>@audio/decode</code> · <code>@audio/encode</code> · <code>@audio/resample</code></div></a></li>
       <li><a href="/util/loudness/"><div class="n">Loudness meter and normalizer</div><div class="d">LUFS, true peak, loudness range; normalize for Spotify, YouTube, podcasts</div><div class="p"><code>@audio/loudness</code> · <code>@audio/dynamics</code></div></a></li>
       <li><a href="/util/denoise/"><div class="n">Noise remover</div><div class="d">Background noise, hum, clicks, wind, plosives, reverb</div><div class="p"><code>@audio/denoise</code></div></a></li>
+      <li><a href="/util/desilence/"><div class="n">Remove silence from audio</div><div class="d">Podcast smart speed, silence removal, trim start/end — voice activity detection</div><div class="p"><code>@audio/denoise-desilence</code></div></a></li>
+      <li><a href="/util/dewow/"><div class="n">Wow and flutter fixer</div><div class="d">Correct slow pitch drift and fast wobble in tape, cassette and vinyl transfers</div><div class="p"><code>@audio/denoise-dewow</code></div></a></li>
+      <li><a href="/util/transcribe/"><div class="n">Transcribe audio to text and subtitles</div><div class="d">Whisper speech-to-text; TXT, SRT, VTT; sentence or word timestamps</div><div class="p"><code>@audio/neural-asr</code> · <code>@audio/subtitle</code></div></a></li>
       <li><a href="/util/key-bpm/"><div class="n">Key and BPM finder</div><div class="d">Musical key, Camelot code, tempo, chords</div><div class="p"><code>@audio/mir</code> · <code>@audio/beat</code></div></a></li>
       <li><a href="/util/vocal-remover/"><div class="n">Vocal remover</div><div class="d">Karaoke track or isolated vocal from a stereo mix</div><div class="p"><code>@audio/vocals</code></div></a></li>
       <li><a href="/util/pitch-tempo/"><div class="n">Pitch and tempo changer</div><div class="d">Transpose semitones, change speed without changing pitch</div><div class="p"><code>@audio/shift</code> · <code>@audio/stretch</code></div></a></li>
+      <li><a href="/util/midi-to-mp3/"><div class="n">MIDI to MP3</div><div class="d">Render a MIDI file with a synth-GM instrument set, no soundfont</div><div class="p"><code>@audio/midi-render</code> · <code>@audio/midi-parse</code></div></a></li>
+      <li><a href="/util/audio-to-midi/"><div class="n">Audio to MIDI and sheet music</div><div class="d">Transcribe a melody to MIDI, MusicXML and ABC — with a synthesized playback</div><div class="p"><code>@audio/mir</code> · <code>@audio/beat</code> · <code>@audio/midi</code> · <code>@audio/musicxml</code> · <code>@audio/midi-render</code></div></a></li>
       <li><a href="/util/tuner/"><div class="n">Tuner</div><div class="d">Chromatic tuner for guitar, bass, violin, voice</div><div class="p"><code>@audio/pitch</code> · <code>@audio/note</code> · <code>@audio/mic</code></div></a></li>
       <li><a href="/util/recorder/"><div class="n">Audio recorder</div><div class="d">Record from the microphone, save as MP3, WAV, FLAC, Opus</div><div class="p"><code>@audio/mic</code> · <code>@audio/encode</code></div></a></li>
+      <li><a href="/util/lossless-check/"><div class="n">Lossless audio checker</div><div class="d">Detect a fake lossless FLAC or WAV: spectral cutoff, edge sharpness, spectral holes</div><div class="p"><code>@audio/measure-lossy</code></div></a></li>
       <li><a href="/util/spectrogram/"><div class="n">Spectrogram</div><div class="d">Frequency-over-time image of any recording</div><div class="p"><code>@audio/stft</code> · <code>@audio/spectral</code></div></a></li>
       <li><a href="/util/measure/"><div class="n">Room and speaker measurement</div><div class="d">Frequency response, reverb time (RT60), latency, via a sine sweep</div><div class="p"><code>@audio/measure</code> · <code>@audio/synth</code> · <code>@audio/mic</code></div></a></li>
     </ul>

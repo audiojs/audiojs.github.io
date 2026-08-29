@@ -91,7 +91,7 @@
             "name": "Which video formats are supported?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR."
+              "text": "Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, E-AC-3 (Dolby Digital Plus), DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR."
             }
           },
           {
@@ -99,7 +99,7 @@
             "name": "Which output formats can I save?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "MP3, WAV, FLAC, OGG Vorbis, Opus and AAC. WAV and FLAC are lossless; MP3, OGG, Opus and AAC are compressed."
+              "text": "MP3, WAV, FLAC, M4A (AAC), ALAC, OGG Vorbis, Opus and AAC. WAV, FLAC and ALAC are lossless; MP3, M4A, OGG, Opus and AAC are compressed. M4A with AAC needs a browser with WebCodecs (Chrome, Edge, Safari)."
             }
           },
           {
@@ -127,8 +127,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=23f3d7c2">
-  <link rel="modulepreload" href="/util/util.js?v=2fcf0d24">
+  <link rel="stylesheet" href="/util/util.css?v=88caac66">
+  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
 </head>
 <body>
   <header class="top">
@@ -157,10 +157,10 @@
       <p>MP3 at 256 kbps is the default because it plays everywhere. Choose WAV or FLAC for a lossless copy to edit, transcribe or archive. Opus and AAC give the smallest files at equal quality. The sample rate follows the source, so nothing is resampled unless you pick Opus, which always runs at 48 kHz.</p>
       <h3>Supported input formats</h3>
       <ul>
-        <li><strong>Video</strong>: MP4, M4V, MOV, 3GP, WebM, MKV and AVI carrying AAC, AC-3, DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. 5.1 tracks keep all six channels.</li>
+        <li><strong>Video</strong>: MP4, M4V, MOV, 3GP, WebM, MKV and AVI carrying AAC, AC-3, E-AC-3, DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. 5.1 tracks keep all six channels.</li>
         <li><strong>Audio</strong>: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR, so the page also converts audio (MP3 to WAV, M4A to MP3, FLAC to MP3).</li>
       </ul>
-      <p>When the in-page decoder cannot read a file (E-AC-3, TrueHD) it hands the bytes to your browser's own decoder, and as a last resort plays the file silently through the audio graph and records the output in real time.</p>
+      <p>When the in-page decoder cannot read a file (TrueHD) it hands the bytes to your browser's own decoder, and as a last resort plays the file silently through the audio graph and records the output in real time. To swap or strip a video's soundtrack without touching the picture, use <a href="/util/video-audio/">replace or remove the audio track</a>.</p>
       <h3>Common uses</h3>
       <ul>
         <li>Convert MP4 to MP3 for a lecture, podcast or interview recording</li>
@@ -173,21 +173,28 @@
       <p>No. There is no upload, account, watermark or size limit. Close the tab and nothing remains. The decoder and encoder are open source: <a href="https://github.com/audiojs/decode" target="_blank" rel="noopener">read the decoder</a>, <a href="https://github.com/audiojs/encode" target="_blank" rel="noopener">read the encoder</a>.</p>
       <h3>Questions</h3>
       <p><strong>Is the video uploaded anywhere?</strong> No. Decoding and encoding run in your browser with open-source JavaScript and WebAssembly codecs. The file never leaves your device, so there is no size limit, no queue and nothing to delete afterwards.</p>
-      <p><strong>Which video formats are supported?</strong> Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR.</p>
-      <p><strong>Which output formats can I save?</strong> MP3, WAV, FLAC, OGG Vorbis, Opus and AAC. WAV and FLAC are lossless; MP3, OGG, Opus and AAC are compressed.</p>
+      <p><strong>Which video formats are supported?</strong> Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, E-AC-3 (Dolby Digital Plus), DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR.</p>
+      <p><strong>Which output formats can I save?</strong> MP3, WAV, FLAC, M4A (AAC), ALAC, OGG Vorbis, Opus and AAC. WAV, FLAC and ALAC are lossless; MP3, M4A, OGG, Opus and AAC are compressed. M4A with AAC needs a browser with WebCodecs (Chrome, Edge, Safari).</p>
       <p><strong>Does it lose quality?</strong> The audio track is decoded to raw PCM at its original sample rate, then encoded to the format you pick. WAV and FLAC keep every decoded sample; MP3, OGG, Opus and AAC re-compress.</p>
       <p><strong>Are the tags kept?</strong> Yes. Title, artist, album, year, track number, comment and cover art are read from the source container and written into the MP3, FLAC, OGG, Opus or WAV you save. AAC (raw ADTS) has no tag chunk.</p>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
           <li><a href="/util/convert-audio/">Audio converter</a></li>
           <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
           <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
           <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
           <li><a href="/util/vocal-remover/">Vocal remover</a></li>
           <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI and sheet music</a></li>
           <li><a href="/util/tuner/">Tuner</a></li>
           <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
           <li><a href="/util/spectrogram/">Spectrogram</a></li>
           <li><a href="/util/measure/">Room and speaker measurement</a></li>
         </ul>
@@ -196,8 +203,8 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=2fcf0d24'
-    tool({ process: '/util/extract-audio/process.js?v=85c49385', ...{"formats":["mp3","wav","flac","ogg","opus","aac"]} })
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    tool({ process: '/util/extract-audio/process.js?v=85c49385', ...{"formats":["mp3","wav","flac","m4a","alac","ogg","opus","aac"]} })
   </script>
 </body>
 </html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remove silence from audio online, free, no upload · audiojs</title>
+  <meta name="description" content="Shorten long pauses for podcast smart speed, remove silence between takes, or trim the start and end. Runs in your browser; nothing is uploaded.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/desilence/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/desilence/">
+  <meta property="og:title" content="Remove silence from audio online, free, no upload">
+  <meta property="og:description" content="Shorten long pauses for podcast smart speed, remove silence between takes, or trim the start and end. Runs in your browser; nothing is uploaded.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/desilence/#app",
+        "name": "Remove silence from audio",
+        "url": "https://audiojs.dev/util/desilence/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Shorten long pauses for podcast smart speed, remove silence between takes, or trim the start and end. Runs in your browser; nothing is uploaded.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/",
+          "logo": "https://audiojs.dev/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/denoise"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Remove silence from audio",
+            "item": "https://audiojs.dev/util/desilence/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does it find the pauses?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A voice activity detector (@audio/vad) measures frame energy and spectral flatness — speech is tonal, silence and noise are flat — and groups the active frames into phrases. It is tuned for close-miced narration, not far-field or noisy conference audio."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What's the difference between shorten, remove and trim?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Shorten is podcast \"Smart Speed\" (the technique Overcast popularized in 2015): every pause longer than the threshold collapses to the \"keep\" length, cut from the middle so the natural onset and offset survive. Remove cuts the same pauses down to a small buffer kept on each side. Trim only strips silence at the very start and end and leaves every internal pause untouched."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will it cut into music?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No — this is a speech tool. A rest in a musical passage looks like a speech pause to the detector and gets shortened or cut the same way, so it is not meant for music or mixed program audio with silences you want to keep."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does a cut ever click?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Every cut is an equal-power crossfade, not a hard splice, so removing or shortening a pause never produces an audible click."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my file uploaded anywhere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Detection and editing run in your browser with @audio/denoise-desilence; nothing leaves your device."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css?v=88caac66">
+  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/denoise" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Remove silence from audio</h1>
+      <p>Drop a recording. Shorten or cut its pauses, or trim just the start and end, and save.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a recording here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <form class="opts" id="opts">
+      <label>Mode <select name="mode">
+        <option value="shorten" selected>Shorten long pauses (podcast smart speed)</option>
+        <option value="remove">Remove pauses</option>
+        <option value="trim">Trim start and end only</option>
+      </select></label>
+      <label data-for="shorten remove">Pause longer than <select name="minSilence">
+        <option value="0.3">0.3 s</option>
+        <option value="0.5" selected>0.5 s</option>
+        <option value="0.75">0.75 s</option>
+        <option value="1">1 s</option>
+        <option value="2">2 s</option>
+      </select></label>
+      <label data-for="shorten">Keep <select name="maxSilence">
+        <option value="0.15">0.15 s</option>
+        <option value="0.25" selected>0.25 s</option>
+        <option value="0.4">0.4 s</option>
+        <option value="0.6">0.6 s</option>
+      </select></label>
+      <label data-for="remove">Keep <select name="pad">
+        <option value="0.05">0.05 s</option>
+        <option value="0.1" selected>0.1 s</option>
+        <option value="0.2">0.2 s</option>
+      </select></label>
+    </form>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/denoise-desilence" target="_blank" rel="noopener"><code>@audio/denoise-desilence</code></a>.</p>
+    <section class="seo">
+      <h2>Podcast smart speed and silence removal, in the browser</h2>
+      <p>This page runs <code>@audio/denoise-desilence</code>: a voice activity detector (<code>@audio/vad</code>) finds the speech from frame energy and spectral flatness, then <code>shorten</code>, <code>remove</code> or <code>trim</code> edits the silence around it. Every cut is an equal-power crossfade, so nothing clicks. Nothing is uploaded.</p>
+      <h3>Shorten: podcast "Smart Speed"</h3>
+      <p>Every pause longer than the threshold collapses to the "keep" length, trimmed from the middle so the onset and offset around each phrase survive — the technique Marco Arment described for Overcast in 2015. Good for tightening narration without cutting anything out.</p>
+      <h3>Remove: cut pauses down to a buffer</h3>
+      <p>Every pause longer than the threshold is cut down to a small buffer kept on each side bordering speech. Good for batch-trimming long pauses out of a take, or closing gaps between spliced clips.</p>
+      <h3>Trim: just the ends</h3>
+      <p>Strips only the silence at the very start and end of the file — room tone before someone starts talking, dead air after they stop — and leaves every pause inside the recording exactly as it is.</p>
+      <h3>Questions</h3>
+      <p><strong>How does it find the pauses?</strong> A voice activity detector (@audio/vad) measures frame energy and spectral flatness — speech is tonal, silence and noise are flat — and groups the active frames into phrases. It is tuned for close-miced narration, not far-field or noisy conference audio.</p>
+      <p><strong>What's the difference between shorten, remove and trim?</strong> Shorten is podcast "Smart Speed" (the technique Overcast popularized in 2015): every pause longer than the threshold collapses to the "keep" length, cut from the middle so the natural onset and offset survive. Remove cuts the same pauses down to a small buffer kept on each side. Trim only strips silence at the very start and end and leaves every internal pause untouched.</p>
+      <p><strong>Will it cut into music?</strong> No — this is a speech tool. A rest in a musical passage looks like a speech pause to the detector and gets shortened or cut the same way, so it is not meant for music or mixed program audio with silences you want to keep.</p>
+      <p><strong>Does a cut ever click?</strong> No. Every cut is an equal-power crossfade, not a hard splice, so removing or shortening a pause never produces an audible click.</p>
+      <p><strong>Is my file uploaded anywhere?</strong> No. Detection and editing run in your browser with @audio/denoise-desilence; nothing leaves your device.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI and sheet music</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    const form = $('opts')
+    const modeSel = form.querySelector('[name=mode]')
+    const sync = () => { for (const label of form.querySelectorAll('[data-for]')) label.hidden = !label.dataset.for.split(' ').includes(modeSel.value) }
+    modeSel.addEventListener('change', sync)
+    sync()
+    tool({ process: '/util/desilence/process.js?v=5c15aa94', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Finding pauses…"} })
+  </script>
+</body>
+</html>

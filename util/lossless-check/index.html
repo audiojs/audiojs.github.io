@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Is this FLAC really lossless? Detect MP3/AAC transcodes · audiojs</title>
+  <meta name="description" content="Check whether a FLAC or WAV is really lossless, or an upsampled/transcoded MP3, AAC, Vorbis or Opus file. Spectral-cutoff analysis in your browser, no upload.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/lossless-check/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/lossless-check/">
+  <meta property="og:title" content="Is this FLAC really lossless? Detect MP3/AAC transcodes">
+  <meta property="og:description" content="Check whether a FLAC or WAV is really lossless, or an upsampled/transcoded MP3, AAC, Vorbis or Opus file. Spectral-cutoff analysis in your browser, no upload.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/lossless-check/#app",
+        "name": "Lossless audio checker",
+        "url": "https://audiojs.dev/util/lossless-check/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Check whether a FLAC or WAV is really lossless, or an upsampled/transcoded MP3, AAC, Vorbis or Opus file. Spectral-cutoff analysis in your browser, no upload.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/",
+          "logo": "https://audiojs.dev/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/measure"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Lossless audio checker",
+            "item": "https://audiojs.dev/util/lossless-check/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does this detect a fake lossless file?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "It reads the long-term average spectrum (Welch, via @audio/spectral-ltas) plus a per-frame max-hold spectrum, then finds the highest frequency where the level drops and stays down to Nyquist, not a narrow notch. It also measures the edge slope, counts short spectral holes in the 4-16 kHz band, and checks for the MP3 sfb21 notch near 16 kHz. This is the numeric form of the manual spectrogram-reading method used by Spek and aucdtect-style guessers."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can a real lossless file get flagged as lossy?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Naturally band-limited audio, an old tape dub, a narrow-band microphone, heavy de-essing, plain speech, produces the same spectral cutoff as a lossy encoder. The verdict is a heuristic, not a certificate: read the cutoff, edge sharpness and holes yourself before trusting it."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can a fake lossless file pass as clean?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, above roughly 128 to 160 kbps. A well-tuned MP3 or AAC at that bitrate or higher often shows no measurable lowpass at all. That is a documented limit of spectral-cutoff detection in general, shared by Spek-based guessers and aucdtect, not specific to this page."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is a spectral hole and the sfb21 notch?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A spectral hole is a short gap in the 4-16 kHz band where a low-bitrate encoder ran out of bits for that frame, the swiss-cheese pattern. The sfb21 notch is a narrow dip near 16 kHz specific to MP3: its last long-block scalefactor band stays bit-starved even above the nominal cutoff."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my file uploaded anywhere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The spectrum analysis and classification run in this tab with @audio/measure-lossy, an open-source library. The file never leaves your device."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css?v=88caac66">
+  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/measure" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Lossless audio checker</h1>
+      <p>Drop a FLAC or WAV. See exactly where its spectrum stops, and whether that edge looks like a codec lowpass.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a FLAC or WAV file here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/measure-lossy" target="_blank" rel="noopener"><code>@audio/measure-lossy</code></a>.</p>
+    <section class="seo">
+    <h2>Spectral-cutoff detection, measured instead of eyeballed</h2>
+    <p>A "lossless" file traded online is sometimes a 128 kbps MP3 re-encoded to FLAC. The classic tell is a spectrogram with a hard wall around 16 kHz, the Spek screenshot audiophile forums have traded for years. This page turns that manual read into a number: <code>@audio/measure-lossy</code> computes the long-term average spectrum (Welch, via <code>@audio/spectral-ltas</code>) and a max-hold spectrum, finds the sustained drop that marks the true cutoff, and matches it against the published lowpass tables of LAME MP3, AAC, Vorbis and Opus.</p>
+    <h3>What the numbers mean</h3>
+    <ul>
+      <li><strong>Cutoff frequency</strong>: the highest frequency the file actually carries. Compare it with the file's own Nyquist, half its sample rate; a gap is the signature of a codec lowpass filter.</li>
+      <li><strong>Edge sharpness</strong>: how steep the drop is, in dB per octave. Psychoacoustic encoders cut sharply, above 60 dB/octave; microphones and tape roll off gently.</li>
+      <li><strong>Spectral holes</strong>: short 4-16 kHz gaps per second where a low-bitrate encoder ran out of bits, the classic MP3 swiss-cheese pattern.</li>
+      <li><strong>Upsampled</strong>: a cutoff sitting at a clean fraction of the sample rate, the 22.05, 24 or 32 kHz half-rates, means a lower-rate source padded back up, not a bitrate-driven filter.</li>
+    </ul>
+    <h3>Where this method breaks down</h3>
+    <p>Above roughly 128 to 160 kbps a well-tuned MP3 or AAC often shows no measurable lowpass, so it can read as lossless even though it was transcoded. The reverse happens too: an old tape dub, a narrow-band microphone, or plain speech is naturally band-limited and can look exactly like a lossy cutoff. This is a known limit of spectral-cutoff detection generally, shared by Spek and aucdtect-style guessers, not a defect specific to this page. Treat the verdict as one data point and read the cutoff, sharpness and holes together.</p>
+      <h3>Questions</h3>
+      <p><strong>How does this detect a fake lossless file?</strong> It reads the long-term average spectrum (Welch, via @audio/spectral-ltas) plus a per-frame max-hold spectrum, then finds the highest frequency where the level drops and stays down to Nyquist, not a narrow notch. It also measures the edge slope, counts short spectral holes in the 4-16 kHz band, and checks for the MP3 sfb21 notch near 16 kHz. This is the numeric form of the manual spectrogram-reading method used by Spek and aucdtect-style guessers.</p>
+      <p><strong>Can a real lossless file get flagged as lossy?</strong> Yes. Naturally band-limited audio, an old tape dub, a narrow-band microphone, heavy de-essing, plain speech, produces the same spectral cutoff as a lossy encoder. The verdict is a heuristic, not a certificate: read the cutoff, edge sharpness and holes yourself before trusting it.</p>
+      <p><strong>Can a fake lossless file pass as clean?</strong> Yes, above roughly 128 to 160 kbps. A well-tuned MP3 or AAC at that bitrate or higher often shows no measurable lowpass at all. That is a documented limit of spectral-cutoff detection in general, shared by Spek-based guessers and aucdtect, not specific to this page.</p>
+      <p><strong>What is a spectral hole and the sfb21 notch?</strong> A spectral hole is a short gap in the 4-16 kHz band where a low-bitrate encoder ran out of bits for that frame, the swiss-cheese pattern. The sfb21 notch is a narrow dip near 16 kHz specific to MP3: its last long-block scalefactor band stays bit-starved even above the nominal cutoff.</p>
+      <p><strong>Is my file uploaded anywhere?</strong> No. The spectrum analysis and classification run in this tab with @audio/measure-lossy, an open-source library. The file never leaves your device.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI and sheet music</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    tool({ process: '/util/lossless-check/process.js?v=af1ddce2', ...{"busy":"Reading the spectrum…"} })
+  </script>
+</body>
+</html>

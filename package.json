@@ -4,11 +4,14 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/util-pages.mjs",
+    "vendor": "node scripts/vendor.mjs",
     "test": "node scripts/util-test.mjs",
     "test:e2e": "node scripts/util-e2e.mjs",
-    "test:all": "node scripts/util-test.mjs && node scripts/util-e2e.mjs chromium firefox webkit"
+    "test:pages": "node scripts/pages-test.mjs",
+    "test:all": "node scripts/util-test.mjs && node scripts/util-e2e.mjs chromium firefox webkit && node scripts/pages-test.mjs"
   },
   "devDependencies": {
+    "esbuild": "^0.28.0",
     "playwright": "^1.58.0"
   }
 }

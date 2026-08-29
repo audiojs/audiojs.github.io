@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio to MIDI converter: transcribe a melody to MIDI and sheet music, free, in your browser · audiojs</title>
+  <meta name="description" content="Transcribe a melody to MIDI, MusicXML and ABC notation in your browser. Notes, tempo and key detected automatically. Best on monophonic audio. No upload.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/audio-to-midi/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/audio-to-midi/">
+  <meta property="og:title" content="Audio to MIDI converter: transcribe a melody to MIDI and sheet music, free, in your browser">
+  <meta property="og:description" content="Transcribe a melody to MIDI, MusicXML and ABC notation in your browser. Notes, tempo and key detected automatically. Best on monophonic audio. No upload.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/audio-to-midi/#app",
+        "name": "Audio to MIDI and sheet music",
+        "url": "https://audiojs.dev/util/audio-to-midi/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Transcribe a melody to MIDI, MusicXML and ABC notation in your browser. Notes, tempo and key detected automatically. Best on monophonic audio. No upload.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/",
+          "logo": "https://audiojs.dev/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/mir"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Audio to MIDI and sheet music",
+            "item": "https://audiojs.dev/util/audio-to-midi/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does this work on full songs with drums and vocals?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Not well. The multi-F0 tracker in @audio/mir-transcribe follows the loudest continuous pitch at each moment; a dense mix confuses it. It is built for one instrument or voice at a time: a whistled or sung melody, a solo piano line, a clean guitar or bass. For a full band mix, use a dedicated ML transcription tool."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What do I do with the MusicXML and ABC files?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Open the .musicxml file in MuseScore, Finale or Sibelius for engraved sheet music. The .abc file is plain text: paste it into any ABC renderer (abcjs, EasyABC) to see or print the same tune without installing anything. The .mid file imports into any DAW."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why is the tempo wrong?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tempo comes from the @audio/beat onset and beat tracker, which can lock onto half or double the real tempo, or drift on rubato playing. Type a tempo in manually if the note grid looks off."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why is the key wrong?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Key comes from matching chroma (pitch-class) energy against major and minor key profiles over the first two minutes. Modal or ambiguous melodies can report the relative major or minor, which shares every note. Pick a key manually to force the spelling."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my audio uploaded anywhere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Transcription, tempo and key detection run in your browser with @audio/mir and @audio/beat; the MIDI, MusicXML and ABC files are written locally with @audio/midi and @audio/musicxml. Nothing leaves your device."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css?v=88caac66">
+  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/mir" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Audio to MIDI and sheet music</h1>
+      <p>Drop a melody. Get MIDI, MusicXML and ABC files, and hear back what was recognized.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a melody or song here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <form class="opts" id="opts">
+      <label>Quantize <select name="quantize">
+        <option value="0">none</option>
+        <option value="8">1/8</option>
+        <option value="16" selected>1/16</option>
+        <option value="32">1/32</option>
+      </select></label>
+      <label>Minimum note <select name="minNote">
+        <option value="50">50 ms</option>
+        <option value="80" selected>80 ms</option>
+        <option value="120">120 ms</option>
+      </select></label>
+      <label>Tempo <input type="number" name="tempo" min="60" max="200" step="1" placeholder="auto" style="width:4.5em;font:inherit;padding:8px;border:1px solid var(--c-rule);border-radius:6px"> BPM</label>
+      <label>Key <select name="key">
+        <option value="auto" selected>auto-detect</option>
+        <optgroup label="Major">
+          <option value="C">C major</option>
+          <option value="Db">D♭ major</option>
+          <option value="D">D major</option>
+          <option value="Eb">E♭ major</option>
+          <option value="E">E major</option>
+          <option value="F">F major</option>
+          <option value="F#">F♯ major</option>
+          <option value="G">G major</option>
+          <option value="Ab">A♭ major</option>
+          <option value="A">A major</option>
+          <option value="Bb">B♭ major</option>
+          <option value="B">B major</option>
+        </optgroup>
+        <optgroup label="Minor">
+          <option value="Cm">C minor</option>
+          <option value="C#m">C♯ minor</option>
+          <option value="Dm">D minor</option>
+          <option value="Ebm">E♭ minor</option>
+          <option value="Em">E minor</option>
+          <option value="Fm">F minor</option>
+          <option value="F#m">F♯ minor</option>
+          <option value="Gm">G minor</option>
+          <option value="G#m">G♯ minor</option>
+          <option value="Am">A minor</option>
+          <option value="Bbm">B♭ minor</option>
+          <option value="Bm">B minor</option>
+        </optgroup>
+      </select></label>
+    </form>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/mir" target="_blank" rel="noopener"><code>@audio/mir</code></a>, <a href="https://npmjs.com/package/@audio/beat" target="_blank" rel="noopener"><code>@audio/beat</code></a>, <a href="https://npmjs.com/package/@audio/midi" target="_blank" rel="noopener"><code>@audio/midi</code></a>, <a href="https://npmjs.com/package/@audio/musicxml" target="_blank" rel="noopener"><code>@audio/musicxml</code></a>, <a href="https://npmjs.com/package/@audio/midi-render" target="_blank" rel="noopener"><code>@audio/midi-render</code></a>.</p>
+    <section class="seo">
+    <h2>Melody transcription that runs on your device</h2>
+    <p>Cloud audio-to-MIDI services upload your file and hand back a download. This page runs the whole pipeline in your browser: <code>@audio/mir-transcribe</code> tracks pitch continuity across <code>@audio/mir-multif0</code> frames (Klapuri's 2006 iterative spectral-subtraction multi-F0 estimation) into note events, <code>@audio/beat</code> finds the tempo, and <code>@audio/mir-key</code> reads the key from chroma frames the way the Key and BPM finder does. The notes are written out with <code>@audio/midi</code> (Standard MIDI File), <code>@audio/musicxml</code> (MusicXML 4.0, quantized and spelled to the key signature, plus ABC notation) and rendered back to audio with <code>@audio/midi-render</code>'s synthesized General MIDI instrument set, so the transcription can be checked by ear before it is opened anywhere else.</p>
+    <h3>What it is good at</h3>
+    <p>One instrument or voice at a time: a sung or whistled melody, a solo piano or guitar line, a bassline. The note tracker follows the strongest pitch and closes a note on a gap, so a clean monophonic recording transcribes cleanly.</p>
+    <h3>What it will not do</h3>
+    <p>It does not reliably separate a chord into its notes, does not follow drums, and will not cleanly split two independent melodic lines playing at once. Multi-F0 estimation reports which pitches are present, not which instrument they belong to; treat the output as a starting point, not a finished score.</p>
+    <h3>Reading the report</h3>
+    <p>Notes found, the tempo and key used (auto-detected or the value set above), the pitch range, and the first bars of the ABC transcription to sanity-check before downloading. A confidence percentage on an auto-detected key, or a low-confidence note on the tempo, is a signal to set that value manually instead.</p>
+      <h3>Questions</h3>
+      <p><strong>Does this work on full songs with drums and vocals?</strong> Not well. The multi-F0 tracker in @audio/mir-transcribe follows the loudest continuous pitch at each moment; a dense mix confuses it. It is built for one instrument or voice at a time: a whistled or sung melody, a solo piano line, a clean guitar or bass. For a full band mix, use a dedicated ML transcription tool.</p>
+      <p><strong>What do I do with the MusicXML and ABC files?</strong> Open the .musicxml file in MuseScore, Finale or Sibelius for engraved sheet music. The .abc file is plain text: paste it into any ABC renderer (abcjs, EasyABC) to see or print the same tune without installing anything. The .mid file imports into any DAW.</p>
+      <p><strong>Why is the tempo wrong?</strong> Tempo comes from the @audio/beat onset and beat tracker, which can lock onto half or double the real tempo, or drift on rubato playing. Type a tempo in manually if the note grid looks off.</p>
+      <p><strong>Why is the key wrong?</strong> Key comes from matching chroma (pitch-class) energy against major and minor key profiles over the first two minutes. Modal or ambiguous melodies can report the relative major or minor, which shares every note. Pick a key manually to force the spelling.</p>
+      <p><strong>Is my audio uploaded anywhere?</strong> No. Transcription, tempo and key detection run in your browser with @audio/mir and @audio/beat; the MIDI, MusicXML and ABC files are written locally with @audio/midi and @audio/musicxml. Nothing leaves your device.</p>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    tool({ process: '/util/audio-to-midi/process.js?v=738f1ca1', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Listening for notes…"} })
+  </script>
+</body>
+</html>
