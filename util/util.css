@@ -129,3 +129,5 @@ footer a:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .faq details::details-content { transition: none; } .faq details[open] p { animation: none; } }
 
 .row.out .opts { display: contents; }   /* the labels flow with Format and Save on one wrapping line */
+
+.opts .sentence { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 12px 8px; }   /* controls that read as one sentence wrap as a unit */

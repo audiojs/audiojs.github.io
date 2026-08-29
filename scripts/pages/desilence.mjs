@@ -12,29 +12,31 @@ export default {
   powered: ['@audio/denoise-desilence'], repo: 'https://github.com/audiojs/denoise',
   body: drop('Drop a recording here') + `
     <form class="opts" id="opts">
-      <label>Mode <select name="mode">
-        <option value="shorten" selected>Shorten long pauses (podcast smart speed)</option>
-        <option value="remove">Remove pauses</option>
-        <option value="trim">Trim start and end only</option>
+      <!-- reads as one sentence: "Shorten pauses longer than 0.5 s to 0.25 s" · "Cut out pauses longer than 0.5 s, keeping 0.1 s around speech" · "Trim silence at the start and end" -->
+      <span class="sentence"><label><select name="mode">
+        <option value="shorten" selected>Shorten</option>
+        <option value="remove">Cut out</option>
+        <option value="trim">Trim</option>
       </select></label>
-      <label data-for="shorten remove">Pause longer than <select name="minSilence">
+      <label data-for="shorten remove">pauses longer than <select name="minSilence">
         <option value="0.3">0.3 s</option>
         <option value="0.5" selected>0.5 s</option>
         <option value="0.75">0.75 s</option>
         <option value="1">1 s</option>
         <option value="2">2 s</option>
       </select></label>
-      <label data-for="shorten">Keep <select name="maxSilence">
+      <label data-for="shorten">to <select name="maxSilence">
         <option value="0.15">0.15 s</option>
         <option value="0.25" selected>0.25 s</option>
         <option value="0.4">0.4 s</option>
         <option value="0.6">0.6 s</option>
       </select></label>
-      <label data-for="remove">Keep <select name="pad">
+      <label data-for="remove">keeping <select name="pad">
         <option value="0.05">0.05 s</option>
         <option value="0.1" selected>0.1 s</option>
         <option value="0.2">0.2 s</option>
-      </select></label>
+      </select> around speech</label>
+      <span data-for="trim">silence at the start and end</span></span>
     </form>`,
   worker: `
 
@@ -114,7 +116,7 @@ export default async function process(a, o, ui) {
     tool({ process: PROCESS, ...TOOL })`,
   faq: [
     ['How does it find the pauses?', 'A voice activity detector (@audio/vad) measures frame energy and spectral flatness — speech is tonal, silence and noise are flat — and groups the active frames into phrases. It is tuned for close-miced narration, not far-field or noisy conference audio.'],
-    ["What's the difference between shorten, remove and trim?", 'Shorten is podcast "Smart Speed" (the technique Overcast popularized in 2015): every pause longer than the threshold collapses to the "keep" length, cut from the middle so the natural onset and offset survive. Remove cuts the same pauses down to a small buffer kept on each side. Trim only strips silence at the very start and end and leaves every internal pause untouched.'],
+    ["What's the difference between shorten, cut out and trim?", 'Shorten is podcast "Smart Speed" (the technique Overcast popularized in 2015): every pause longer than the threshold collapses to the target length, cut from the middle so the natural onset and offset survive. Cut out removes the same pauses down to a small buffer kept on each side. Trim only strips silence at the very start and end and leaves every internal pause untouched.'],
     ['Will it cut into music?', 'No — this is a speech tool. A rest in a musical passage looks like a speech pause to the detector and gets shortened or cut the same way, so it is not meant for music or mixed program audio with silences you want to keep.'],
     ['Does a cut ever click?', 'No. Every cut is an equal-power crossfade, not a hard splice, so removing or shortening a pause never produces an audible click.'],
     ['Is my file uploaded anywhere?', 'No. Detection and editing run in your browser with @audio/denoise-desilence; nothing leaves your device.'],
@@ -123,7 +125,7 @@ export default async function process(a, o, ui) {
       <h2>Podcast smart speed and silence removal, in the browser</h2>
       <p>This page runs <code>@audio/denoise-desilence</code>: a voice activity detector (<code>@audio/vad</code>) finds the speech from frame energy and spectral flatness, then <code>shorten</code>, <code>remove</code> or <code>trim</code> edits the silence around it. Every cut is an equal-power crossfade, so nothing clicks. Nothing is uploaded.</p>
       <h3>Shorten: podcast "Smart Speed"</h3>
-      <p>Every pause longer than the threshold collapses to the "keep" length, trimmed from the middle so the onset and offset around each phrase survive — the technique Marco Arment described for Overcast in 2015. Good for tightening narration without cutting anything out.</p>
+      <p>Every pause longer than the threshold collapses to the target length, trimmed from the middle so the onset and offset around each phrase survive — the technique Marco Arment described for Overcast in 2015. Good for tightening narration without cutting anything out.</p>
       <h3>Remove: cut pauses down to a buffer</h3>
       <p>Every pause longer than the threshold is cut down to a small buffer kept on each side bordering speech. Good for batch-trimming long pauses out of a take, or closing gaps between spliced clips.</p>
       <h3>Trim: just the ends</h3>

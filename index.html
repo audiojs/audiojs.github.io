@@ -348,13 +348,15 @@
         list-style: none;
         margin: 18px auto 0;
         padding: 0;
-        max-width: 560px;
-        display: flex;
-        flex-direction: column;
+        max-width: 760px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
       }
+      @media (max-width: 640px) { .tools ul { grid-template-columns: minmax(0, 1fr); max-width: 560px; } }
       .tools a {
         display: block;
+        height: 100%;
         padding: 14px 18px;
         border: 1px solid #d6d3cb;
         border-radius: 8px;
@@ -475,18 +477,26 @@
   <main>
     <section class="tools" id="util" aria-label="Utilities">
       <div class="t-label"><a href="/util/" style="color:inherit;text-decoration:none">Utilities</a></div>
-      <ul>
-        <li><a href="/util/extract-audio/"><div class="t-name">Extract audio from video</div><div class="t-desc">Video → MP3, WAV, FLAC, OGG, Opus, AAC</div></a></li>
-        <li><a href="/util/convert-audio/"><div class="t-name">Audio converter</div><div class="t-desc">MP3, WAV, FLAC, OGG, Opus, AAC, M4A in any direction</div></a></li>
+      <ul><!-- utilities: written by scripts/util-pages.mjs from the pages list -->
+        <li><a href="/util/extract-audio/"><div class="t-name">Extract audio from video</div><div class="t-desc">Video → MP3, WAV, FLAC, M4A, ALAC, OGG, Opus, AAC</div></a></li>
+        <li><a href="/util/video-audio/"><div class="t-name">Remove or replace video audio</div><div class="t-desc">Strip the audio track, or swap in AAC, Opus, ALAC or FLAC — the video is never re-encoded</div></a></li>
+        <li><a href="/util/convert-audio/"><div class="t-name">Audio converter</div><div class="t-desc">MP3, WAV, FLAC, M4A, ALAC, WavPack, OGG, Opus, AAC, AIFF, CAF, WebM, QOA; reads APE, TTA, Musepack, DSD, tracker modules too</div></a></li>
         <li><a href="/util/loudness/"><div class="t-name">Loudness meter and normalizer</div><div class="t-desc">LUFS, true peak, loudness range; normalize for Spotify, YouTube, podcasts</div></a></li>
         <li><a href="/util/denoise/"><div class="t-name">Noise remover</div><div class="t-desc">Background noise, hum, clicks, wind, plosives, reverb</div></a></li>
+        <li><a href="/util/desilence/"><div class="t-name">Remove silence from audio</div><div class="t-desc">Podcast smart speed, silence removal, trim start/end — voice activity detection</div></a></li>
+        <li><a href="/util/dewow/"><div class="t-name">Wow and flutter fixer</div><div class="t-desc">Correct slow pitch drift and fast wobble in tape, cassette and vinyl transfers</div></a></li>
+        <li><a href="/util/transcribe/"><div class="t-name">Transcribe audio to text and subtitles</div><div class="t-desc">Whisper speech-to-text; TXT, SRT, VTT; sentence or word timestamps</div></a></li>
         <li><a href="/util/key-bpm/"><div class="t-name">Key and BPM finder</div><div class="t-desc">Musical key, Camelot code, tempo, chords</div></a></li>
         <li><a href="/util/vocal-remover/"><div class="t-name">Vocal remover</div><div class="t-desc">Karaoke track or isolated vocal from a stereo mix</div></a></li>
         <li><a href="/util/pitch-tempo/"><div class="t-name">Pitch and tempo changer</div><div class="t-desc">Transpose semitones, change speed without changing pitch</div></a></li>
+        <li><a href="/util/midi-to-mp3/"><div class="t-name">MIDI to MP3</div><div class="t-desc">Render a MIDI file with a synth-GM instrument set, no soundfont</div></a></li>
+        <li><a href="/util/audio-to-midi/"><div class="t-name">Audio to MIDI and sheet music</div><div class="t-desc">Transcribe a melody to MIDI, MusicXML and ABC — with a synthesized playback</div></a></li>
         <li><a href="/util/tuner/"><div class="t-name">Tuner</div><div class="t-desc">Chromatic tuner for guitar, bass, violin, voice</div></a></li>
         <li><a href="/util/recorder/"><div class="t-name">Audio recorder</div><div class="t-desc">Record from the microphone, save as MP3, WAV, FLAC, Opus</div></a></li>
+        <li><a href="/util/lossless-check/"><div class="t-name">Lossless audio checker</div><div class="t-desc">Detect a fake lossless FLAC or WAV: spectral cutoff, edge sharpness, spectral holes</div></a></li>
         <li><a href="/util/spectrogram/"><div class="t-name">Spectrogram</div><div class="t-desc">Frequency-over-time image of any recording</div></a></li>
-        <li><a href="/util/measure/"><div class="t-name">Room and speaker measurement</div><div class="t-desc">Frequency response, RT60, latency via a sine sweep</div></a></li>
+        <li><a href="/util/measure/"><div class="t-name">Room and speaker measurement</div><div class="t-desc">Frequency response, reverb time (RT60), latency, via a sine sweep</div></a></li>
+        <!-- /utilities -->
       </ul>
     </section>
     <section class="sponsors" id="sponsors" aria-label="Sponsors">
