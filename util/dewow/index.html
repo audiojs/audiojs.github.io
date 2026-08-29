@@ -127,8 +127,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -174,12 +174,14 @@
     <p>Wow and flutter are reported as unweighted peak deviation from nominal speed, before and after correction: not the IEC 60386 / DIN 45507 figure, which applies a psychoacoustic weighting curve this page does not implement. Confidence is the fraction of the recording with a usable speed reading. The speed curve chart plots the source's drift in grey and the corrected result in the accent color, both against a ±3% scale.</p>
     <h3>Honest limits</h3>
     <p>This corrects speed, nothing else. Dropouts and azimuth error (a stereo channel time-skew, not a speed defect) are out of scope, as is anything with no stable tone to track: a cappella breath, pure noise, hard cuts. See the <a href="https://github.com/audiojs/denoise/tree/main/packages/denoise-dewow" target="_blank" rel="noopener">package README</a> for the measured accuracy this method achieves on its own test signal.</p>
-      <h3>Questions</h3>
-      <p><strong>What is wow and flutter?</strong> Wow is slow pitch drift, below about 6 Hz: a stretched belt, an eccentric capstan, a warped record. Flutter is faster wobble, up to a few tens of Hz: a rough motor, a dirty pinch roller. Both come from a transport that does not turn at a constant speed.</p>
-      <p><strong>How does it find the speed without a reference recording?</strong> The default mode tracks stable partials in the music itself: a tone that should hold one frequency reveals the transport's actual speed when it wobbles instead (a phase-vocoder implementation of the technique behind Celemony Capstan). Reference mode does the same on one known tone, mains hum or a calibration tone; pitch mode follows a monophonic voice or instrument.</p>
-      <p><strong>What can it not fix?</strong> Dropouts, azimuth error (a stereo time skew, not a speed error), and anything with no stable partial or reference tone to lock onto: a cappella breath, pure noise, hard cuts. Pitch mode also cannot tell real musical vibrato from mechanical wow, so it only works well on lightly-inflected material.</p>
-      <p><strong>Why does flutter above about 40 Hz not show up?</strong> The speed curve is itself sampled at roughly 86 Hz (sample rate divided by the analysis hop), so anything above its Nyquist, about 43 Hz, cannot be represented at all. Most tape and turntable flutter sits below that.</p>
-      <p><strong>Does it work on drum loops or spoken word with no held notes?</strong> Not well. Percussion-only material gives the estimator nothing to lock onto. Pick a passage with a sustained note or vowel, or switch to reference mode if a hum or tone runs through the recording.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>What is wow and flutter?</summary><p>Wow is slow pitch drift, below about 6 Hz: a stretched belt, an eccentric capstan, a warped record. Flutter is faster wobble, up to a few tens of Hz: a rough motor, a dirty pinch roller. Both come from a transport that does not turn at a constant speed.</p></details>
+        <details><summary>How does it find the speed without a reference recording?</summary><p>The default mode tracks stable partials in the music itself: a tone that should hold one frequency reveals the transport's actual speed when it wobbles instead (a phase-vocoder implementation of the technique behind Celemony Capstan). Reference mode does the same on one known tone, mains hum or a calibration tone; pitch mode follows a monophonic voice or instrument.</p></details>
+        <details><summary>What can it not fix?</summary><p>Dropouts, azimuth error (a stereo time skew, not a speed error), and anything with no stable partial or reference tone to lock onto: a cappella breath, pure noise, hard cuts. Pitch mode also cannot tell real musical vibrato from mechanical wow, so it only works well on lightly-inflected material.</p></details>
+        <details><summary>Why does flutter above about 40 Hz not show up?</summary><p>The speed curve is itself sampled at roughly 86 Hz (sample rate divided by the analysis hop), so anything above its Nyquist, about 43 Hz, cannot be represented at all. Most tape and turntable flutter sits below that.</p></details>
+        <details><summary>Does it work on drum loops or spoken word with no held notes?</summary><p>Not well. Percussion-only material gives the estimator nothing to lock onto. Pick a passage with a sustained note or vowel, or switch to reference mode if a hum or tone runs through the recording.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -206,7 +208,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     const form = $('opts'), refRow = $('refRow'), mode = form.querySelector('[name=mode]')
     const syncMode = () => refRow.hidden = mode.value !== 'reference'
     mode.addEventListener('change', syncMode)

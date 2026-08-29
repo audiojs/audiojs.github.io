@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -157,11 +157,13 @@
       </ul>
       <h3>Reference pitch</h3>
       <p>Most music uses A4 = 440 Hz. Orchestras often tune to 442 or 443, baroque ensembles to 415, and some players prefer 432. Set the field and every reading follows.</p>
-      <h3>Questions</h3>
-      <p><strong>How do I tune a guitar with it?</strong> Standard tuning is E2 A2 D3 G3 B3 E4. Play one string at a time, let it ring, and turn the peg until the needle sits in the green zone (within 5 cents).</p>
-      <p><strong>Which instruments does it work for?</strong> Anything that produces a clear pitch: guitar, bass, ukulele, violin, cello, brass, woodwinds, voice. Detection uses the YIN algorithm on a 4096-sample window.</p>
-      <p><strong>Can I change the reference pitch?</strong> Yes. A4 defaults to 440 Hz; set 432, 415 (baroque) or 442 to 443 (many orchestras).</p>
-      <p><strong>Is my microphone recorded?</strong> No. Audio is analysed in the tab and discarded. Nothing is stored or sent.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>How do I tune a guitar with it?</summary><p>Standard tuning is E2 A2 D3 G3 B3 E4. Play one string at a time, let it ring, and turn the peg until the needle sits in the green zone (within 5 cents).</p></details>
+        <details><summary>Which instruments does it work for?</summary><p>Anything that produces a clear pitch: guitar, bass, ukulele, violin, cello, brass, woodwinds, voice. Detection uses the YIN algorithm on a 4096-sample window.</p></details>
+        <details><summary>Can I change the reference pitch?</summary><p>Yes. A4 defaults to 440 Hz; set 432, 415 (baroque) or 442 to 443 (many orchestras).</p></details>
+        <details><summary>Is my microphone recorded?</summary><p>No. Audio is analysed in the tab and discarded. Nothing is stored or sent.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -188,7 +190,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     const pitch = import('https://esm.sh/@audio/pitch@2.0.3')
     const note = import('https://esm.sh/@audio/note@1.0.1')
     const start = $('start'), noteEl = $('note'), hzEl = $('hz'), needle = $('needle'), a4 = $('a4')

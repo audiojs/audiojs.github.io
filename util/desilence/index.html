@@ -127,8 +127,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -184,12 +184,14 @@
       <p>Every pause longer than the threshold is cut down to a small buffer kept on each side bordering speech. Good for batch-trimming long pauses out of a take, or closing gaps between spliced clips.</p>
       <h3>Trim: just the ends</h3>
       <p>Strips only the silence at the very start and end of the file — room tone before someone starts talking, dead air after they stop — and leaves every pause inside the recording exactly as it is.</p>
-      <h3>Questions</h3>
-      <p><strong>How does it find the pauses?</strong> A voice activity detector (@audio/vad) measures frame energy and spectral flatness — speech is tonal, silence and noise are flat — and groups the active frames into phrases. It is tuned for close-miced narration, not far-field or noisy conference audio.</p>
-      <p><strong>What's the difference between shorten, remove and trim?</strong> Shorten is podcast "Smart Speed" (the technique Overcast popularized in 2015): every pause longer than the threshold collapses to the "keep" length, cut from the middle so the natural onset and offset survive. Remove cuts the same pauses down to a small buffer kept on each side. Trim only strips silence at the very start and end and leaves every internal pause untouched.</p>
-      <p><strong>Will it cut into music?</strong> No — this is a speech tool. A rest in a musical passage looks like a speech pause to the detector and gets shortened or cut the same way, so it is not meant for music or mixed program audio with silences you want to keep.</p>
-      <p><strong>Does a cut ever click?</strong> No. Every cut is an equal-power crossfade, not a hard splice, so removing or shortening a pause never produces an audible click.</p>
-      <p><strong>Is my file uploaded anywhere?</strong> No. Detection and editing run in your browser with @audio/denoise-desilence; nothing leaves your device.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>How does it find the pauses?</summary><p>A voice activity detector (@audio/vad) measures frame energy and spectral flatness — speech is tonal, silence and noise are flat — and groups the active frames into phrases. It is tuned for close-miced narration, not far-field or noisy conference audio.</p></details>
+        <details><summary>What's the difference between shorten, remove and trim?</summary><p>Shorten is podcast "Smart Speed" (the technique Overcast popularized in 2015): every pause longer than the threshold collapses to the "keep" length, cut from the middle so the natural onset and offset survive. Remove cuts the same pauses down to a small buffer kept on each side. Trim only strips silence at the very start and end and leaves every internal pause untouched.</p></details>
+        <details><summary>Will it cut into music?</summary><p>No — this is a speech tool. A rest in a musical passage looks like a speech pause to the detector and gets shortened or cut the same way, so it is not meant for music or mixed program audio with silences you want to keep.</p></details>
+        <details><summary>Does a cut ever click?</summary><p>No. Every cut is an equal-power crossfade, not a hard splice, so removing or shortening a pause never produces an audible click.</p></details>
+        <details><summary>Is my file uploaded anywhere?</summary><p>No. Detection and editing run in your browser with @audio/denoise-desilence; nothing leaves your device.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -216,7 +218,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     const form = $('opts')
     const modeSel = form.querySelector('[name=mode]')
     const sync = () => { for (const label of form.querySelectorAll('[data-for]')) label.hidden = !label.dataset.for.split(' ').includes(modeSel.value) }

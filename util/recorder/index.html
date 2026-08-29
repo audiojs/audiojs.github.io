@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -160,11 +160,13 @@
       <p>Press record, speak, press stop, save. The level meter shows when you are too quiet or clipping. Recordings are mono at your device sample rate, usually 48 kHz.</p>
       <h3>After recording</h3>
       <p>Drop the file into the <a href="/util/denoise/">noise remover</a> to clean it, or the <a href="/util/loudness/">loudness normalizer</a> to bring it to the -16 LUFS podcast standard.</p>
-      <h3>Questions</h3>
-      <p><strong>Where is the recording stored?</strong> In the tab memory only. When you press Save the file goes to your downloads folder. Close the tab and it is gone; nothing is uploaded.</p>
-      <p><strong>Is there a time limit?</strong> No. A minute of mono audio at 48 kHz uses about 11 MB of memory, so an hour is fine on any laptop.</p>
-      <p><strong>Which formats can I save?</strong> MP3, WAV (lossless), FLAC (lossless, compressed), OGG Vorbis, Opus (smallest) and AAC. Encoding runs in the browser with @audio/encode.</p>
-      <p><strong>Why does the meter turn red?</strong> The dot turns green in a healthy range and stays grey when the level is too low or clipping. Move closer to or further from the microphone.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Where is the recording stored?</summary><p>In the tab memory only. When you press Save the file goes to your downloads folder. Close the tab and it is gone; nothing is uploaded.</p></details>
+        <details><summary>Is there a time limit?</summary><p>No. A minute of mono audio at 48 kHz uses about 11 MB of memory, so an hour is fine on any laptop.</p></details>
+        <details><summary>Which formats can I save?</summary><p>MP3, WAV (lossless), FLAC (lossless, compressed), OGG Vorbis, Opus (smallest) and AAC. Encoding runs in the browser with @audio/encode.</p></details>
+        <details><summary>Why does the meter turn red?</summary><p>The dot turns green in a healthy range and stays grey when the level is too low or clipping. Move closer to or further from the microphone.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -191,7 +193,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     const rec = $('rec'), time = $('time'), level = $('level'), peak = $('peak'), panel = $('panel'), player = $('player'), fmt = $('fmt'), save = $('save'), saveLabel = $('saveLabel'), progress = $('progress'), status = $('status')
     for (const [k, f] of Object.entries(FORMATS)) fmt.append(el('option', { value: k }, f.label))
     fmt.value = 'mp3'

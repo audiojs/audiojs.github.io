@@ -127,8 +127,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -162,12 +162,14 @@
     </ul>
     <h3>Where this method breaks down</h3>
     <p>Above roughly 128 to 160 kbps a well-tuned MP3 or AAC often shows no measurable lowpass, so it can read as lossless even though it was transcoded. The reverse happens too: an old tape dub, a narrow-band microphone, or plain speech is naturally band-limited and can look exactly like a lossy cutoff. This is a known limit of spectral-cutoff detection generally, shared by Spek and aucdtect-style guessers, not a defect specific to this page. Treat the verdict as one data point and read the cutoff, sharpness and holes together.</p>
-      <h3>Questions</h3>
-      <p><strong>How does this detect a fake lossless file?</strong> It reads the long-term average spectrum (Welch, via @audio/spectral-ltas) plus a per-frame max-hold spectrum, then finds the highest frequency where the level drops and stays down to Nyquist, not a narrow notch. It also measures the edge slope, counts short spectral holes in the 4-16 kHz band, and checks for the MP3 sfb21 notch near 16 kHz. This is the numeric form of the manual spectrogram-reading method used by Spek and aucdtect-style guessers.</p>
-      <p><strong>Can a real lossless file get flagged as lossy?</strong> Yes. Naturally band-limited audio, an old tape dub, a narrow-band microphone, heavy de-essing, plain speech, produces the same spectral cutoff as a lossy encoder. The verdict is a heuristic, not a certificate: read the cutoff, edge sharpness and holes yourself before trusting it.</p>
-      <p><strong>Can a fake lossless file pass as clean?</strong> Yes, above roughly 128 to 160 kbps. A well-tuned MP3 or AAC at that bitrate or higher often shows no measurable lowpass at all. That is a documented limit of spectral-cutoff detection in general, shared by Spek-based guessers and aucdtect, not specific to this page.</p>
-      <p><strong>What is a spectral hole and the sfb21 notch?</strong> A spectral hole is a short gap in the 4-16 kHz band where a low-bitrate encoder ran out of bits for that frame, the swiss-cheese pattern. The sfb21 notch is a narrow dip near 16 kHz specific to MP3: its last long-block scalefactor band stays bit-starved even above the nominal cutoff.</p>
-      <p><strong>Is my file uploaded anywhere?</strong> No. The spectrum analysis and classification run in this tab with @audio/measure-lossy, an open-source library. The file never leaves your device.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>How does this detect a fake lossless file?</summary><p>It reads the long-term average spectrum (Welch, via @audio/spectral-ltas) plus a per-frame max-hold spectrum, then finds the highest frequency where the level drops and stays down to Nyquist, not a narrow notch. It also measures the edge slope, counts short spectral holes in the 4-16 kHz band, and checks for the MP3 sfb21 notch near 16 kHz. This is the numeric form of the manual spectrogram-reading method used by Spek and aucdtect-style guessers.</p></details>
+        <details><summary>Can a real lossless file get flagged as lossy?</summary><p>Yes. Naturally band-limited audio, an old tape dub, a narrow-band microphone, heavy de-essing, plain speech, produces the same spectral cutoff as a lossy encoder. The verdict is a heuristic, not a certificate: read the cutoff, edge sharpness and holes yourself before trusting it.</p></details>
+        <details><summary>Can a fake lossless file pass as clean?</summary><p>Yes, above roughly 128 to 160 kbps. A well-tuned MP3 or AAC at that bitrate or higher often shows no measurable lowpass at all. That is a documented limit of spectral-cutoff detection in general, shared by Spek-based guessers and aucdtect, not specific to this page.</p></details>
+        <details><summary>What is a spectral hole and the sfb21 notch?</summary><p>A spectral hole is a short gap in the 4-16 kHz band where a low-bitrate encoder ran out of bits for that frame, the swiss-cheese pattern. The sfb21 notch is a narrow dip near 16 kHz specific to MP3: its last long-block scalefactor band stays bit-starved even above the nominal cutoff.</p></details>
+        <details><summary>Is my file uploaded anywhere?</summary><p>No. The spectrum analysis and classification run in this tab with @audio/measure-lossy, an open-source library. The file never leaves your device.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -194,7 +196,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/lossless-check/process.js?v=dbd4ae54', ...{"busy":"Reading the spectrum…"} })
   </script>
 </body>

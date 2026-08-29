@@ -111,3 +111,13 @@ footer a:hover { text-decoration: underline; }
 
 .row.files { display: flex; flex-wrap: wrap; gap: 10px }
 .row.files .btn { flex: 0 1 auto }
+
+.faq { margin-top: 32px; }
+.faq h3 { margin-top: 0; }
+.faq details { border-top: 1px solid var(--c-rule); }
+.faq summary { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 0; cursor: pointer; list-style: none; font-size: var(--fs-sm); font-weight: 700; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: '+'; flex: none; color: var(--c-mute); font-weight: 500; }
+.faq details[open] summary::after { content: '−'; }
+.faq summary:hover, .faq summary:focus-visible { color: var(--c-accent); outline: none; }
+.faq p { margin: -2px 0 14px; }

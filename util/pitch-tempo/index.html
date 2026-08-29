@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -155,11 +155,13 @@
       <p>Shift by whole semitones up to an octave. Duration stays the same, so the track still lines up with a video or a click.</p>
       <h3>Quality notes</h3>
       <p>Transient detection keeps drum hits from smearing, the usual weakness of phase vocoders. Extreme settings (an octave, or 200 %) are audible on any algorithm; moderate settings are hard to tell from the original.</p>
-      <h3>Questions</h3>
-      <p><strong>Does changing tempo change the pitch?</strong> No. Time stretching keeps the pitch while changing duration, and pitch shifting keeps the duration while transposing. Both use transient-preserving phase vocoders, so drums stay sharp.</p>
-      <p><strong>How far can I transpose?</strong> Up to an octave either way. Small moves (up to 3 or 4 semitones) are transparent; larger ones start to sound processed, as with any real-time algorithm.</p>
-      <p><strong>What is it good for?</strong> Slowing a solo down to learn it, transposing a backing track to your vocal range, speeding up a lecture or audiobook, matching two songs for a mix.</p>
-      <p><strong>Is the audio uploaded?</strong> No. @audio/shift and @audio/stretch run in your browser.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Does changing tempo change the pitch?</summary><p>No. Time stretching keeps the pitch while changing duration, and pitch shifting keeps the duration while transposing. Both use transient-preserving phase vocoders, so drums stay sharp.</p></details>
+        <details><summary>How far can I transpose?</summary><p>Up to an octave either way. Small moves (up to 3 or 4 semitones) are transparent; larger ones start to sound processed, as with any real-time algorithm.</p></details>
+        <details><summary>What is it good for?</summary><p>Slowing a solo down to learn it, transposing a backing track to your vocal range, speeding up a lecture or audiobook, matching two songs for a mix.</p></details>
+        <details><summary>Is the audio uploaded?</summary><p>No. @audio/shift and @audio/stretch run in your browser.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -186,7 +188,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/pitch-tempo/process.js?v=32d664df', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Processing…"} })
   </script>
 </body>

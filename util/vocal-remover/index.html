@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -157,11 +157,13 @@
         <li>Older recordings with hard-panned instruments separate the cleanest.</li>
         <li>Save as WAV or FLAC if you plan to process further.</li>
       </ul>
-      <h3>Questions</h3>
-      <p><strong>How does it remove the vocal?</strong> Mid/side processing. In most mixes the lead vocal is panned dead center, so subtracting the right channel from the left cancels it while side-panned instruments remain. The isolate mode keeps the center instead.</p>
-      <p><strong>Why can I still hear some vocal?</strong> Reverb, delays and doubled harmonies are usually panned wide and survive cancellation. Bass and kick, also centered, are reduced along with the vocal. AI separation handles these better; this method is instant, private and works on any device.</p>
-      <p><strong>Does it work on mono files?</strong> No. Center extraction needs a stereo image. A mono file has no sides to keep.</p>
-      <p><strong>Is my song uploaded?</strong> No. The processing runs in your browser with @audio/vocals, an open-source library. Nothing leaves your device.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>How does it remove the vocal?</summary><p>Mid/side processing. In most mixes the lead vocal is panned dead center, so subtracting the right channel from the left cancels it while side-panned instruments remain. The isolate mode keeps the center instead.</p></details>
+        <details><summary>Why can I still hear some vocal?</summary><p>Reverb, delays and doubled harmonies are usually panned wide and survive cancellation. Bass and kick, also centered, are reduced along with the vocal. AI separation handles these better; this method is instant, private and works on any device.</p></details>
+        <details><summary>Does it work on mono files?</summary><p>No. Center extraction needs a stereo image. A mono file has no sides to keep.</p></details>
+        <details><summary>Is my song uploaded?</summary><p>No. The processing runs in your browser with @audio/vocals, an open-source library. Nothing leaves your device.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -188,7 +190,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/vocal-remover/process.js?v=1b74c64f', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Separating center and sides…"} })
   </script>
 </body>

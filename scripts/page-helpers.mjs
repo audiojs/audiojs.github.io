@@ -16,6 +16,12 @@ export const drop = (text, accept = 'audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,
       <input type="file" id="file${id}" accept="${accept}">
     </div>`
 export const pkg = n => `<a href="https://npmjs.com/package/${n}" target="_blank" rel="noopener"><code>${n}</code></a>`
+// foldable FAQ: native <details>, answers stay in the document for search engines (the FAQPage JSON-LD is emitted separately)
+export const faq = (items, title = 'Questions') => items.length ? `
+      <section class="faq" aria-label="${title}">
+        <h3>${title}</h3>${items.map(([q, a]) => `
+        <details><summary>${q}</summary><p>${a}</p></details>`).join('')}
+      </section>` : ''
 export const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
 
 // Module URL for a package: the vendored bundle in util/vendor/ while the package is unpublished

@@ -56,8 +56,6 @@ export default {
     const report = $('report'), out = $('out'), player = $('player'), save = $('save'), saveLabel = $('saveLabel')
     const hasAAC = typeof AudioEncoder !== 'undefined'
     const CODEC_LABEL = { aac: 'AAC <small>· 192 kbps</small>', opus: 'Opus <small>· 192 kbps</small>', alac: 'ALAC <small>· lossless</small>', flac: 'FLAC <small>· lossless</small>' }
-    const dropAText = { t: dropA.querySelector('.t').innerHTML, s: dropA.querySelector('.s').innerHTML }
-    const dropBText = { t: dropB.querySelector('.t').innerHTML, s: dropB.querySelector('.s').innerHTML }
     const applyCodecDefault = () => { form.codec.value = hasAAC ? 'aac' : 'flac' }
     applyCodecDefault()
 
@@ -126,20 +124,8 @@ export default {
       progress.hidden = false; status.textContent = msg; status.classList.toggle('err', err); bar.hidden = !busy; bar.classList.toggle('busy', busy)
     }
     const yieldUI = () => new Promise(r => setTimeout(r, 30))
-    const showChosen = (zone, file) => { zone.querySelector('.t').textContent = file.name; zone.querySelector('.s').textContent = fmtSize(file.size) + ' · click to choose a different file' }
     const UNSUPPORTED_EXT = /\\.(mkv|webm|avi)$/i
     const release = () => { if (save.href?.startsWith('blob:')) URL.revokeObjectURL(save.href); save.removeAttribute('href'); player.removeAttribute('src') }
-
-    function wireDrop(zone, input, onFile) {
-      zone.addEventListener('click', () => input.click())
-      zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click() } })
-      zone.addEventListener('paste', e => { const f = e.clipboardData?.files[0]; if (f) onFile(f) })
-      input.addEventListener('change', () => { if (input.files[0]) onFile(input.files[0]); input.value = '' })
-      zone.addEventListener('dragenter', e => { e.preventDefault(); zone.classList.add('over') })
-      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over') })
-      zone.addEventListener('dragleave', () => zone.classList.remove('over'))
-      zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) onFile(f) })
-    }
 
     let videoFile = null, videoBytes = null, info = null, vgen = 0
     let audioFile = null, audioDecoded = null, agen = 0
@@ -148,7 +134,7 @@ export default {
       const vg = ++vgen
       release()
       videoFile = file; videoBytes = null; info = null
-      showChosen(dropA, file)
+      zoneA.hide()
       panel.hidden = false; report.hidden = out.hidden = true
       name.textContent = file.name; meta.textContent = fmtSize(file.size)
       if (UNSUPPORTED_EXT.test(file.name) || /matroska|webm|x-msvideo|\\/avi/.test(file.type)) {
@@ -174,7 +160,7 @@ export default {
     async function onAudio(file) {
       const ag = ++agen
       audioFile = file; audioDecoded = null
-      showChosen(dropB, file)
+      zoneB.hide()
       setMsg('Decoding replacement audio…', { busy: true })
       await yieldUI()
       try {
@@ -243,8 +229,7 @@ export default {
       }
     }
 
-    wireDrop(dropA, fileA, onVideo)
-    wireDrop(dropB, fileB, onAudio)
+    const zoneA = dropzone(dropA, fileA, onVideo), zoneB = dropzone(dropB, fileB, onAudio)
     form.addEventListener('change', e => {
       if (e.target.name === 'mode') {
         const replace = form.mode.value === 'replace'
@@ -260,9 +245,7 @@ export default {
       panel.hidden = true
       form.reset(); applyCodecDefault()
       document.querySelectorAll('.replace-only').forEach(x => x.hidden = true)
-      dropA.querySelector('.t').innerHTML = dropAText.t; dropA.querySelector('.s').innerHTML = dropAText.s
-      dropB.querySelector('.t').innerHTML = dropBText.t; dropB.querySelector('.s').innerHTML = dropBText.s
-      dropA.focus()
+      zoneB.show(); zoneA.show()
     })`,
   faq: [
     ['Is the video re-encoded?', 'No. Only the audio track and the container boxes (moov, mdat) are rewritten; the video stream is copied byte-for-byte from the source. That makes this instant even on a long file, and lossless for the picture.'],

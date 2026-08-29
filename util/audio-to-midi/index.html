@@ -127,8 +127,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -204,12 +204,14 @@
     <p>It does not reliably separate a chord into its notes, does not follow drums, and will not cleanly split two independent melodic lines playing at once. Multi-F0 estimation reports which pitches are present, not which instrument they belong to; treat the output as a starting point, not a finished score.</p>
     <h3>Reading the report</h3>
     <p>Notes found, the tempo and key used (auto-detected or the value set above), the pitch range, and the first bars of the ABC transcription to sanity-check before downloading. A confidence percentage on an auto-detected key, or a low-confidence note on the tempo, is a signal to set that value manually instead.</p>
-      <h3>Questions</h3>
-      <p><strong>Does this work on full songs with drums and vocals?</strong> Not well. The multi-F0 tracker in @audio/mir-transcribe follows the loudest continuous pitch at each moment; a dense mix confuses it. It is built for one instrument or voice at a time: a whistled or sung melody, a solo piano line, a clean guitar or bass. For a full band mix, use a dedicated ML transcription tool.</p>
-      <p><strong>What do I do with the MusicXML and ABC files?</strong> Open the .musicxml file in MuseScore, Finale or Sibelius for engraved sheet music. The .abc file is plain text: paste it into any ABC renderer (abcjs, EasyABC) to see or print the same tune without installing anything. The .mid file imports into any DAW.</p>
-      <p><strong>Why is the tempo wrong?</strong> Tempo comes from the @audio/beat onset and beat tracker, which can lock onto half or double the real tempo, or drift on rubato playing. Type a tempo in manually if the note grid looks off.</p>
-      <p><strong>Why is the key wrong?</strong> Key comes from matching chroma (pitch-class) energy against major and minor key profiles over the first two minutes. Modal or ambiguous melodies can report the relative major or minor, which shares every note. Pick a key manually to force the spelling.</p>
-      <p><strong>Is my audio uploaded anywhere?</strong> No. Transcription, tempo and key detection run in your browser with @audio/mir and @audio/beat; the MIDI, MusicXML and ABC files are written locally with @audio/midi and @audio/musicxml. Nothing leaves your device.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Does this work on full songs with drums and vocals?</summary><p>Not well. The multi-F0 tracker in @audio/mir-transcribe follows the loudest continuous pitch at each moment; a dense mix confuses it. It is built for one instrument or voice at a time: a whistled or sung melody, a solo piano line, a clean guitar or bass. For a full band mix, use a dedicated ML transcription tool.</p></details>
+        <details><summary>What do I do with the MusicXML and ABC files?</summary><p>Open the .musicxml file in MuseScore, Finale or Sibelius for engraved sheet music. The .abc file is plain text: paste it into any ABC renderer (abcjs, EasyABC) to see or print the same tune without installing anything. The .mid file imports into any DAW.</p></details>
+        <details><summary>Why is the tempo wrong?</summary><p>Tempo comes from the @audio/beat onset and beat tracker, which can lock onto half or double the real tempo, or drift on rubato playing. Type a tempo in manually if the note grid looks off.</p></details>
+        <details><summary>Why is the key wrong?</summary><p>Key comes from matching chroma (pitch-class) energy against major and minor key profiles over the first two minutes. Modal or ambiguous melodies can report the relative major or minor, which shares every note. Pick a key manually to force the spelling.</p></details>
+        <details><summary>Is my audio uploaded anywhere?</summary><p>No. Transcription, tempo and key detection run in your browser with @audio/mir and @audio/beat; the MIDI, MusicXML and ABC files are written locally with @audio/midi and @audio/musicxml. Nothing leaves your device.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -236,7 +238,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/audio-to-midi/process.js?v=e805c4b6', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Listening for notes…"} })
   </script>
 </body>

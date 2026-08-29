@@ -135,8 +135,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -183,13 +183,15 @@
       <p>Title, artist, album, year, cover art and similar fields are read from the source and written into the target when the target format has a tag chunk (WAV, MP3, FLAC, AIFF, OGG, Opus). The file line shows the title and artist that were found.</p>
       <h3>Video files</h3>
       <p>MP4, MOV, MKV, WebM and AVI files are accepted too: their audio track is extracted and converted. See <a href="/util/extract-audio/">extract audio from video</a> for the details.</p>
-      <h3>Questions</h3>
-      <p><strong>Which formats can I convert from?</strong> MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, M4A, ALAC, AIFF, CAF, WMA, AMR, AC-3, E-AC-3, DTS, QOA, WavPack, APE (Monkey's Audio), TTA, Musepack, DSD (DSF, DFF) and tracker modules (MOD, XM, S3M, IT), plus the audio track of MP4, MOV, MKV, WebM and AVI video.</p>
-      <p><strong>Which formats can I convert to?</strong> MP3, WAV, FLAC, M4A (AAC), ALAC (Apple Lossless in M4A), WavPack, OGG Vorbis, Opus, AAC, AIFF, CAF, WebM (Opus) and QOA. Lossy formats take a bitrate (or a quality level for Vorbis); PCM formats take a bit depth of 16, 24 or 32-bit float. M4A with AAC needs a browser with WebCodecs (Chrome, Edge, Safari); ALAC and the rest work everywhere.</p>
-      <p><strong>Do the tags survive?</strong> Title, artist, album, year, cover art and the other common fields are read from MP3, FLAC, WAV, M4A, Ogg and Opus sources and written into WAV, MP3, FLAC, AIFF, OGG, Opus, M4A, ALAC and WavPack outputs.</p>
-      <p><strong>Can I change the sample rate or make it mono?</strong> Yes. Pick a sample rate from 8 to 96 kHz (polyphase resampling with a Kaiser-windowed filter) and mono or stereo. Opus and WebM always run at 48 kHz internally.</p>
-      <p><strong>Is the conversion lossless?</strong> WAV, FLAC, ALAC, WavPack, AIFF and CAF preserve every decoded sample at the chosen bit depth. Converting between two lossy formats re-compresses; keep a lossless master when you can.</p>
-      <p><strong>What about DSD and tracker modules?</strong> DSF and DFF files are converted from 1-bit DSD to PCM with a 100 dB-stopband decimation filter (DSD64 becomes 88.2 kHz). MOD, XM, S3M and IT modules are rendered with libopenmpt at 48 kHz stereo, so a chiptune becomes an MP3 or FLAC.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Which formats can I convert from?</summary><p>MP3, WAV, FLAC, OGG Vorbis, Opus, AAC, M4A, ALAC, AIFF, CAF, WMA, AMR, AC-3, E-AC-3, DTS, QOA, WavPack, APE (Monkey's Audio), TTA, Musepack, DSD (DSF, DFF) and tracker modules (MOD, XM, S3M, IT), plus the audio track of MP4, MOV, MKV, WebM and AVI video.</p></details>
+        <details><summary>Which formats can I convert to?</summary><p>MP3, WAV, FLAC, M4A (AAC), ALAC (Apple Lossless in M4A), WavPack, OGG Vorbis, Opus, AAC, AIFF, CAF, WebM (Opus) and QOA. Lossy formats take a bitrate (or a quality level for Vorbis); PCM formats take a bit depth of 16, 24 or 32-bit float. M4A with AAC needs a browser with WebCodecs (Chrome, Edge, Safari); ALAC and the rest work everywhere.</p></details>
+        <details><summary>Do the tags survive?</summary><p>Title, artist, album, year, cover art and the other common fields are read from MP3, FLAC, WAV, M4A, Ogg and Opus sources and written into WAV, MP3, FLAC, AIFF, OGG, Opus, M4A, ALAC and WavPack outputs.</p></details>
+        <details><summary>Can I change the sample rate or make it mono?</summary><p>Yes. Pick a sample rate from 8 to 96 kHz (polyphase resampling with a Kaiser-windowed filter) and mono or stereo. Opus and WebM always run at 48 kHz internally.</p></details>
+        <details><summary>Is the conversion lossless?</summary><p>WAV, FLAC, ALAC, WavPack, AIFF and CAF preserve every decoded sample at the chosen bit depth. Converting between two lossy formats re-compresses; keep a lossless master when you can.</p></details>
+        <details><summary>What about DSD and tracker modules?</summary><p>DSF and DFF files are converted from 1-bit DSD to PCM with a 100 dB-stopband decimation filter (DSD64 becomes 88.2 kHz). MOD, XM, S3M and IT modules are rendered with libopenmpt at 48 kHz stereo, so a chiptune becomes an MP3 or FLAC.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -216,7 +218,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     const BITRATES = { mp3: [96, 128, 192, 256, 320], aac: [64, 96, 128, 192, 256], m4a: [64, 96, 128, 192, 256], opus: [32, 64, 96, 128, 160, 192], webm: [32, 64, 96, 128, 160, 192] }
     const DEPTHS = { wav: [16, 24, 32], aiff: [16, 24], caf: [16, 32], flac: [16, 24] }
     const form = $('opts')

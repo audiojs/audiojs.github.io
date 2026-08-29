@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -159,11 +159,13 @@
       </ul>
       <h3>Reading the result</h3>
       <p>A response within ±3 dB from 100 Hz to 10 kHz is good for an untreated room. RT60 below 0.4 s is what mixing rooms aim for; living rooms sit around 0.5 s. Latency includes your audio interface and operating system, so it is not a pure acoustic figure, but it is stable for the same setup.</p>
-      <h3>Questions</h3>
-      <p><strong>What do I need?</strong> Speakers or headphones and a microphone in the same room. A laptop measures itself; for real speaker data use an external microphone, ideally an omni measurement mic, at the listening position.</p>
-      <p><strong>What is RT60?</strong> The time the sound field takes to decay by 60 dB after the source stops. It is estimated from the impulse response by Schroeder backward integration and extrapolated from the -5 to -25 dB slope (T20).</p>
-      <p><strong>Why does the response look wild below 200 Hz?</strong> Room modes: standing waves between walls create peaks and dips of 10 dB or more. That is the room, not the speaker. Move the microphone and compare.</p>
-      <p><strong>Is anything uploaded?</strong> No. The sweep, the recording and the analysis stay in your browser.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>What do I need?</summary><p>Speakers or headphones and a microphone in the same room. A laptop measures itself; for real speaker data use an external microphone, ideally an omni measurement mic, at the listening position.</p></details>
+        <details><summary>What is RT60?</summary><p>The time the sound field takes to decay by 60 dB after the source stops. It is estimated from the impulse response by Schroeder backward integration and extrapolated from the -5 to -25 dB slope (T20).</p></details>
+        <details><summary>Why does the response look wild below 200 Hz?</summary><p>Room modes: standing waves between walls create peaks and dips of 10 dB or more. That is the room, not the speaker. Move the microphone and compare.</p></details>
+        <details><summary>Is anything uploaded?</summary><p>No. The sweep, the recording and the analysis stay in your browser.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -190,7 +192,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     const lib = import('https://esm.sh/@audio/measure@1.1.2')
     const chirpLib = import('https://esm.sh/@audio/synth-chirp')
     const start = $('start'), msg = $('msg'), peak = $('peak'), panel = $('panel'), report = $('report'), viz = $('viz'), gainSel = $('gain')

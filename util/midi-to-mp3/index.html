@@ -127,8 +127,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -165,12 +165,14 @@
     <p>Tempo from 50% to 200% stretches or compresses the whole note schedule before synthesis, so slowing down re-renders the piece at the new speed rather than just stretching silence. Transpose shifts every non-percussion note up to an octave either way. Sample rate (44.1 or 48 kHz) and channel count (stereo or mono) set the render's output directly.</p>
     <h3>What the report shows</h3>
     <p>Note and track counts come straight from <code>@audio/midi-parse</code>. Instruments used lists the General MIDI program names in effect on each channel — the same per-channel program resolution the renderer itself uses — plus percussion when channel 10 has notes.</p>
-      <h3>Questions</h3>
-      <p><strong>Is this a real soundfont or sampled instruments?</strong> No. Every General MIDI program is synthesized live from scratch with FM synthesis, Karplus–Strong plucked strings and modal resonator banks — the same algorithm families real synthesizers use, not a recording. It sounds like a synth-GM module, not a sample library.</p>
-      <p><strong>Which MIDI files work?</strong> Standard MIDI Files, format 0 or 1, .mid or .midi. Multi-track, multi-channel files are supported: program changes, channel volume (CC7), pan (CC10, read once per channel), sustain pedal (CC64) and pitch bend are all read from the file.</p>
-      <p><strong>What happens on the drum channel?</strong> Channel 10 always uses the fixed General MIDI percussion map (kick, snare, hi-hat, toms, cymbals, latin percussion on keys 35 to 81), regardless of any program change on that channel — that is what GM Level 1 specifies.</p>
-      <p><strong>Why does rendering take a few seconds?</strong> Every note is synthesized sample by sample in your browser, then encoded to the format you pick. A multi-minute, several-hundred-note piece takes a few seconds on a laptop. Nothing is uploaded and nothing is cached on a server.</p>
-      <p><strong>Can I change the tempo or key?</strong> Yes. Tempo (50 to 200%) stretches or compresses the note schedule before synthesis; transpose (±12 semitones) shifts every non-percussion note. Both apply to the render itself, not as after-the-fact audio processing.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Is this a real soundfont or sampled instruments?</summary><p>No. Every General MIDI program is synthesized live from scratch with FM synthesis, Karplus–Strong plucked strings and modal resonator banks — the same algorithm families real synthesizers use, not a recording. It sounds like a synth-GM module, not a sample library.</p></details>
+        <details><summary>Which MIDI files work?</summary><p>Standard MIDI Files, format 0 or 1, .mid or .midi. Multi-track, multi-channel files are supported: program changes, channel volume (CC7), pan (CC10, read once per channel), sustain pedal (CC64) and pitch bend are all read from the file.</p></details>
+        <details><summary>What happens on the drum channel?</summary><p>Channel 10 always uses the fixed General MIDI percussion map (kick, snare, hi-hat, toms, cymbals, latin percussion on keys 35 to 81), regardless of any program change on that channel — that is what GM Level 1 specifies.</p></details>
+        <details><summary>Why does rendering take a few seconds?</summary><p>Every note is synthesized sample by sample in your browser, then encoded to the format you pick. A multi-minute, several-hundred-note piece takes a few seconds on a laptop. Nothing is uploaded and nothing is cached on a server.</p></details>
+        <details><summary>Can I change the tempo or key?</summary><p>Yes. Tempo (50 to 200%) stretches or compresses the note schedule before synthesis; transpose (±12 semitones) shifts every non-percussion note. Both apply to the render itself, not as after-the-fact audio processing.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -197,7 +199,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/midi-to-mp3/process.js?v=1ac744e1', ...{"raw":true,"formats":["mp3","wav","flac","ogg","opus","m4a"],"busy":"Rendering with the synth atoms…"} })
   </script>
 </body>

@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -158,11 +158,13 @@
       </ul>
       <h3>Numbers alongside the picture</h3>
       <p>Strongest frequency across the file, the highest frequency with meaningful content (useful to judge a transcode), and the spectral centroid, the balance point of the energy that tracks perceived brightness.</p>
-      <h3>Questions</h3>
-      <p><strong>What does a spectrogram show?</strong> Time runs left to right, frequency bottom to top, brightness is level. Harmonics appear as stacked lines, drums as vertical stripes, noise as a wash.</p>
-      <p><strong>How do I spot a fake lossless file?</strong> A hard cutoff at 16 kHz is the MP3 128 kbps signature, 19 to 20 kHz suggests 320 kbps or AAC. True CD-quality material reaches 22 kHz with a natural roll-off.</p>
-      <p><strong>Why choose a different window?</strong> A longer window (4096) resolves close pitches but blurs time; a shorter one (1024) shows fast transients but smears pitch. 2048 is the usual compromise at 44.1 or 48 kHz.</p>
-      <p><strong>Is the file uploaded?</strong> No. The STFT is computed in your browser with @audio/stft; nothing leaves your device.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>What does a spectrogram show?</summary><p>Time runs left to right, frequency bottom to top, brightness is level. Harmonics appear as stacked lines, drums as vertical stripes, noise as a wash.</p></details>
+        <details><summary>How do I spot a fake lossless file?</summary><p>A hard cutoff at 16 kHz is the MP3 128 kbps signature, 19 to 20 kHz suggests 320 kbps or AAC. True CD-quality material reaches 22 kHz with a natural roll-off.</p></details>
+        <details><summary>Why choose a different window?</summary><p>A longer window (4096) resolves close pitches but blurs time; a shorter one (1024) shows fast transients but smears pitch. 2048 is the usual compromise at 44.1 or 48 kHz.</p></details>
+        <details><summary>Is the file uploaded?</summary><p>No. The STFT is computed in your browser with @audio/stft; nothing leaves your device.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -189,7 +191,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/spectrogram/process.js?v=8205d3b9', ...{"busy":"Computing spectrogram…"} })
   </script>
 </body>

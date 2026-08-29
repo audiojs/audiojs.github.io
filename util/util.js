@@ -128,6 +128,31 @@ function workerRunner(url) {
   })
 }
 
+// ── drop zone: the `drop()` partial wired to one file callback ──
+// Click, Enter/Space and the hidden input pick a file; a file dragged or pasted anywhere on the page goes to the
+// first visible zone, a file dropped on a zone goes to that zone. hide() once a file is in (the panel takes its
+// place), show() on "Another file".
+const zones = []
+const primary = () => zones.find(z => !z.zone.hidden) || zones[0]   // results showing: a file dropped on the page still replaces the current one
+export function dropzone(zone, input, onFile) {
+  const pick = f => { if (f) onFile(f) }
+  zone.addEventListener('click', () => input.click())
+  zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click() } })
+  input.addEventListener('change', () => { pick(input.files[0]); input.value = '' })
+  zone.addEventListener('dragover', () => zone.classList.add('over'))
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'))
+  zone.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); zone.classList.remove('over'); pick(e.dataTransfer.files[0]) })
+  if (!zones.length) {
+    for (const ev of ['dragenter', 'dragover']) document.addEventListener(ev, e => { e.preventDefault(); primary()?.zone.classList.add('over') })
+    for (const ev of ['dragleave', 'drop']) document.addEventListener(ev, e => { e.preventDefault(); primary()?.zone.classList.remove('over') })
+    document.addEventListener('drop', e => primary()?.pick(e.dataTransfer.files[0]))
+    document.addEventListener('paste', e => primary()?.pick(e.clipboardData?.files[0]))
+  }
+  const z = { zone, pick, hide: () => { zone.hidden = true }, show: () => { zone.hidden = false; zone.focus() } }
+  zones.push(z)
+  return z
+}
+
 // ── file tool ──
 // cfg.process: (audio, opts, ui) → { audio?, report?: [{ k, v, cls?, note? }], viz?: Node | ImageData-like, suffix?, files?: [{ name, data: Uint8Array | string | Blob, mime? }] }
 //   or a module URL run in a Worker (default export with the same signature)
@@ -158,15 +183,8 @@ export function tool(cfg) {
   cfg.onFormat?.(fmt.value)
 
   let run = 0, file = null, audio = null, result = null, url = null
-  const pick = f => { if (f) load(f) }
-  drop.addEventListener('click', () => input.click())
-  drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click() } })
-  input.addEventListener('change', () => { pick(input.files[0]); input.value = '' })
-  for (const ev of ['dragenter', 'dragover']) document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over') })
-  for (const ev of ['dragleave', 'drop']) document.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over') })
-  document.addEventListener('drop', e => pick(e.dataTransfer.files[0]))
-  document.addEventListener('paste', e => pick(e.clipboardData?.files[0]))
-  reset.addEventListener('click', () => { run++; release(); panel.hidden = true; drop.focus() })
+  const zone = dropzone(drop, input, load)
+  reset.addEventListener('click', () => { run++; release(); panel.hidden = true; zone.show() })
   fmt.addEventListener('change', () => { cfg.onFormat?.(fmt.value); result?.audio && encode() })
   opts?.addEventListener('change', () => audio && process())
   opts?.addEventListener('input', e => { const o = e.target.closest('label')?.querySelector('output'); if (o && e.target.type === 'range') o.value = e.target.value })
@@ -183,6 +201,7 @@ export function tool(cfg) {
   async function load(f) {
     const id = ++run
     release(); file = f
+    zone.hide()
     panel.hidden = false; report.hidden = viz.hidden = out.hidden = true
     name.textContent = f.name; meta.textContent = fmtSize(f.size)
     if (cfg.raw) {   // the bytes are the input: no decode, no audio line

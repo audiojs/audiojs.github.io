@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -151,11 +151,13 @@
       <p>The chord progression is read from the same chroma frames, smoothed to suppress passing notes. Use it as a starting point for a lead sheet or to find a sample's key before pitching it.</p>
       <h3>How it works</h3>
       <p>Chroma vectors (12 pitch classes per frame) are matched against major and minor key profiles; the best-scoring key wins with a confidence figure. Tempo comes from spectral-flux onsets and a comb-filter tempogram, then a beat tracker aligns the grid.</p>
-      <h3>Questions</h3>
-      <p><strong>How accurate is key detection?</strong> Chroma features over the first two minutes are matched against Krumhansl key profiles, the same approach as desktop DJ software. Clear tonal music lands the right key most of the time; ambiguous or modal material may report the relative major or minor, which shares every note.</p>
-      <p><strong>What is a Camelot code?</strong> A wheel notation DJs use for harmonic mixing: 1A to 12A are minor keys, 1B to 12B their relative majors. Tracks that are one step apart on the wheel, or share a number, mix without clashing.</p>
-      <p><strong>Why is the BPM double or half what I expect?</strong> Tempo has an octave ambiguity: a 90 BPM groove with strong eighth notes also fits 180. The report lists both. Pick the one that matches how you count.</p>
-      <p><strong>Does it upload my music?</strong> No. Analysis runs in your browser with @audio/mir and @audio/beat, open-source music information retrieval libraries.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>How accurate is key detection?</summary><p>Chroma features over the first two minutes are matched against Krumhansl key profiles, the same approach as desktop DJ software. Clear tonal music lands the right key most of the time; ambiguous or modal material may report the relative major or minor, which shares every note.</p></details>
+        <details><summary>What is a Camelot code?</summary><p>A wheel notation DJs use for harmonic mixing: 1A to 12A are minor keys, 1B to 12B their relative majors. Tracks that are one step apart on the wheel, or share a number, mix without clashing.</p></details>
+        <details><summary>Why is the BPM double or half what I expect?</summary><p>Tempo has an octave ambiguity: a 90 BPM groove with strong eighth notes also fits 180. The report lists both. Pick the one that matches how you count.</p></details>
+        <details><summary>Does it upload my music?</summary><p>No. Analysis runs in your browser with @audio/mir and @audio/beat, open-source music information retrieval libraries.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -182,7 +184,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/key-bpm/process.js?v=027933d1', ...{"busy":"Listening for key and tempo…"} })
   </script>
 </body>

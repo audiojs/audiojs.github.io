@@ -127,8 +127,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -171,12 +171,14 @@
       </ul>
       <h3>Is the video uploaded anywhere?</h3>
       <p>No. There is no upload, account, watermark or size limit. Close the tab and nothing remains. The decoder and encoder are open source: <a href="https://github.com/audiojs/decode" target="_blank" rel="noopener">read the decoder</a>, <a href="https://github.com/audiojs/encode" target="_blank" rel="noopener">read the encoder</a>.</p>
-      <h3>Questions</h3>
-      <p><strong>Is the video uploaded anywhere?</strong> No. Decoding and encoding run in your browser with open-source JavaScript and WebAssembly codecs. The file never leaves your device, so there is no size limit, no queue and nothing to delete afterwards.</p>
-      <p><strong>Which video formats are supported?</strong> Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, E-AC-3 (Dolby Digital Plus), DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR.</p>
-      <p><strong>Which output formats can I save?</strong> MP3, WAV, FLAC, M4A (AAC), ALAC, OGG Vorbis, Opus and AAC. WAV, FLAC and ALAC are lossless; MP3, M4A, OGG, Opus and AAC are compressed. M4A with AAC needs a browser with WebCodecs (Chrome, Edge, Safari).</p>
-      <p><strong>Does it lose quality?</strong> The audio track is decoded to raw PCM at its original sample rate, then encoded to the format you pick. WAV and FLAC keep every decoded sample; MP3, OGG, Opus and AAC re-compress.</p>
-      <p><strong>Are the tags kept?</strong> Yes. Title, artist, album, year, track number, comment and cover art are read from the source container and written into the MP3, FLAC, OGG, Opus or WAV you save. AAC (raw ADTS) has no tag chunk.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Is the video uploaded anywhere?</summary><p>No. Decoding and encoding run in your browser with open-source JavaScript and WebAssembly codecs. The file never leaves your device, so there is no size limit, no queue and nothing to delete afterwards.</p></details>
+        <details><summary>Which video formats are supported?</summary><p>Video: MP4, M4V, MOV, 3GP, WebM, MKV and AVI with AAC, AC-3, E-AC-3 (Dolby Digital Plus), DTS, MP3, Opus, Vorbis, FLAC, ALAC or PCM audio. Surround tracks keep their channels. Audio: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR.</p></details>
+        <details><summary>Which output formats can I save?</summary><p>MP3, WAV, FLAC, M4A (AAC), ALAC, OGG Vorbis, Opus and AAC. WAV, FLAC and ALAC are lossless; MP3, M4A, OGG, Opus and AAC are compressed. M4A with AAC needs a browser with WebCodecs (Chrome, Edge, Safari).</p></details>
+        <details><summary>Does it lose quality?</summary><p>The audio track is decoded to raw PCM at its original sample rate, then encoded to the format you pick. WAV and FLAC keep every decoded sample; MP3, OGG, Opus and AAC re-compress.</p></details>
+        <details><summary>Are the tags kept?</summary><p>Yes. Title, artist, album, year, track number, comment and cover art are read from the source container and written into the MP3, FLAC, OGG, Opus or WAV you save. AAC (raw ADTS) has no tag chunk.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -203,7 +205,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/extract-audio/process.js?v=85c49385', ...{"formats":["mp3","wav","flac","m4a","alac","ogg","opus","aac"]} })
   </script>
 </body>

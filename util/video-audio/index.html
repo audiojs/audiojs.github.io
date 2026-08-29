@@ -127,8 +127,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -198,12 +198,14 @@
     <p>The replacement file is decoded with <code>@audio/decode</code>, trimmed, padded with silence or looped to the video length, and encoded into the container with <code>@audio/encode</code>: AAC through the browser's own WebCodecs encoder, or Opus, ALAC and FLAC through pure-JavaScript encoders. <code>@audio/encode-mp4</code> then interleaves the new audio chunks with the untouched video chunks by presentation time, so the file still plays progressively.</p>
     <h3>What does not work here</h3>
     <p>Fragmented MP4, the moof-based layout used by DASH and HLS streaming exports, needs a segment-aware muxer and is rejected with a clear error. MKV, WebM and AVI are different container formats altogether; re-encode them to MP4 with ffmpeg or HandBrake before using this page.</p>
-      <h3>Questions</h3>
-      <p><strong>Is the video re-encoded?</strong> No. Only the audio track and the container boxes (moov, mdat) are rewritten; the video stream is copied byte-for-byte from the source. That makes this instant even on a long file, and lossless for the picture.</p>
-      <p><strong>Which video files work?</strong> MP4, M4V, MOV and 3GP that store a single moov and mdat, the normal export from a phone, camera or editor. Fragmented MP4 (streamed or DASH exports) is not supported. MKV, WebM and AVI are a different container entirely and cannot be remuxed here; re-encode them to MP4 first.</p>
-      <p><strong>Which audio formats can I use to replace the track?</strong> Anything the decoder reads: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR. It is decoded, then re-encoded into AAC, Opus, ALAC or FLAC and packed into the MP4 container.</p>
-      <p><strong>What happens if the replacement audio runs a different length than the video?</strong> By default it is trimmed to the video length, or padded with silence if it runs short. Check "loop the audio" to repeat it instead until the video ends.</p>
-      <p><strong>Which audio codec should I pick?</strong> AAC plays in every MP4 player and needs a Chromium or Safari browser to encode (WebCodecs). Opus is smaller and plays in modern browsers and VLC. ALAC and FLAC are lossless: ALAC is the safer choice on Apple players, FLAC has the narrowest player support of the four.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Is the video re-encoded?</summary><p>No. Only the audio track and the container boxes (moov, mdat) are rewritten; the video stream is copied byte-for-byte from the source. That makes this instant even on a long file, and lossless for the picture.</p></details>
+        <details><summary>Which video files work?</summary><p>MP4, M4V, MOV and 3GP that store a single moov and mdat, the normal export from a phone, camera or editor. Fragmented MP4 (streamed or DASH exports) is not supported. MKV, WebM and AVI are a different container entirely and cannot be remuxed here; re-encode them to MP4 first.</p></details>
+        <details><summary>Which audio formats can I use to replace the track?</summary><p>Anything the decoder reads: MP3, WAV, FLAC, OGG, Opus, AAC, M4A, AIFF, CAF, WMA and AMR. It is decoded, then re-encoded into AAC, Opus, ALAC or FLAC and packed into the MP4 container.</p></details>
+        <details><summary>What happens if the replacement audio runs a different length than the video?</summary><p>By default it is trimmed to the video length, or padded with silence if it runs short. Check "loop the audio" to repeat it instead until the video ends.</p></details>
+        <details><summary>Which audio codec should I pick?</summary><p>AAC plays in every MP4 player and needs a Chromium or Safari browser to encode (WebCodecs). Opus is smaller and plays in modern browsers and VLC. ALAC and FLAC are lossless: ALAC is the safer choice on Apple players, FLAC has the narrowest player support of the four.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -230,7 +232,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     const remuxLib = import('https://esm.sh/@audio/encode-mp4@1.0.0/remux').then(m => m.remux)
     const decodeLib = import('https://esm.sh/@audio/decode@3.15.0').then(m => m.default)
 
@@ -240,8 +242,6 @@
     const report = $('report'), out = $('out'), player = $('player'), save = $('save'), saveLabel = $('saveLabel')
     const hasAAC = typeof AudioEncoder !== 'undefined'
     const CODEC_LABEL = { aac: 'AAC <small>· 192 kbps</small>', opus: 'Opus <small>· 192 kbps</small>', alac: 'ALAC <small>· lossless</small>', flac: 'FLAC <small>· lossless</small>' }
-    const dropAText = { t: dropA.querySelector('.t').innerHTML, s: dropA.querySelector('.s').innerHTML }
-    const dropBText = { t: dropB.querySelector('.t').innerHTML, s: dropB.querySelector('.s').innerHTML }
     const applyCodecDefault = () => { form.codec.value = hasAAC ? 'aac' : 'flac' }
     applyCodecDefault()
 
@@ -310,20 +310,8 @@
       progress.hidden = false; status.textContent = msg; status.classList.toggle('err', err); bar.hidden = !busy; bar.classList.toggle('busy', busy)
     }
     const yieldUI = () => new Promise(r => setTimeout(r, 30))
-    const showChosen = (zone, file) => { zone.querySelector('.t').textContent = file.name; zone.querySelector('.s').textContent = fmtSize(file.size) + ' · click to choose a different file' }
     const UNSUPPORTED_EXT = /\.(mkv|webm|avi)$/i
     const release = () => { if (save.href?.startsWith('blob:')) URL.revokeObjectURL(save.href); save.removeAttribute('href'); player.removeAttribute('src') }
-
-    function wireDrop(zone, input, onFile) {
-      zone.addEventListener('click', () => input.click())
-      zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click() } })
-      zone.addEventListener('paste', e => { const f = e.clipboardData?.files[0]; if (f) onFile(f) })
-      input.addEventListener('change', () => { if (input.files[0]) onFile(input.files[0]); input.value = '' })
-      zone.addEventListener('dragenter', e => { e.preventDefault(); zone.classList.add('over') })
-      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over') })
-      zone.addEventListener('dragleave', () => zone.classList.remove('over'))
-      zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) onFile(f) })
-    }
 
     let videoFile = null, videoBytes = null, info = null, vgen = 0
     let audioFile = null, audioDecoded = null, agen = 0
@@ -332,7 +320,7 @@
       const vg = ++vgen
       release()
       videoFile = file; videoBytes = null; info = null
-      showChosen(dropA, file)
+      zoneA.hide()
       panel.hidden = false; report.hidden = out.hidden = true
       name.textContent = file.name; meta.textContent = fmtSize(file.size)
       if (UNSUPPORTED_EXT.test(file.name) || /matroska|webm|x-msvideo|\/avi/.test(file.type)) {
@@ -358,7 +346,7 @@
     async function onAudio(file) {
       const ag = ++agen
       audioFile = file; audioDecoded = null
-      showChosen(dropB, file)
+      zoneB.hide()
       setMsg('Decoding replacement audio…', { busy: true })
       await yieldUI()
       try {
@@ -427,8 +415,7 @@
       }
     }
 
-    wireDrop(dropA, fileA, onVideo)
-    wireDrop(dropB, fileB, onAudio)
+    const zoneA = dropzone(dropA, fileA, onVideo), zoneB = dropzone(dropB, fileB, onAudio)
     form.addEventListener('change', e => {
       if (e.target.name === 'mode') {
         const replace = form.mode.value === 'replace'
@@ -444,9 +431,7 @@
       panel.hidden = true
       form.reset(); applyCodecDefault()
       document.querySelectorAll('.replace-only').forEach(x => x.hidden = true)
-      dropA.querySelector('.t').innerHTML = dropAText.t; dropA.querySelector('.s').innerHTML = dropAText.s
-      dropB.querySelector('.t').innerHTML = dropBText.t; dropB.querySelector('.s').innerHTML = dropBText.s
-      dropA.focus()
+      zoneB.show(); zoneA.show()
     })
   </script>
 </body>

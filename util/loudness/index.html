@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -160,11 +160,13 @@
       </ul>
       <h3>What the numbers mean</h3>
       <p><strong>Integrated LUFS</strong> is the loudness of the whole program. <strong>Loudness range (LRA)</strong> in LU describes how much the loudness varies; speech sits around 3 to 8 LU, dynamic music above 10. <strong>True peak</strong> catches inter-sample overs that a sample-peak meter misses.</p>
-      <h3>Questions</h3>
-      <p><strong>What is LUFS?</strong> Loudness Units relative to Full Scale, the perceptual loudness measure defined by ITU-R BS.1770. Integrated LUFS describes the whole file with gating, so silence does not pull it down. Streaming services normalize to a LUFS target.</p>
-      <p><strong>What loudness should I master to?</strong> Spotify, YouTube and Tidal play back at -14 LUFS, Apple Music and most podcast platforms at -16, EBU broadcast at -23 with a -1 dBTP ceiling. A louder master is simply turned down on playback.</p>
-      <p><strong>What is true peak?</strong> The peak level after 4× oversampling, which reveals inter-sample peaks that clip in DACs and lossy codecs. Keep it at or below -1 dBTP for streaming.</p>
-      <p><strong>Is the measurement standard-compliant?</strong> Yes. @audio/loudness implements ITU-R BS.1770-4 K-weighting with absolute and relative gating, EBU R128 loudness range (EBU Tech 3342) and 4× oversampled true peak, and is verified against the EBU test vectors.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>What is LUFS?</summary><p>Loudness Units relative to Full Scale, the perceptual loudness measure defined by ITU-R BS.1770. Integrated LUFS describes the whole file with gating, so silence does not pull it down. Streaming services normalize to a LUFS target.</p></details>
+        <details><summary>What loudness should I master to?</summary><p>Spotify, YouTube and Tidal play back at -14 LUFS, Apple Music and most podcast platforms at -16, EBU broadcast at -23 with a -1 dBTP ceiling. A louder master is simply turned down on playback.</p></details>
+        <details><summary>What is true peak?</summary><p>The peak level after 4× oversampling, which reveals inter-sample peaks that clip in DACs and lossy codecs. Keep it at or below -1 dBTP for streaming.</p></details>
+        <details><summary>Is the measurement standard-compliant?</summary><p>Yes. @audio/loudness implements ITU-R BS.1770-4 K-weighting with absolute and relative gating, EBU R128 loudness range (EBU Tech 3342) and 4× oversampled true peak, and is verified against the EBU test vectors.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -191,7 +193,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/loudness/process.js?v=8caa65ec', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Measuring loudness…","defaultFormat":"wav"} })
   </script>
 </body>

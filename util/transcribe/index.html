@@ -127,8 +127,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -184,12 +184,14 @@
       <p>Segment timestamps come straight from Whisper's own chunk boundaries and are the reliable default. Word-level timestamps need cross-attention data that only the older Xenova Whisper exports carry, so picking "Per word" switches the model to the matching Xenova conversion automatically.</p>
       <h3>Transcript, SRT, VTT</h3>
       <p><code>@audio/subtitle</code> writes the recognised segments (or words, via <code>fromWords</code>, when word timestamps are on) to SubRip (.srt) and WebVTT (.vtt) alongside a plain .txt transcript, ready to attach to a video or feed to an editor.</p>
-      <h3>Questions</h3>
-      <p><strong>Is the audio uploaded anywhere?</strong> No. Recognition runs in your browser with Whisper through @audio/neural-asr (transformers.js on ONNX Runtime, WASM or WebGPU). Audio never leaves your device. The Whisper model itself downloads once from huggingface.co and is cached by the browser; every transcription after that runs offline.</p>
-      <p><strong>Does it detect the language automatically?</strong> No. The browser Whisper pipeline does not auto-detect language; leaving the selector on Auto quietly assumes English. Pick the spoken language from the list for anything else — the wrong language still produces fluent but wrong text.</p>
-      <p><strong>Which model should I pick?</strong> Tiny (91 MB) is fastest, good for a quick draft of clear speech. Base (136 MB) is the default: a real accuracy step up for a modest extra download. Small (285 MB) gets closest to a human transcript but downloads more and runs slower, especially on a phone.</p>
-      <p><strong>How accurate are word-level timestamps?</strong> They come from Whisper's cross-attention alignment, documented as accurate to roughly ±100 ms, sometimes worse: short function words can land at the same instant. Sentence timestamps use Whisper's own segment boundaries and are more reliable; pick word-level only when you need karaoke-style captions.</p>
-      <p><strong>What happens with silence or music?</strong> Whisper has no explicit silent output. Fed music, noise or long silence it can produce fluent invented text instead of nothing. Trim non-speech sections before transcribing anything you plan to publish as-is.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Is the audio uploaded anywhere?</summary><p>No. Recognition runs in your browser with Whisper through @audio/neural-asr (transformers.js on ONNX Runtime, WASM or WebGPU). Audio never leaves your device. The Whisper model itself downloads once from huggingface.co and is cached by the browser; every transcription after that runs offline.</p></details>
+        <details><summary>Does it detect the language automatically?</summary><p>No. The browser Whisper pipeline does not auto-detect language; leaving the selector on Auto quietly assumes English. Pick the spoken language from the list for anything else — the wrong language still produces fluent but wrong text.</p></details>
+        <details><summary>Which model should I pick?</summary><p>Tiny (91 MB) is fastest, good for a quick draft of clear speech. Base (136 MB) is the default: a real accuracy step up for a modest extra download. Small (285 MB) gets closest to a human transcript but downloads more and runs slower, especially on a phone.</p></details>
+        <details><summary>How accurate are word-level timestamps?</summary><p>They come from Whisper's cross-attention alignment, documented as accurate to roughly ±100 ms, sometimes worse: short function words can land at the same instant. Sentence timestamps use Whisper's own segment boundaries and are more reliable; pick word-level only when you need karaoke-style captions.</p></details>
+        <details><summary>What happens with silence or music?</summary><p>Whisper has no explicit silent output. Fed music, noise or long silence it can produce fluent invented text instead of nothing. Trim non-speech sections before transcribing anything you plan to publish as-is.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -216,7 +218,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/transcribe/process.js?v=3d332cce', ...{"busy":"Loading the speech model…"} })
   </script>
 </body>

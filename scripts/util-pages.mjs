@@ -2,7 +2,7 @@
 // Run: node scripts/util-pages.mjs
 // Pages live inline below and as one module each in scripts/pages/ (export default { slug, … }, same shape).
 import { writeFileSync, mkdirSync, readdirSync } from 'fs'
-import { ROOT, sha, hash, drop, pkg, esc, src } from './page-helpers.mjs'
+import { ROOT, sha, hash, drop, pkg, esc, src, faq } from './page-helpers.mjs'
 
 const SITE = 'https://audiojs.dev'
 // util/libs.js — the shell's package URLs: a vendored bundle while a package is unpublished, esm.sh once it is (see page-helpers src)
@@ -803,9 +803,7 @@ const page = (p) => `${head(p)}
     </section>
 ${p.body}
     <p class="privacy">${NO_UPLOAD}${p.powered.map(pkg).join(p.powered.length > 2 ? ', ' : ' and ')}.</p>
-    <section class="seo">${p.seo}
-      <h3>Questions</h3>
-      ${p.faq.map(([q, a]) => `<p><strong>${q}</strong> ${a}</p>`).join('\n      ')}
+    <section class="seo">${p.seo}${faq(p.faq)}
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>${pages.filter(o => o !== p).map(o => `\n          <li><a href="/util/${o.slug}/">${o.name}</a></li>`).join('')}
@@ -814,7 +812,7 @@ ${p.body}
     </section>
   </main>${footer}
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '${JS}'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '${JS}'
     ${p.script.trim().replace('PROCESS', `'/util/${p.slug}/process.js?v=${p.worker ? sha(p.worker) : ''}'`).replace('TOOL', JSON.stringify(p.tool || {}))}
   </script>
 </body>

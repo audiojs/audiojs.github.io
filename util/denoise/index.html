@@ -119,8 +119,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=88caac66">
-  <link rel="modulepreload" href="/util/util.js?v=f6b95671">
+  <link rel="stylesheet" href="/util/util.css?v=4c2762b4">
+  <link rel="modulepreload" href="/util/util.js?v=a4a6ba6f">
 </head>
 <body>
   <header class="top">
@@ -172,11 +172,13 @@
       </ul>
       <h3>When to pick a method by hand</h3>
       <p>Automatic mode handles the common cases. If you know the problem, choose the method: dehum for a ground loop, declick for a scratched record, declip for a hot recording, gate for silence between takes. The output plays in the page so you can compare before saving.</p>
-      <h3>Questions</h3>
-      <p><strong>How does automatic mode choose?</strong> A classifier measures the recording: hum energy at 50/60 Hz and harmonics, click density, low-frequency rumble, noise-floor stationarity and sibilance. It picks the specialised method that scored highest and shows the plan.</p>
-      <p><strong>Which noises can it remove?</strong> Steady background noise (fans, hiss, air conditioning), mains hum, clicks and pops, vinyl crackle, clipping, wind rumble, microphone plosives, sibilance, room reverb and noise between phrases.</p>
-      <p><strong>Is this AI noise removal?</strong> No. Every method is classical signal processing: Wiener and OM-LSA spectral gain, spectral subtraction, adaptive notch filters, LPC click interpolation. It runs instantly on any device and never sends audio anywhere. For heavy speech-over-noise, ML models can do better; for hum, clicks, wind and hiss, these are the same algorithms the professional tools use.</p>
-      <p><strong>Does it work on music?</strong> Yes for hum, clicks, crackle and clipping. Broadband denoising on music is gentler than on speech; use it lightly and compare with the original in the player.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>How does automatic mode choose?</summary><p>A classifier measures the recording: hum energy at 50/60 Hz and harmonics, click density, low-frequency rumble, noise-floor stationarity and sibilance. It picks the specialised method that scored highest and shows the plan.</p></details>
+        <details><summary>Which noises can it remove?</summary><p>Steady background noise (fans, hiss, air conditioning), mains hum, clicks and pops, vinyl crackle, clipping, wind rumble, microphone plosives, sibilance, room reverb and noise between phrases.</p></details>
+        <details><summary>Is this AI noise removal?</summary><p>No. Every method is classical signal processing: Wiener and OM-LSA spectral gain, spectral subtraction, adaptive notch filters, LPC click interpolation. It runs instantly on any device and never sends audio anywhere. For heavy speech-over-noise, ML models can do better; for hum, clicks, wind and hiss, these are the same algorithms the professional tools use.</p></details>
+        <details><summary>Does it work on music?</summary><p>Yes for hum, clicks, crackle and clipping. Broadband denoising on music is gentler than on speech; use it lightly and compare with the original in the player.</p></details>
+      </section>
       <div class="more">
         <h3>More audio utilities</h3>
         <ul>
@@ -203,7 +205,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=f6b95671'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a4a6ba6f'
     tool({ process: '/util/denoise/process.js?v=5c02f474', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Analyzing noise…"} })
   </script>
 </body>
