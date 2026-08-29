@@ -18,7 +18,7 @@ export const FORMATS = {
   qoa: { label: 'QOA', ext: 'qoa', mime: 'audio/qoa', opts: {} },
   // `enc` names the @audio/encode format when it differs from the key (ALAC is the m4a container with another codec)
   m4a: { label: 'M4A · AAC', ext: 'm4a', mime: 'audio/mp4; codecs=mp4a.40.2', opts: { codec: 'aac', bitrate: 192 } },
-  alac: { label: 'ALAC · Apple Lossless (M4A)', ext: 'm4a', mime: 'audio/mp4; codecs=alac', enc: 'm4a', opts: { codec: 'alac' } },
+  alac: { label: 'ALAC · lossless M4A', ext: 'm4a', mime: 'audio/mp4; codecs=alac', enc: 'm4a', opts: { codec: 'alac' } },
   wv: { label: 'WavPack · lossless', ext: 'wv', mime: 'audio/wavpack', opts: {} },
 }
 
@@ -41,7 +41,7 @@ async function readMeta(bytes) {
 }
 
 export const $ = id => document.getElementById(id)
-export const fmtSize = n => n < 1e6 ? (n / 1e3).toFixed(0) + ' KB' : n < 1e9 ? (n / 1e6).toFixed(1) + ' MB' : (n / 1e9).toFixed(2) + ' GB'
+export const fmtSize = n => n < 1e3 ? n + ' B' : n < 1e6 ? (n / 1e3).toFixed(0) + ' KB' : n < 1e9 ? (n / 1e6).toFixed(1) + ' MB' : (n / 1e9).toFixed(2) + ' GB'
 export const fmtTime = s => { s = Math.round(s); const m = Math.floor(s / 60); return (m >= 60 ? Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0') : m) + ':' + String(s % 60).padStart(2, '0') }
 export const chLabel = n => n === 1 ? 'mono' : n === 2 ? 'stereo' : n === 6 ? '5.1' : n + ' ch'
 export const el = (tag, attrs = {}, ...children) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) k === 'class' ? e.className = v : k === 'html' ? e.innerHTML = v : e.setAttribute(k, v); e.append(...children); return e }
@@ -176,9 +176,10 @@ export function tool(cfg) {
   const save = el('a', { class: 'btn', download: '' }, el('span', { html: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M2.5 13.5h11"/></svg>' }), saveLabel)
   const fmtLabel = el('label', { class: 'fmt' }, 'Format ', fmt)
   const files = el('div', { class: 'row files', hidden: '' })
-  const out = el('div', { class: 'row out', hidden: '' }, player, previewNote, fmtLabel, el('span', { class: 'spacer' }), save)
+  // the page's options form moves in next to the format select: one controls line under the result
+  const out = el('div', { class: 'row out', hidden: '' }, player, previewNote, fmtLabel, ...(opts ? [opts] : []), el('span', { class: 'spacer' }), save)
   panel.append(el('div', { class: 'row' }, el('div', { class: 'file' }, name, meta), reset), progress, report, viz, files, out)
-  ;(opts || drop).after(panel)
+  drop.after(panel)
   fmt.value = cfg.defaultFormat || 'mp3'
   cfg.onFormat?.(fmt.value)
 
@@ -242,7 +243,7 @@ export function tool(cfg) {
         files.hidden = false
       }
       if (result.audio) await encode(id)
-      else progress.hidden = true
+      else { progress.hidden = true; player.hidden = fmtLabel.hidden = save.hidden = true; out.hidden = !opts }   // nothing to save: the row only carries the options
     } catch (e) {
       if (id !== run) return
       console.error(e)
@@ -252,7 +253,7 @@ export function tool(cfg) {
 
   async function encode(id = run) {
     const f = fmt.value
-    out.hidden = true
+    out.hidden = true; player.hidden = fmtLabel.hidden = save.hidden = false
     ui.status(f === 'wav' ? 'Writing WAV…' : `Encoding ${f.toUpperCase()}…`)
     try {
       // source tags ride along unless the processor set its own (or `meta: null` to drop them); worker results arrive without them

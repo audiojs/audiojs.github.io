@@ -127,3 +127,5 @@ footer a:hover { text-decoration: underline; }
 .faq details[open] p { animation: faq-in .25s ease-out both; }
 @keyframes faq-in { from { opacity: 0; transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .faq details::details-content { transition: none; } .faq details[open] p { animation: none; } }
+
+.row.out .opts { display: contents; }   /* the labels flow with Format and Save on one wrapping line */
