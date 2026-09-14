@@ -1,8 +1,62 @@
 ## Now (ordered)
 
-1. [ ] Website: resolve homepage direction (index-v2/3/4, undecided since Apr) → ship **Mix Analyser** first (`@audio/loudness` + `@audio/spectral` real) → FUNDING.yml/OSC/Sponsors plumbing → **Speech Enhancer** (see Website)
-2. [ ] Funding now-actions: GitHub Secure OSS Fund application, Open Source Collective host, Tidelift, STR audit request, thanks.dev/Pledge query, corporate outreach (see Funding)
-3. [ ] Registry-drift holds (all other drift resolved 2026-07-09: compile 0.1.1 + ducker 0.1.5 published, sweeps clean): 3 mic platform binaries (need CI runners) · pcm-convert 3.2.0 (needs 2FA OTP) · ~~decode wasm WIP~~ shipped 2026-08-27 (single-file ES wasm loaders, worklet tests, in decode 3.13.0)
+1. [~] **Package baseline and infrastructure consolidation** — audit `~/projects/@audio`, fix docs/examples and type gaps, align npm artifacts and exports, and verify clean installed consumers. [Baseline and ordered gaps](package-baseline.md). Native export/release waits for JZ v1; no interim compiler pin. Adapter work: `@audio/compile/.work/todo.md`. No registry release is complete until the installed public packages pass the same check.
+2. [ ] **One useful effect, end to end** — choose an existing filter/delay/compressor with a developer-musician; audition in browser, change its source, build VST3, automate it in a DAW, save/reopen the session. Useful controls and a few presets. Gain is the release smoke test, not the flagship effect.
+3. [ ] **Realtime quality and independent host evidence** — test the recommended processors for automation, allocations, variable block sizes/sample rates, state, bypass, latency/tails and CPU spikes; publish exact limits. Add macOS native-build CI and an independent validator/DAW check. Follow the host groups below.
+4. [ ] **Small supported package path** — mark recommended / experimental / legacy, with tested targets and examples. Prioritize types, release checks and compatibility on this path: processor contract + selected DSP → compile-wam/compile-vst → web-audio-api/assert/host → codecs/buffers. Preserve compatibility for existing infrastructure users; defer wholesale repo moves and catalog-wide polish.
+5. [ ] **Three external authors** — help three JavaScript-capable musicians/DSP developers build effects they already wanted. Record installation friction, first successful render/build, actual session use and return to build another effect. Use that evidence to select the next algorithm or target. No outreach/messages without authorization.
+
+## Direction and acceptance (2026-09-14)
+
+Serve JavaScript-capable musicians and DSP developers building effects/plugins first. Proposed promise: **write the processor in JavaScript, hear it in the browser, build it into a plugin**. State the supported JavaScript/toolchain subset and platform limits; this is not yet an every-host guarantee.
+
+**Current constraint (2026-09-14): wait for JZ v1.** Let compiler work finish independently. Prioritize consolidation, consistent package entry points, shipped examples, browser/Node integration checks, types and documented gaps. Native compilation, native release CI, native publication and DAW acceptance resume only after the released JZ v1 passes a clean-consumer build. `jz@0.9.2` currently rejects `host: 'native'`; do not mask this with a pinned snapshot or sibling checkout.
+
+The compounding assets are useful DSP, a stable processor contract, reproducible quality checks and real integrations. Existing npm infrastructure downloads do not validate demand for plugin authoring. Success for this phase: three independently authored effects used in real sessions.
+
+- [ ] Before expanding the catalog, prove the current package path from an actual npm install with no sibling checkouts or workspace links.
+- [ ] For the first effect: verify input/output, automated controls without unexpected clicks/resets, bypass, preset/session recall, multiple instances, offline bounce, silence/tails, and 44.1/48/96 kHz at small/large/variable blocks. Compare JS/browser/native output within documented tolerances; use listening checks for musical quality.
+- [ ] Record each result as artifact version/hash, compiler version, OS/architecture, DAW version, plugin format, fixture/project, checks run, failures and date. A supported format is not a tested host. No DAW is marked verified yet.
+- [ ] Document known suitability limits: delay time currently restarts the processor; tube saturation is whole-signal (`streaming: false`). Resolve these when the chosen effect requires live modulation/oversampling.
+- [ ] After the first workflow succeeds, surface `@audio/assert` and `@audio/host` with focused audio-regression and plugin-batch-testing recipes.
+
+### Package baseline before expanding infrastructure
+
+- [x] Inventory 332 publishable packages under `~/projects/@audio`; add repeatable `npm run check:packages` and documentation regression tests.
+- [x] Correct 34 generated leaf examples across beat/dynamics/effect, including envelope's named export; fix denoise's broken license link. Fix the generator, preserve hand-written docs. All four family suites pass.
+- [x] Prepare and test compiler tarballs in isolated Node/browser consumers; ship examples and the existing demo with the standalone browser adapter. No publication; native compilation remains gated on JZ v1.
+- [x] Close the 23 non-platform declaration gaps: 21 roots plus both compiler adapters. Reuse leaf declarations; expose 70 previously hidden leaf declarations; repair window-function subpaths and Node Web Audio type compatibility. `npm run test:types` checks packed NodeNext/bundler consumers without `skipLibCheck`. Details in [package-baseline.md](package-baseline.md).
+- [ ] Extend packed-consumer/example/type checks to the selected DSP path and its dependencies; retain family signal tests.
+- [ ] Unify the documented expectations: units, input/output and mutation, state/reset, streaming suitability, modulation, latency/tails and supported runtimes. Fill missing behavior evidence before marking packages recommended.
+- [ ] Recheck exact published microphone binaries on Linux ARM64/x64 and Windows x64; local build outputs are absent, registry health is not yet established.
+- [ ] Wire the existing release drift sweep and artifact tests into CI, with exact-version consumer verification after an authorized release. Do not build a parallel release system.
+
+Verification 2026-09-14: documentation tests and local baseline pass; beat 70, dynamics 56, effect 67, denoise 18 + 56 tests pass. Compiler source 51 passes in the development environment; fresh installed browser/Node artifact checks pass independently of JZ. Full site suite passes, including Chromium/Firefox/WebKit and all seven utility pages.
+
+### DAW coverage: adoption groups, plus newer hosts
+
+These are coverage priorities for this audience, not a claimed worldwide market-share ranking. Surveys differ substantially by audience. Within a group, test the current stable release first, then the previous supported major when an adopter needs it. Keep DAW priority separate from format implementation order: Logic is a core target even though AU is not built yet.
+
+| Group | Hosts | Planned path / acceptance |
+|---|---|---|
+| 1 — broad music-production adoption | Ableton Live, FL Studio (Fruity Loops), Logic Pro, Cubase | VST3 for Live/FL/Cubase; AU for Logic. Each gets its own saved-session and automation check. |
+| 1 — recording, post and extensible workflows | REAPER, Nuendo, Studio One / Fender Studio Pro | REAPER is the first practical independent integration gate, not a claim of first place in market share. Validate Nuendo separately from Cubase. Start with VST3. |
+| 2 — established creative workflow | Reason | VST3 in Reason 12.5+; validate the DAW itself, not merely the Reason Rack plugin inside another host. |
+| 2 — newer/modern-host coverage | Bitwig Studio, Universal Audio LUNA, Tracktion Waveform | Start with VST3. Bring Bitwig into the first VST3 pilot alongside REAPER; add CLAP after VST3/AU acceptance and actual author demand. These are modern-host candidates, not all newly launched products. |
+| Later — professional format expansion | Pro Tools | Important installed base, but requires a separate AAX feasibility/licensing/distribution plan. Do not claim support through VST3. |
+
+Implementation sequence: **REAPER + Bitwig VST3 pilot → remaining group-1 VST3 hosts → AU for Logic (also cross-check in Live) → Reason / remaining modern hosts → demand-led CLAP and other formats**. Cover macOS first (current builder limit), then Windows VST3 for the broad-use group; add Linux where hosts and adopters justify it. Do not install/purchase every DAW to start: use an independent validator and willing owners for the recorded host matrix.
+
+Evidence checked 2026-09-14: [Production Expert 2025 reader survey](https://www.production-expert.com/production-expert-1/2025-daw-survey-the-results) (professional readership, not global shares); [Ableton formats](https://www.ableton.com/en/manual/working-with-instruments-and-effects/); [Logic Audio Units](https://support.apple.com/en-au/guide/logicpro/lgcp22a0dab0/mac); [Reason VST3](https://help.reasonstudios.com/hc/en-us/articles/360002999093-What-VST-types-are-supported-in-Reason); [Bitwig plugin handling](https://www.bitwig.com/userguide/latest/vst_plug-in_handling_and_options/); [LUNA cross-platform VST3](https://help.uaudio.com/hc/en-us/articles/26636829359252-FAQ-LUNA-for-Windows); [Fender Studio Pro](https://www.fender.com/articles/fender-studio/inside-the-fender-sound).
+
+### Deferred during this phase
+
+Website redesign and the website/funding/product concepts below remain backlog, not the active build order. Pause new algorithm variants, broad target-format expansion, a new general CLI/IDE/marketplace and catalog-wide refactors until the supported workflow is used externally. Continue bug fixes and compatibility maintenance for existing package users.
+
+Registry state must be rechecked rather than inherited from July's sweep: `pcm-convert@3.2.0` is published as of this review; `@audio/compile@0.1.3` is documentation-only, and the split compiler adapters are not yet on npm. Mic platform binaries still need a fresh audit.
+
+## Recent shipped work
+
 4. [x] **2026-08-27 video-container wave**: `@audio/decode` 3.13→3.14: NEW `decode-mp4` (MP4/MOV/M4V/3GP demux → AAC/ALAC/MP3/FLAC/Opus/AC-3/DTS/AMR/PCM/G.711), `decode-avi`, `decode-ac3` (liba52 wasm, 43 KB), `decode-dts` (libdca wasm) · `decode-webm` Matroska codecs + lacing + DiscardPadding · `decode-aac` raw-AU API + QuickTime v1/v2 stsd (MOV was silently empty) · `audio-type` mkv/avi/ac3/dts. `@audio/encode`: `encode-opus` on own libopus single-file wasm (opusscript failed on every CDN; pre-skip was a hard-coded 3840 = 73 ms cut; now sample-exact), `core` export, `encode-webm` on it with DiscardPadding. Site: `/util/extract-audio/` (in-house decode first, Web Audio + real-time capture fallbacks), Utilities section, canonical audiojs.dev. Verified: Node+Chromium suites, trailer (1080p).mp4 end-to-end in Chromium. Open: E-AC-3 (no open decoder), mkvmerge-laced MKV untested (lacing implemented, no fixture).
 4. [x] **2026-08-04 speaker/decode alias wave published**: `audio-speaker` 2.3.2 = unscoped alias of `@audio/speaker` (decode-precedent shape, `speaker/packages/audio-speaker`) — un-deprecated on npm, old versions re-worded to the soft "thin alias" pointer · `@audio/speaker` 2.3.3 (index.d.ts TS2652: function+namespace merge → declare + export default) · `audio-decode` 3.11.5 (stream default export restored — `export *` drops defaults — + stream.d.ts shipped) · `@audio/decode` 3.11.3 (stream.d.ts stale duplicate-default tail removed). Verified from live registry: null-backend write cycle + both stream defaults + strict tsc nodenext; speaker 27/27, decode 68/68. Committed per repo (pushes pending).
 5. [x] **2026-07-10 gap-closure wave published**: NEW `@audio/{synth-fm, synth-modal, effect-rotary, effect-tapestop}` 0.1.0 · dynamics compressor/expander/softclip 0.2.0 + multiband 0.4.0 (upward/OTT/oversample; expander knee sign fix) + 6 sibling range bumps · umbrellas dynamics 0.2.3, synth 1.1.1, effect 2.1.2 · `audio@2.6.2` (registry +4; engine 669/669). Suites: dynamics 47 · synth 31/113 · effect 65. Committed + pushed per repo (dynamics/synth/effect/audio/site). (New-package GETs lagged npm indexing ~10 min at publish; all four verified visible same session.)
@@ -12,7 +66,7 @@
 
 - [ ] Open, reasons on record in their READMEs: `speech-world` (faithful WORLD port or WASM — not a namesake; doubles as De-Slop's phase-2 vocoder), `midi-soundfont` (asset-strategy decision), neural lane (runtime adapter + policy) · reverb partitioned→streaming
 - [ ] Per-repo README refresh at publish (names renamed 2026-07 ✓; API docs/examples per repo still to verify) — filter: re-enable `test/readme.js` fence runner with the new import map; update `filter/plot/generate.js` + `test/types.ts` to split families
-- [ ] Per-atom `.d.ts` + individual READMEs — denoise family done 2026-07-09 (13 strict-clean `index.d.ts` with full option surfaces + 14 generated READMEs via `scripts/atomdocs.mjs`; pattern proven); ~265 atoms to go — a content-authorship decision, not a mechanical one
+- [~] Package declarations + executable READMEs — all 332 publishable packages in `~/projects/@audio` have READMEs; no non-platform declaration-presence gaps remain. The 21 newly typed roots and compiler adapters have strict packed-consumer coverage. Extend executable examples and semantic type/API checks beyond that path; declaration presence alone is not full API verification. Follow [the baseline](package-baseline.md).
 - [~] Release automation — `scripts/release.mjs` shipped 2026-07-09: org-wide registry-drift sweep (315 packages; AHEAD/DIRTY/BEHIND/UNPUB; content-hash vs registry tarball) + `--publish` mode. Remaining: wire into CI/cron; changesets still an option for changelog discipline; bus factor (2nd npm owner + recovery playbook)
 - Workspace policy (standing, decided 2026-07): raw-source publishing + zero shared-only packages — small util duplication is the accepted cost. A util with real standalone value → promote to a *categorized* atom (`@audio/quality`/`@audio/spectral-pvoc` precedent), never a `*-core`/`*-utils`.
 

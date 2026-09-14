@@ -13,9 +13,10 @@
 // Atoms with no matching section are reported for hand-writing.
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
-import { join } from 'path'
+import { join, resolve } from 'path'
+import { homedir } from 'os'
 
-const ROOT = join(process.env.HOME, 'projects/@audio')
+const ROOT = resolve(process.env.AUDIO_ROOT || join(homedir(), 'projects/@audio'))
 const repo = process.argv[2]
 const WRITE = process.argv.includes('--write')
 if (!repo) { console.error('usage: atomdocs.mjs <repo> [--write]'); process.exit(1) }
@@ -24,6 +25,17 @@ const repoDir = join(ROOT, repo)
 const umbrella = ['README.md', 'readme.md'].map(f => join(repoDir, f)).find(existsSync)
 const md = readFileSync(umbrella, 'utf8')
 const umbrellaName = JSON.parse(readFileSync(join(repoDir, 'package.json'), 'utf8')).name
+// Read re-exports without loading DSP modules. A named-only leaf (e.g. envelope)
+// needs a named import even when most siblings use default exports.
+const index = join(repoDir, 'index.js')
+const bindings = new Map()
+if (existsSync(index)) {
+  for (const [, names, source] of readFileSync(index, 'utf8').matchAll(/export\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g))
+    for (const name of names.split(',')) {
+      const [local, exported = local] = name.trim().split(/\s+as\s+/)
+      bindings.set(`${source}:${exported}`, local)
+    }
+}
 
 // Split umbrella into sections keyed by heading token
 let sections = {}
@@ -86,7 +98,7 @@ const FN_NAME = {
 }
 
 const pkgs = readdirSync(join(repoDir, 'packages')).filter(p => existsSync(join(repoDir, 'packages', p, 'package.json')))
-let written = 0, missing = [], skipped = []
+let changed = 0, missing = [], skipped = []
 
 for (let p of pkgs) {
   let pj = JSON.parse(readFileSync(join(repoDir, 'packages', p, 'package.json'), 'utf8'))
@@ -100,6 +112,18 @@ for (let p of pkgs) {
   if (!section) { missing.push(p); continue }
 
   let fnName = FN_NAME[p] || (ALIAS[p] || short).replace(/-(\w)/g, (_, c) => c.toUpperCase())
+  const binding = bindings.get(`${pj.name}:${fnName}`) || 'default'
+  const leafImport = name => {
+    if (binding === 'default') return `import ${name} from '${pj.name}'`
+    return `import { ${binding}${binding === name ? '' : ` as ${name}`} } from '${pj.name}'`
+  }
+  // The leaf's install command must suffice for its own examples. Preserve
+  // unrelated/multi-function imports: those are not this package's API.
+  let content = section.replace(/^.*\n/, '').trim().replace(
+    /import\s*\{\s*(\w+)(?:\s+as\s+(\w+))?\s*,?\s*\}\s*from\s*(['"])([^'"]+)\3/g,
+    (statement, name, alias, quote, source) => source === umbrellaName && name === fnName
+      ? leafImport(alias || name) : statement
+  )
   let body = `# ${pj.name} [![npm](https://img.shields.io/npm/v/${pj.name})](https://www.npmjs.com/package/${pj.name}) [![MIT](https://img.shields.io/badge/MIT-%E0%A5%90-white)](https://github.com/krishnized/license)
 
 ${pj.description}
@@ -109,10 +133,10 @@ npm install ${pj.name}
 \`\`\`
 
 \`\`\`js
-import ${fnName} from '${pj.name}'
+${leafImport(fnName)}
 \`\`\`
 
-${section.replace(/^.*\n/, '').trim()}
+${content}
 
 ---
 
@@ -123,8 +147,9 @@ MIT © [audiojs](https://github.com/audiojs)
   let out = join(repoDir, 'packages', p, 'README.md')
   let prev = existsSync(out) ? readFileSync(out, 'utf8') : null
   if (prev === body) continue
-  if (WRITE) { writeFileSync(out, body); written++ }
+  changed++
+  if (WRITE) writeFileSync(out, body)
   else console.log(`would write ${p}/README.md (${body.length} bytes, section '${short}')`)
 }
 
-console.log(`\n${WRITE ? 'wrote' : 'pending'}: ${WRITE ? written : pkgs.length - missing.length - skipped.length} · hand-written kept: ${skipped.join(', ') || 'none'} · no umbrella section: ${missing.join(', ') || 'none'}`)
+console.log(`\n${WRITE ? 'wrote' : 'pending'}: ${changed} · hand-written kept: ${skipped.join(', ') || 'none'} · no umbrella section: ${missing.join(', ') || 'none'}`)
