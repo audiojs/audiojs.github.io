@@ -47,13 +47,32 @@ try {
   writeFileSync(join(consumer, 'package.json'), JSON.stringify({ private: true, type: 'module' }))
   const archives = []
   for (const name of selected) {
-    const { dir } = packages.get(name)
+    const { dir, pkg } = packages.get(name)
     const [pack] = JSON.parse(run(npm, ['pack', '--ignore-scripts', '--json', '--pack-destination', work], dir))
+    const declarations = [pkg.types, pkg.typings].filter(Boolean)
+    const adjacent = pkg.main?.replace(/\.([cm]?)js$/, '.d.$1ts')
+    if (adjacent && adjacent !== pkg.main && existsSync(join(dir, adjacent))) declarations.push(adjacent)
+    const packed = new Set(pack.files.map(file => file.path))
+    for (const file of declarations)
+      assert.ok(packed.has(file.replace(/^\.\//, '')), `${name}: declaration ${file} missing from npm tarball`)
     archives.push(join(work, pack.filename))
   }
   console.log(`Packed ${archives.length} local packages (umbrellas and their local dependencies).`)
   run(npm, ['install', '--ignore-scripts', '--no-audit', '--no-fund', ...archives])
   writeFileSync(join(consumer, 'umbrellas.ts'), sources.umbrellas)
+  // Execute the actual first examples shipped in the two reviewed family READMEs.
+  // Export their results only so the consumer assertions can inspect signal/state.
+  const readmes = []
+  for (const [name, exports] of [['dynamics', 'samples, compressed, limited, blocks, opts'], ['eq', 'input, output, params']]) {
+    const md = readFileSync(join(consumer, 'node_modules', '@audio', name, 'README.md'), 'utf8')
+    const code = md.match(/^```js\r?\n([\s\S]*?)^```/m)?.[1]
+    assert.ok(code?.trim(), `${name}: missing executable first JavaScript example`)
+    const file = `${name}-readme.js`
+    writeFileSync(join(consumer, file), code + `\nexport { ${exports} }\n`)
+    readmes.push(file)
+  }
+  writeFileSync(join(consumer, 'readmes.mjs'), readFileSync(new URL('readmes.mjs', fixtures), 'utf8'))
+  console.log(run(process.execPath, ['--test', 'readmes.mjs']).trim())
   const tsc = fileURLToPath(new URL('../node_modules/typescript/bin/tsc', import.meta.url))
   for (const mode of ['node', 'browser']) {
     const expected = []
@@ -75,7 +94,7 @@ try {
     writeFileSync(join(consumer, 'target.ts'), sources[mode])
     run(process.execPath, [tsc, '--noEmit', '--strict', '--target', 'ES2022', '--lib', 'ES2022,DOM,DOM.Iterable',
       '--module', mode === 'node' ? 'NodeNext' : 'ESNext', '--moduleResolution', mode === 'node' ? 'NodeNext' : 'Bundler',
-      'umbrellas.ts', 'target.ts', 'exports.ts'])
+      '--allowJs', '--checkJs', 'umbrellas.ts', 'target.ts', 'exports.ts', ...readmes])
     console.log(`${mode}: strict installed examples, rejected invalid calls, and every runtime export passed`)
   }
   writeFileSync(join(consumer, 'native-only.ts'), sources.node.replace("from '@audio/compile'", "from '@audio/compile-vst'"))

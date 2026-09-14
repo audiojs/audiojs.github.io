@@ -3,6 +3,12 @@ import defeedback from '@audio/defeedback'
 import { defeedback as feedbackAtom } from '@audio/defeedback/audio'
 import { gate, dehum, type DehumOptions } from '@audio/denoise'
 import { delay, type DelayOptions } from '@audio/effect'
+import { compressor as dynamicsCompressor, gate as dynamicsGate, deesser, multiband, transientShaper, opto, fet, vca, varimu, leveler,
+  type CompressorOpts, type GateOpts, type DeesserOpts, type EnvelopeOpts, type LimiterOpts, type ExpanderOpts,
+  type UnlimitOpts, type DuckerOpts, type SoftclipOpts, type CompandOpts } from '@audio/dynamics'
+import { parametricEq, graphicEq, lowShelf, highShelf, baxandall, tilt, firEq, firDesign, dynamicEq, fitEq,
+  toEqualizerApo, fromEqualizerApo, eqResponse, type PeqBand, type ShelfParams, type GraphicEqParams,
+  type ParametricEqParams, type BaxandallParams, type TiltParams } from '@audio/eq'
 import { latency } from '@audio/measure'
 import { parse as parseMidi } from '@audio/midi'
 import { chroma } from '@audio/mir'
@@ -28,6 +34,32 @@ const data = new Float32Array(2048)
 const ampOptions: AmpTubeOptions = { fs: 48000, gain: 0.3 }
 const humOptions: DehumOptions = { freq: 50 }
 const delayOptions: DelayOptions = { time: 0.25, feedback: 0.3 }
+// Older umbrella option names remain usable, including their original fields.
+const compressorOptions: CompressorOpts = { detector: 'rms', rmsWindow: 64, sampleRate: 48000 }
+const gateOptions: GateOpts = { lookahead: 5, closeThreshold: -48, rmsWindow: 256 }
+const deesserOptions: DeesserOpts = { mode: 'band', block: 64, rmsWindow: 256 }
+const legacyOptions: [EnvelopeOpts, LimiterOpts, ExpanderOpts, UnlimitOpts, DuckerOpts, SoftclipOpts, CompandOpts] =
+  [{ detector: 'rms' }, { ceiling: -1 }, { mode: 'upward' }, { amount: 2 }, { range: -12 }, { oversample: 2 }, { points: [[-20, -24]] }]
+const dynamicsResults: Float32Array[] = [dynamicsCompressor(data, compressorOptions), dynamicsGate(data, gateOptions), deesser(data, deesserOptions),
+  multiband(data, { fs: 48000, bands: [{ threshold: -20 }, null], freqs: [1000] }), transientShaper(data, { attackGain: 0.5 }), leveler(data, { frame: 0.5 })]
+const modelResults: Float32Array[] = [opto(), fet(), vca(), varimu()].map(write => write(data))
+const band: PeqBand = { fc: 1000, Q: 1, gain: -3 }
+const peqOptions: ParametricEqParams = { bands: [band], fs: 48000, cached: true }
+const shelfOptions: ShelfParams = { fc: 200, gain: 3, cached: true }
+const graphicOptions: GraphicEqParams = { gains: { 1000: -3 }, cached: true }
+const bassOptions: BaxandallParams = { bass: 2, cached: true }
+const tiltOptions: TiltParams = { gain: 2, cached: true }
+const eq32: Float32Array = parametricEq(data, peqOptions)
+const eq64: Float64Array = highShelf(new Float64Array(8), shelfOptions)
+const eqArrays: number[][] = [lowShelf([1, 0], shelfOptions), graphicEq([1, 0], graphicOptions), baxandall([1, 0], bassOptions), tilt([1, 0], tiltOptions)]
+const fir: Float64Array = firDesign(f => f > 5000 ? -6 : 0, { taps: 63, fs: 48000 })
+const firOutput: Float64Array = firEq(eq64, { coefs: fir })
+const dynamicOutput: Float32Array = dynamicEq(data, { bands: [{ fc: 6000, mode: 'down', attack: 5 }] })
+const fit = fitEq([{ f: 100, gain: 3 }, { f: 10000, gain: -3 }], { bands: 4, fs: 48000 })
+const fitted: Float32Array = parametricEq(data, { bands: fit.bands })
+const apo: string = toEqualizerApo(fit)
+const restored = fromEqualizerApo(apo)
+const responseDb: number = eqResponse(restored.bands, restored.preamp, 48000)(1000)
 const processed: Float32Array[] = [amp(data, ampOptions), gate(data, { attack: 0.001 }), dehum(data, humOptions), delay(data, delayOptions),
   linear(data, { from: 48000, to: 44100 }), freeverb(data), tube(data), snap(data), noise(1, { color: 'pink' }), glottis({ f0: 220 })]
 const feedback = defeedback({ fs: 48000, pnpr: 18, ramp: 256 })
@@ -75,6 +107,18 @@ node.setParam('value', 0.5)
 node.dispose()
 
 // Invalid calls must remain errors: detect accidental any and widened wrappers.
+// @ts-expect-error whole-buffer processors do not have a writer overload
+multiband({ fs: 48000 })
+// @ts-expect-error this processor reads fs, not sampleRate
+leveler(data, { sampleRate: 48000 })
+// @ts-expect-error dynamic EQ band modes are a closed set
+dynamicEq(data, { bands: [{ fc: 1000, mode: 'compress' }] })
+// @ts-expect-error FIR needs typed arrays (TypedArray.set), not plain arrays
+firEq([1, 0], { coefs: fir })
+// @ts-expect-error required state/options object cannot be omitted
+parametricEq(data)
+// @ts-expect-error an APO document is text
+fromEqualizerApo(42)
 // @ts-expect-error delay time is seconds, represented by a number
 delay(data, { time: '250ms' })
 // @ts-expect-error gate times are numeric
