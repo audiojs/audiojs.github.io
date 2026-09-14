@@ -6,6 +6,7 @@ import { homedir, tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import ts from 'typescript'
+import verifyWorklets from './types/worklet.mjs'
 
 const root = resolve(process.env.AUDIO_ROOT || join(homedir(), 'projects/@audio'))
 const fixtures = new URL('./types/', import.meta.url)
@@ -60,11 +61,14 @@ try {
   console.log(`Packed ${archives.length} local packages (umbrellas and their local dependencies).`)
   run(npm, ['install', '--ignore-scripts', '--no-audit', '--no-fund', ...archives])
   writeFileSync(join(consumer, 'umbrellas.ts'), sources.umbrellas)
-  // Execute the actual first examples shipped in the two reviewed family READMEs.
+  // Execute the actual first examples shipped in the reviewed family READMEs.
   // Export their results only so the consumer assertions can inspect signal/state.
   const readmes = []
-  for (const [name, exports] of [['dynamics', 'samples, compressed, limited, blocks, opts'], ['eq', 'input, output, params']]) {
-    const md = readFileSync(join(consumer, 'node_modules', '@audio', name, 'README.md'), 'utf8')
+  for (const [name, exports] of [['dynamics', 'samples, compressed, limited, blocks, opts'], ['eq', 'input, output, params'], ['effect', 'input, output, params']]) {
+    const dir = join(consumer, 'node_modules', '@audio', name)
+    const readme = readdirSync(dir).find(file => /^readme\.md$/i.test(file))
+    assert.ok(readme, `${name}: missing README in npm tarball`)
+    const md = readFileSync(join(dir, readme), 'utf8')
     const code = md.match(/^```js\r?\n([\s\S]*?)^```/m)?.[1]
     assert.ok(code?.trim(), `${name}: missing executable first JavaScript example`)
     const file = `${name}-readme.js`
@@ -72,7 +76,9 @@ try {
     readmes.push(file)
   }
   writeFileSync(join(consumer, 'readmes.mjs'), readFileSync(new URL('readmes.mjs', fixtures), 'utf8'))
-  console.log(run(process.execPath, ['--test', 'readmes.mjs']).trim())
+  // The family tests use public imports, so exactly the same regressions run here.
+  writeFileSync(join(consumer, 'effect-api.mjs'), readFileSync(join(root, 'effect', 'test-api.js'), 'utf8'))
+  console.log(run(process.execPath, ['--test', 'readmes.mjs', 'effect-api.mjs']).trim())
   const tsc = fileURLToPath(new URL('../node_modules/typescript/bin/tsc', import.meta.url))
   for (const mode of ['node', 'browser']) {
     const expected = []
@@ -110,6 +116,7 @@ try {
   writeFileSync(join(consumer, 'sdk.ts'), readFileSync(new URL('sdk.ts', fixtures), 'utf8'))
   run(process.execPath, [tsc, '--noEmit', '--strict', '--target', 'ES2022', '--lib', 'ES2022,DOM,DOM.Iterable,ESNext.Disposable', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', 'sdk.ts'])
   console.log('Node Web Audio SDK: packed declarations and bidirectional worklet connections passed')
+  await verifyWorklets(consumer)
 } finally {
   if (process.argv.includes('--keep')) console.log(`Kept consumer for inspection: ${work}`)
   else rmSync(work, { recursive: true, force: true })

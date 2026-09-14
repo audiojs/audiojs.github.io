@@ -3,6 +3,8 @@ import defeedback from '@audio/defeedback'
 import { defeedback as feedbackAtom } from '@audio/defeedback/audio'
 import { gate, dehum, type DehumOptions } from '@audio/denoise'
 import { delay, type DelayOptions } from '@audio/effect'
+import * as effects from '@audio/effect'
+import { delay as delayProcessor } from '@audio/effect-delay/audio'
 import { compressor as dynamicsCompressor, gate as dynamicsGate, deesser, multiband, transientShaper, opto, fet, vca, varimu, leveler,
   type CompressorOpts, type GateOpts, type DeesserOpts, type EnvelopeOpts, type LimiterOpts, type ExpanderOpts,
   type UnlimitOpts, type DuckerOpts, type SoftclipOpts, type CompandOpts } from '@audio/dynamics'
@@ -34,6 +36,14 @@ const data = new Float32Array(2048)
 const ampOptions: AmpTubeOptions = { fs: 48000, gain: 0.3 }
 const humOptions: DehumOptions = { freq: 50 }
 const delayOptions: DelayOptions = { time: 0.25, feedback: 0.3 }
+const { mixer: mixEffects, pingPong, rotary, ...monoEffects } = effects
+for (const process of Object.values(monoEffects)) {
+  const result32: Float32Array = process(data)
+  const result64: Float64Array = process(new Float64Array(8))
+}
+const stereoEffects: [Float32Array, Float64Array][] = [pingPong(data, new Float64Array(data.length)), rotary(data, new Float64Array(data.length))]
+const mixedEffects: Float64Array = mixEffects([])
+const delayTail: number = delayProcessor.tail({ sampleRate: 48000, params: { time: Float32Array.of(0.25), feedback: Float32Array.of(0.3) } })
 // Older umbrella option names remain usable, including their original fields.
 const compressorOptions: CompressorOpts = { detector: 'rms', rmsWindow: 64, sampleRate: 48000 }
 const gateOptions: GateOpts = { lookahead: 5, closeThreshold: -48, rmsWindow: 256 }
@@ -107,6 +117,10 @@ node.setParam('value', 0.5)
 node.dispose()
 
 // Invalid calls must remain errors: detect accidental any and widened wrappers.
+// @ts-expect-error PCM input is floating point, not an integer sample array
+delay(new Int16Array(8))
+// @ts-expect-error null does not mean default options
+delay(data, null)
 // @ts-expect-error whole-buffer processors do not have a writer overload
 multiband({ fs: 48000 })
 // @ts-expect-error this processor reads fs, not sampleRate

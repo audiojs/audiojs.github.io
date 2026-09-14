@@ -7,6 +7,16 @@ import compressor from '@audio/dynamics-compressor'
 import parametricEq from '@audio/eq-parametric'
 import * as d from './dynamics-readme.js'
 import * as e from './eq-readme.js'
+import * as f from './effect-readme.js'
+
+test('installed effect README produces the exact documented echoes without mutating its original input', () => {
+  const original = new Float32Array(14401); original[0] = 1
+  assert.deepEqual(f.input, original)
+  assert.notEqual(f.output, f.input)
+  const expected = new Float32Array(original.length)
+  expected[0] = 0.5; expected[4800] = 0.5; expected[9600] = 0.25; expected[14400] = 0.125
+  assert.deepEqual(f.output, expected)
+})
 
 test('installed dynamics README preserves input, returns full output and matches streaming samples', () => {
   assert.equal(dynamics.compressor, compressor)
