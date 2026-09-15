@@ -1,0 +1,35 @@
+.prosody { margin-bottom: 28px; --c-panel-bg: var(--c-ink); --c-panel-fg: var(--c-paper); --c-panel-label: var(--c-rule); --c-panel-grid: var(--c-mute); --c-focus: var(--c-accent); --c-ink-2: var(--c-mute); }
+.prosody .intro { border: 0; justify-content: center; font-size: var(--fs-sm); }
+.prosody > .status { margin: 16px 0; min-height: 1.5em; }
+.prosody fieldset { padding: 0; margin: 0; min-width: 0; border: 0; }
+.prosody fieldset:disabled { opacity: .65; }
+.prosody .legend { display: flex; flex-wrap: wrap; gap: 10px 22px; padding: 16px 20px; font-size: 13px; }
+.prosody .legend strong { color: var(--c-ink); }
+.prosody #curve { display: block; width: 100%; height: 300px; background: var(--c-panel-bg); touch-action: none; cursor: crosshair; }
+.prosody #curve > * { pointer-events: none; } /* Keep capture on the SVG while traces redraw. */
+.prosody #curve text { fill: var(--c-panel-label); font: 12px system-ui; }
+.prosody #curve .wave { fill: var(--c-panel-label); opacity: .24; }
+.prosody #curve .grid { stroke: var(--c-panel-grid); }
+.prosody #curve .detected { stroke: var(--c-panel-label); stroke-dasharray: 4 4; }
+.prosody #curve .target { stroke: var(--c-accent); stroke-width: 2.5; }
+.prosody #curve .selection { fill: var(--c-accent); opacity: .12; }
+.prosody #curve .point { fill: var(--c-panel-fg); stroke: var(--c-accent); stroke-width: 2; }
+.prosody #curve .playhead { stroke: var(--c-panel-fg); stroke-width: 1; }
+.prosody :is(button, input, a.btn):focus-visible, .prosody #curve:focus-visible { outline: 3px solid var(--c-focus); outline-offset: -3px; }
+.prosody .hint { font-size: 13px; line-height: 1.6; color: var(--c-ink-2); }
+.prosody #curve-help { padding: 12px 20px; }
+.prosody label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+.prosody input { width: 90px; max-width: 100%; min-height: 44px; padding: 8px; border: 1px solid var(--c-rule); border-radius: 4px; background: var(--c-paper); color: var(--c-ink); font: inherit; }
+.prosody button, .prosody .btn { min-height: 44px; }
+.prosody .edit-grid { display: grid; grid-template-columns: 1.2fr 1fr; border-top: 1px solid var(--c-rule); }
+.prosody .edit-grid section { padding: 20px; min-width: 0; }
+.prosody h2 { font-size: 16px; margin: 0 0 12px; }
+.prosody .edit-grid p { margin-bottom: 12px; }
+.prosody .edit-grid button { margin: 6px 0; }
+.prosody .actions { display: flex; flex-wrap: wrap; gap: 0 8px; margin: 8px 0; }
+.prosody .players { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; border-top: 1px solid var(--c-rule); }
+.prosody .players label { display: grid; min-width: 0; font-weight: 700; }
+.prosody audio { min-width: 0; }
+.prosody [aria-disabled=true] { opacity: .4; pointer-events: none; }
+.prosody #filename { overflow-wrap: anywhere; }
+@media (max-width: 620px) { .prosody .edit-grid, .prosody .players { grid-template-columns: 1fr; } .prosody .row { gap: 10px; padding: 14px; } .prosody #curve { height: 280px; } }

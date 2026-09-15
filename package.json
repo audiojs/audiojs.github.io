@@ -9,9 +9,10 @@
     "test:e2e": "node scripts/util-e2e.mjs",
     "test:pages": "node scripts/pages-test.mjs",
     "test:docs": "node --test scripts/atomdocs.test.mjs scripts/package-baseline.test.mjs",
+    "test:prosody": "node --test scripts/prosody.test.mjs",
     "test:types": "node scripts/umbrella-types.mjs",
     "check:packages": "node scripts/package-baseline.mjs",
-    "test:all": "npm run test:docs && node scripts/util-test.mjs && node scripts/util-e2e.mjs chromium firefox webkit && node scripts/pages-test.mjs"
+    "test:all": "npm run test:docs && npm run test:prosody && node scripts/util-test.mjs && node scripts/util-e2e.mjs chromium firefox webkit && node scripts/pages-test.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.0",

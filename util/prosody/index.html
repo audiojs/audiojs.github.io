@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speech prosody editor: edit pitch curves and phrase timing · audiojs</title>
+  <meta name="description" content="Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce pitch variation, compare with the original and save a WAV. Nothing is uploaded.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/prosody/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/prosody/">
+  <meta property="og:title" content="Speech prosody editor: edit pitch curves and phrase timing">
+  <meta property="og:description" content="Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce pitch variation, compare with the original and save a WAV. Nothing is uploaded.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/prosody/#app",
+        "name": "Speech prosody editor",
+        "url": "https://audiojs.dev/util/prosody/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce pitch variation, compare with the original and save a WAV. Nothing is uploaded.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/",
+          "logo": "https://audiojs.dev/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/audiojs.github.io/tree/main/util/prosody"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Speech prosody editor",
+            "item": "https://audiojs.dev/util/prosody/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can this automatically fix the tone of a question?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The rising and falling controls apply a pitch ramp to your selection. They do not infer sentence meaning. Listen and adjust the selection and pitch to match your intended delivery."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will it preserve the voice?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pitch shifting compensates for formant movement, but edits can still sound processed. Breathy or creaky speech, inaccurate pitch detection and large changes are harder. Compare with the original before saving."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why are parts of the curve missing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Silence and unvoiced consonants do not have a reliable fundamental pitch. Those regions stay unpitched. Very short clips may also have too little audio for detection."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/util/util.css?v=0cef0e67">
+  <link rel="modulepreload" href="/util/util.js?v=cc0aa73d">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
+      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/audiojs.github.io/tree/main/util/prosody" target="_blank" rel="noopener">Source</a></nav>
+    </div>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Speech prosody editor</h1>
+      <p>Shape how a sentence sounds. Adjust its pitch, emphasis and pace.</p>
+    </section>
+
+    <link rel="stylesheet" href="/util/prosody/editor.css?v=b1c50043a904a5bed74da450">
+    <div class="prosody">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a speech recording here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac">
+    </div>
+      <div class="row intro"><button class="btn ghost" id="demo">Try a speech sample</button><span>Experimental · one voice · up to 60 seconds · mono output</span></div>
+      <p id="status" class="status" role="status" aria-live="polite">Choose a short, clean recording to begin.</p>
+      <section id="editor" class="panel" hidden aria-label="Speech editor">
+        <div class="row"><strong id="filename" class="file"></strong><button id="replace" class="btn ghost">Change file</button></div>
+        <fieldset id="controls" disabled>
+          <div class="row"><span id="length" class="file"></span><button id="undo" class="btn ghost" disabled>Undo</button><button id="reset" class="btn ghost">Reset all</button></div>
+          <div class="legend"><span>Waveform</span><span>┄ Detected pitch</span><strong>━ Edited pitch</strong><span id="point-info">No point selected</span></div>
+          <svg id="curve" viewBox="0 0 960 300" tabindex="0" role="group" aria-label="Pitch curve editor" aria-describedby="curve-help"></svg>
+          <p id="curve-help" class="hint">Drag a pitch point up or down. Drag the background to select time. Arrow keys move the selected point; left/right chooses another. Fields below offer the same controls. Timeline stays in original seconds.</p>
+          <div class="row selection">
+            <label>Start (s)<input id="start" type="number" min="0" step="0.01" value="0"></label>
+            <label>End (s)<input id="end" type="number" min="0" step="0.01" value="1"></label>
+            <button id="select-all" class="btn ghost">Select all</button><button id="zoom" class="btn ghost">Zoom selection</button><button id="zoom-out" class="btn ghost">Show all</button>
+          </div>
+          <div class="edit-grid">
+            <section><h2>Intonation</h2>
+              <label>Pitch change (semitones)<input id="semitones" type="number" min="-12" max="12" step="0.5" value="1"></label>
+              <button id="shift" class="btn ghost">Shift selection</button>
+              <div class="actions"><button id="flatten" class="btn ghost">Reduce variation 50%</button><button id="rise" class="btn ghost">Rising end</button><button id="fall" class="btn ghost">Falling end</button><button id="pitch-reset" class="btn ghost">Restore pitch</button></div>
+              <label>Selected point (Hz)<input id="point-hz" type="number" min="1" step="1" disabled></label><button id="set-point" class="btn ghost" disabled>Set pitch point</button>
+            </section>
+            <section><h2>Phrase timing</h2>
+              <p class="hint">Change the selected fragment’s length. The rest shifts in time. Select vowels or pauses for gentler edits.</p>
+              <label>New duration (s)<input id="duration" type="number" min="0.01" step="0.01" value="1"></label><button id="retime" class="btn ghost">Set duration</button>
+              <p id="timing" class="hint"></p>
+            </section>
+          </div>
+          <div class="row"><button id="render" class="btn" disabled>Render edits</button><span id="render-state">Original audio · no edits</span></div>
+        </fieldset>
+        <div class="players"><label>Original<audio id="original" controls preload="metadata"></audio></label><label>Edited<audio id="edited" controls preload="metadata"></audio></label></div>
+        <div class="row"><a id="save" class="btn" aria-disabled="true">Save WAV</a><span class="hint">32-bit float · mono · original sample rate</span></div>
+      </section>
+    </div>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/pitch-yin" target="_blank" rel="noopener"><code>@audio/pitch-yin</code></a>, <a href="https://npmjs.com/package/@audio/shift-formant" target="_blank" rel="noopener"><code>@audio/shift-formant</code></a>, <a href="https://npmjs.com/package/@audio/stretch-wsola" target="_blank" rel="noopener"><code>@audio/stretch-wsola</code></a>, <a href="https://npmjs.com/package/@audio/encode-wav" target="_blank" rel="noopener"><code>@audio/encode-wav</code></a>.</p>
+    <section class="seo"><h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Changes are rendered from the original recording, so undoing an edit does not require reversing an audio effect.</p><p>This first version uses frame-level YIN detection, a formant-compensated pitch shifter and WSOLA time stretching. Timing edits stretch the whole selection, including consonants; automatic phoneme protection and linguistic intonation correction are future work. WAV export contains audio only, without source tags.</p>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Can this automatically fix the tone of a question?</summary><p>The rising and falling controls apply a pitch ramp to your selection. They do not infer sentence meaning. Listen and adjust the selection and pitch to match your intended delivery.</p></details>
+        <details><summary>Will it preserve the voice?</summary><p>Pitch shifting compensates for formant movement, but edits can still sound processed. Breathy or creaky speech, inaccurate pitch detection and large changes are harder. Compare with the original before saving.</p></details>
+        <details><summary>Why are parts of the curve missing?</summary><p>Silence and unvoiced consonants do not have a reliable fundamental pitch. Those regions stay unpitched. Very short clips may also have too little audio for detection.</p></details>
+      </section>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI and sheet music</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=cc0aa73d'
+    import { startEditor } from '/util/prosody/editor.bundle.js?v=b1c50043a904a5bed74da450'; startEditor('b1c50043a904a5bed74da450')
+  </script>
+</body>
+</html>

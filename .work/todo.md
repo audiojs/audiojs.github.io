@@ -261,6 +261,9 @@ output
 
 ### Tool pages & demos (Tier-2, lower priority)
 
+* [x] **Speech prosody editor** at `/util/prosody/`: built-in speech sample, waveform/F0 overlay, draggable and keyboard/numeric pitch control, selection rules, source-anchored phrase duration, undo/reset, original/edited playback and WAV export. Shared utility styling; linked from home/tools/sitemap. Tested with local DSP bundles in Chromium, Firefox and WebKit. Experimental quality; no semantic question detection or automatic consonant protection.
+* [ ] **Prosody quality and demo consolidation:** evaluate edits on varied real speech (creaky/breathy voice, consonants, detector octave errors), add phoneme-aware timing and better contour tracking; bring existing package demos into the `/util/` tools area using its shared shell before the planned visual redesign. Keep linguistic intonation rules separate from pitch detection.
+
 * [ ] BPM detector (`@audio/beat`)
 * [ ] Pitch / key detector (`@audio/pitch`)
 * [ ] Tuner — visual (Madri) with piano location; singing → MIDI (`@audio/tune-midi` ✔)
