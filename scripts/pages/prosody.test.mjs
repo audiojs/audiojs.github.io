@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { resolve, extname, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as pw from 'playwright'
+import { encode } from '../../util/prosody/process.js'
 
 const root = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '')
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wav': 'audio/wav' }
@@ -100,14 +101,17 @@ try {
       assert.equal(await page.locator('#undo').isEnabled(), false)
 
       const upload = async (kind, seconds = 1) => {
-        const bytes = await page.evaluate(async ({ kind, seconds }) => {
-          const { encode } = await import('/util/prosody/process.js')
-          const samples = new Float32Array(Math.round(16000 * seconds))
-          if (kind === 'tone') for (let i = 0; i < samples.length; i++) samples[i] = .3 * Math.sin(2 * Math.PI * 260 * i / 16000)
-          return [...await encode(samples, 16000)]
-        }, { kind, seconds })
+        const samples = new Float32Array(Math.round(16000 * seconds))
+        if (kind === 'tone') for (let i = 0; i < samples.length; i++) samples[i] = .3 * Math.sin(2 * Math.PI * 260 * i / 16000)
+        const bytes = await encode(samples, 16000)
         await page.setInputFiles('#file', { name: `${kind}.wav`, mimeType: 'audio/wav', buffer: Buffer.from(bytes) })
       }
+      await upload('silence', 61)
+      await page.waitForFunction(() => document.querySelector('#status').textContent.startsWith('No reliable'))
+      assert.match(await page.locator('#length').textContent(), /61.00 s original → 61.00 s edited/)
+      await page.click('#reset'); await page.click('#render')
+      await page.waitForFunction(() => document.querySelector('#render-state').textContent.startsWith('Rendered'))
+      assert.equal(await page.locator('#save').evaluate(async a => (await (await fetch(a.href)).arrayBuffer()).byteLength), 44 + 61 * 16000 * 4)
       await upload('silence')
       await page.waitForFunction(() => document.querySelector('#status').textContent.startsWith('No reliable'))
       assert.equal(await page.locator('.target').getAttribute('d'), '')
@@ -119,6 +123,9 @@ try {
       assert.notEqual(await page.locator('.target').getAttribute('d'), before, 'different file has independent analysis')
       await upload('silence', .02)
       await page.waitForFunction(() => document.querySelector('#status').textContent.startsWith('No reliable'))
+      await upload('silence', .01)
+      await page.waitForFunction(() => document.querySelector('#status').textContent.startsWith('No reliable'))
+      assert.equal(await page.locator('#save').evaluate(async a => (await (await fetch(a.href)).arrayBuffer()).byteLength), 44 + 160 * 4)
       await upload('silence', 0)
       await page.waitForFunction(() => document.querySelector('#status').textContent.includes('no decodable audio'))
       assert.equal(await page.locator('#editor').isVisible(), false)

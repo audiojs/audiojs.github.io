@@ -22,11 +22,25 @@ test('analysis: known F0, silence, short input, and A → A → B are independen
 })
 
 test('identity render and short unvoiced input preserve every source sample', () => {
-  for (const a of [tone(), new Float32Array(320), new Float32Array(fs)]) {
+  for (const a of [tone(), Float32Array.of(.25), new Float32Array(160), new Float32Array(320), new Float32Array(fs)]) {
     const t = analyze(a, fs), copy = a.slice()
     const out = render(a, fs, t, t.f0, [[0, 0], [a.length / fs, a.length / fs]])
     assert.deepEqual(out, copy); assert.deepEqual(a, copy); assert.notEqual(out, a)
   }
+})
+
+test('recordings beyond 60 seconds retain analysis and editable audio at the end', () => {
+  const a = new Float32Array(61 * fs)
+  a.set(tone(260, 1), 60 * fs)
+  const t = analyze(a, fs)
+  assert.ok(t.times.at(-1) > 60.9)
+  assert.ok(Math.abs(median(t.f0.subarray(-30)) - 260) < 1)
+  assert.deepEqual(render(a, fs, t, t.f0, [[0, 0], [61, 61]]), a)
+  const target = transform(t, t.f0, 60, 61, 'shift', 3)
+  const out = render(a, fs, t, target, [[0, 0], [61, 61]])
+  assert.equal(out.length, a.length)
+  assert.deepEqual(out.subarray(0, 59 * fs), a.subarray(0, 59 * fs))
+  assert.ok(Math.abs(median(analyze(out.subarray(60.3 * fs, 60.8 * fs), fs).f0) - 260 * 2 ** (3 / 12)) < 2)
 })
 
 test('pitch edits reach requested F0, preserve length, dry regions and original samples', () => {

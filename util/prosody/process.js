@@ -4,7 +4,6 @@ import { clamp } from './model.js'
 export function analyze(samples, sampleRate) {
   if (!(samples instanceof Float32Array) || !samples.length || !Number.isFinite(sampleRate) || sampleRate < 8000)
     throw Error('The recording must contain audio at 8 kHz or above.')
-  if (samples.length / sampleRate > 60) throw Error('Use a speech fragment of up to 60 seconds.')
   // Box-filter decimation is only for F0 analysis; render retains the original PCM.
   const step = Math.max(1, Math.floor(sampleRate / 16000)), fs = sampleRate / step
   const data = new Float32Array(Math.ceil(samples.length / step))

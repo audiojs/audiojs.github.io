@@ -18,7 +18,12 @@ The included sample was synthesized with the macOS Samantha system voice:
 “We can change how this sentence sounds. Try making the last word rise, or give
 this phrase a little more time.” It is a demo input, not a quality benchmark.
 
-Limits: 0.02–60 seconds, one voice, mono output, F0 range 60–600 Hz. Analysis is
+There is no fixed input duration or file-size cap; practical capacity depends on
+browser memory and processing time. Empty recordings are rejected. Clips shorter
+than the 50 ms analysis window can be played and exported but have no pitch curve;
+editing selections still requires at least 20 ms.
+
+Limits: one voice, mono output, F0 range 60–600 Hz. Analysis is
 frame-level YIN with confidence gating, not a sequence model. Pitch changes are
 limited to ±12 semitones, local stretch factors to 0.5–2. The timeline remains in
 source seconds after timing edits. WSOLA stretches the entire selected fragment;

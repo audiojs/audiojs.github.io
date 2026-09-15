@@ -58,14 +58,12 @@ export function startEditor(version) {
     const id = ++run
     release(); lock(true); $('editor').hidden = true; zone.show(); status('Reading recording…')
     try {
-      if (file.size > 100 * 1024 * 1024) throw Error('Choose a file smaller than 100 MB and up to 60 seconds.')
       const header = new Uint8Array(await file.slice(0, 12).arrayBuffer())
       const isWav = String.fromCharCode(...header.slice(0, 4)) === 'RIFF' && String.fromCharCode(...header.slice(8, 12)) === 'WAVE'
       const audio = isWav ? decodeWav(await file.arrayBuffer()) : await decodeFile(file)
       if (id !== run) return
       if (!audio.channelData.length || !audio.channelData[0].length) throw Error('This recording contains no decodable audio.')
       sampleRate = audio.sampleRate; duration = audio.channelData[0].length / sampleRate
-      if (duration < 0.02 || duration > 60) throw Error('Choose a recording between 0.02 and 60 seconds.')
       samples = new Float32Array(audio.channelData[0].length)
       for (const channel of audio.channelData) for (let i = 0; i < samples.length; i++) samples[i] += channel[i] / audio.channelData.length
       filename = file.name.replace(/\.[^.]+$/, '') || 'speech'
@@ -78,12 +76,14 @@ export function startEditor(version) {
         if (data.type === 'error') { lock(false); status(data.message, true); return }
         if (data.type === 'loaded') {
           track = data.track; target = track.f0.slice(); anchors = [[0, 0], [duration, duration]]; view = [0, duration]
-          const voiced = [...track.f0].filter(Boolean).map(hzToNote)
-          pitchRange = voiced.length ? [Math.min(...voiced) - 13, Math.max(...voiced) + 13] : [hzToNote(60), hzToNote(600)]
+          let low = Infinity, high = -Infinity
+          for (const hz of track.f0) if (hz) { const note = hzToNote(hz); low = Math.min(low, note); high = Math.max(high, note) }
+          const voiced = Number.isFinite(low)
+          pitchRange = voiced ? [low - 13, high + 13] : [hzToNote(60), hzToNote(600)]
           $('start').value = 0; $('end').value = duration; $('start').max = $('end').max = duration
           $('undo').disabled = true; readyAudio(data.bytes, true); update(); draw()
           $('render-state').textContent = 'Original audio · no edits'
-          status(voiced.length ? 'Ready. Select a phrase or drag its pitch curve.' : 'No reliable pitch detected. You can still adjust timing; try a longer voiced recording for intonation.')
+          status(voiced ? 'Ready. Select a phrase or drag its pitch curve.' : 'No reliable pitch detected. Try a longer voiced recording for intonation.')
         } else {
           readyAudio(data.bytes); $('render-state').textContent = `Rendered · ${data.duration.toFixed(2)} s`
           status(data.peak > 1 ? 'Rendered. Peaks exceed playback range; lower the level after export if you hear distortion.' : 'Rendered. Compare both versions or save the edited WAV.')

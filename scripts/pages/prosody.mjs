@@ -16,7 +16,7 @@ export default {
     <link rel="stylesheet" href="/util/prosody/editor.css?v=${version}">
     <div class="prosody">
       ${drop('Drop a speech recording here', 'audio/*,.wav,.mp3,.m4a,.ogg,.flac').trimStart()}
-      <div class="row intro"><button class="btn ghost" id="demo">Try a speech sample</button><span>Experimental · one voice · up to 60 seconds · mono output</span></div>
+      <div class="row intro"><button class="btn ghost" id="demo">Try a speech sample</button><span>Experimental · one voice · mono output</span></div>
       <p id="status" class="status" role="status" aria-live="polite">Choose a short, clean recording to begin.</p>
       <section id="editor" class="panel" hidden aria-label="Speech editor">
         <div class="row"><strong id="filename" class="file"></strong><button id="replace" class="btn ghost">Change file</button></div>
