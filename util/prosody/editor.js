@@ -1,5 +1,5 @@
 import { $, dropzone, decodeFile } from '../util.js'
-import { clamp, hzToNote, noteToHz, mapTime, retime, transform, movePoint } from './model.js'
+import { clamp, hzToNote, noteToHz, mapTime, retime, transform, movePoint, pitchAt } from './model.js'
 import { decodeWav } from './dsp.js'
 
 export function startEditor(version) {
@@ -110,6 +110,17 @@ export function startEditor(version) {
   $('select-all').onclick = () => { $('start').value = 0; $('end').value = duration; update(); draw() }
   $('zoom').onclick = () => act(() => { view = selection(); draw() })
   $('zoom-out').onclick = () => { view = [0, duration]; draw() }
+  function zoom(factor, center = point >= 0 && track.times[point] >= view[0] && track.times[point] <= view[1] ? track.times[point] : (view[0] + view[1]) / 2) {
+    const span = view[1] - view[0], width = clamp(span * factor, Math.min(.1, duration), duration)
+    const start = clamp(center - (center - view[0]) / span * width, 0, duration - width)
+    view = [start, start + width]; draw()
+  }
+  $('zoom-in').onclick = () => act(() => zoom(.5))
+  $('zoom-less').onclick = () => act(() => zoom(2))
+  $('view-position').oninput = () => act(() => {
+    const width = view[1] - view[0], start = +$('view-position').value * (duration - width)
+    view = [start, start + width]; draw()
+  })
 
   let plotWidth = 885
   const x = t => 55 + (t - view[0]) / (view[1] - view[0]) * plotWidth
@@ -119,6 +130,12 @@ export function startEditor(version) {
     if (!track) return
     plotWidth = Math.max(120, svg.clientWidth - 75)
     svg.setAttribute('viewBox', `0 0 ${plotWidth + 75} 300`)
+    const span = view[1] - view[0], full = span >= duration - 1e-8
+    $('zoom-in').disabled = span <= Math.min(.1, duration) + 1e-8
+    $('zoom-less').disabled = $('zoom-out').disabled = $('view-position').disabled = full
+    $('view-position').value = full ? 0 : view[0] / (duration - span)
+    $('view-position').setAttribute('aria-valuetext', `${view[0].toFixed(2)} to ${view[1].toFixed(2)} seconds`)
+    $('view-range').textContent = `${view[0].toFixed(2)}–${view[1].toFixed(2)} s · ${(duration / span).toFixed(1)}×`
     svg.replaceChildren()
     for (let n = Math.ceil(pitchRange[0] / 6) * 6; n <= pitchRange[1]; n += 6) { const yy = y(noteToHz(n)); node('path', { d: `M55 ${yy}H${55 + plotWidth}`, class: 'grid' }); node('text', { x: 4, y: yy + 4 }).textContent = Math.round(noteToHz(n)) + ' Hz' }
     const ticks = plotWidth < 400 ? 3 : 5
@@ -126,17 +143,22 @@ export function startEditor(version) {
     const a = clamp(+$('start').value, view[0], view[1]), b = clamp(+$('end').value, view[0], view[1])
     node('rect', { x: x(a), y: 0, width: Math.max(0, x(b) - x(a)), height: 275, class: 'selection' })
     let wave = ''
-    for (let i = 0; i < 600; i++) {
-      const start = Math.floor((view[0] + (view[1] - view[0]) * i / 600) * sampleRate), end = Math.min(samples.length, Math.ceil((view[0] + (view[1] - view[0]) * (i + 1) / 600) * sampleRate))
+    const columns = Math.ceil(plotWidth)
+    for (let i = 0; i < columns; i++) {
+      const start = Math.floor((view[0] + span * i / columns) * sampleRate), end = Math.min(samples.length, Math.ceil((view[0] + span * (i + 1) / columns) * sampleRate))
       let min = 0, max = 0
       for (let j = start; j < end; j++) { min = Math.min(min, samples[j]); max = Math.max(max, samples[j]) }
-      wave += `M${55 + i * plotWidth / 600} ${145 - max * 110}v${Math.max(0.5, (max - min) * 110)}h1v${-Math.max(0.5, (max - min) * 110)}z`
+      wave += `M${55 + i * plotWidth / columns} ${145 - max * 110}v${Math.max(0.5, (max - min) * 110)}h1v${-Math.max(0.5, (max - min) * 110)}z`
     }
     node('path', { d: wave, class: 'wave' })
     for (const [values, cls] of [[track.f0, 'detected'], [target, 'target']]) {
       let d = '', previous = false
       for (let i = 0; i < values.length; i++) {
         if (!values[i] || track.times[i] < view[0] || track.times[i] > view[1]) { previous = false; continue }
+        if (previous) for (let part = 1; part < 4; part++) {
+          const time = track.times[i - 1] + (track.times[i] - track.times[i - 1]) * part / 4
+          d += `L${x(time).toFixed(2)} ${y(pitchAt(track, values, time)).toFixed(2)}`
+        }
         d += `${previous ? 'L' : 'M'}${x(track.times[i]).toFixed(2)} ${y(values[i]).toFixed(2)}`; previous = true
       }
       node('path', { d, class: cls, fill: 'none' })
@@ -158,6 +180,10 @@ export function startEditor(version) {
     drag = { id: event.pointerId, time, yy, before: snapshot(), index: onCurve ? nearest : -1, moved: false }
     point = onCurve ? nearest : -1; svg.setPointerCapture(event.pointerId); update(); draw()
   }
+  svg.addEventListener('wheel', event => {
+    if (!event.altKey || !track || busy) return
+    event.preventDefault(); zoom(Math.exp(clamp(event.deltaY, -100, 100) * .005), position(event).time)
+  }, { passive: false })
   svg.onpointermove = event => {
     if (!drag || event.pointerId !== drag.id) return
     const { time, yy } = position(event)
@@ -174,6 +200,12 @@ export function startEditor(version) {
   }
   svg.onpointercancel = () => { if (drag) { target = drag.before.target; drag = null; update(); draw() } }
   svg.onkeydown = event => {
+    if (track && !busy && ['+', '=', '-', '0'].includes(event.key)) {
+      event.preventDefault()
+      if (event.key === '0') { view = [0, duration]; draw() }
+      else zoom(event.key === '-' ? 2 : .5)
+      return
+    }
     if (!track || busy || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return
     event.preventDefault()
     act(() => {

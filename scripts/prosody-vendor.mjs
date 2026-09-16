@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 const root = join(homedir(), 'projects/@audio')
 const packages = {
   yin: 'pitch/packages/pitch-yin/yin.js',
-  shift: 'shift/packages/shift-formant/index.js',
+  resample: 'resample/packages/resample-sinc/sinc.js',
   stretch: 'stretch/packages/stretch-wsola/wsola.js',
   wav: 'encode/packages/encode-wav/wav-encode.js',
   decodeWav: 'decode/packages/decode-wav/decode-wav.js',
@@ -15,8 +15,6 @@ const packages = {
 const result = await build({
   stdin: { contents: Object.entries(packages).map(([name, path]) => `export { default as ${name} } from ${JSON.stringify(join(root, path))}`).join('\n'), resolveDir: root },
   bundle: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true,
-  // Use the checked-out phase engine, not an older installed transitive copy.
-  alias: { '@audio/spectral-pvoc': join(root, 'spectral/packages/spectral-pvoc/pvoc.js') },
   outfile: 'util/prosody/dsp.js', legalComments: 'eof', metafile: true,
 })
 const versions = Object.values(packages).map(path => {
@@ -37,4 +35,4 @@ for (const path of Object.keys(result.metafile.inputs)) {
   if (!file) throw Error('Missing license for ' + p.name)
   notices.set(p.name, `${p.name}@${p.version}\n${readFileSync(join(licenseDir, file), 'utf8')}`)
 }
-writeFileSync('util/prosody/THIRD_PARTY.txt', [...notices.values()].join('\n\n---\n\n'))
+writeFileSync('util/prosody/THIRD_PARTY.txt', [...notices.values(), 'WORLD\n' + readFileSync('util/prosody/WORLD-LICENSE.txt', 'utf8')].join('\n\n---\n\n'))

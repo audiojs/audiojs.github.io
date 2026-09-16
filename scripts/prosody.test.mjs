@@ -2,19 +2,27 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { analyze, render, encode } from '../util/prosody/process.js'
-import { retime, mapTime, transform, movePoint } from '../util/prosody/model.js'
-import { shift, decodeWav } from '../util/prosody/dsp.js'
+import { retime, mapTime, transform, movePoint, pitchAt } from '../util/prosody/model.js'
+import { decodeWav } from '../util/prosody/dsp.js'
+import { speechPitch } from '../util/prosody/world.js'
 const fs = 16000
 const tone = (frequency = 180, seconds = 2) => Float32Array.from({ length: fs * seconds }, (_, i) => 0.3 * Math.sin(2 * Math.PI * frequency * i / fs))
 const median = data => [...data].filter(Boolean).sort((a, b) => a - b).at(Math.floor([...data].filter(Boolean).length / 2))
 
-test('vendored shifter reconstructs speech with unity automation, without bypass', () => {
-  const { channelData: [a], sampleRate } = decodeWav(readFileSync(new URL('../util/prosody/sample.wav', import.meta.url)))
-  const out = shift(a, { sampleRate, ratio: () => 1 })
-  assert.equal(out.length, a.length)
-  let error = 0, energy = 0
-  for (let i = 0; i < a.length; i++) { error += (out[i] - a[i]) ** 2; energy += a[i] ** 2 }
-  assert.ok(error / energy < 1e-12, `Relative reconstruction error: ${10 * Math.log10(error / energy)} dB`)
+test('pitch interpolation has continuous slopes, no overshoot, and no pitch inside unvoiced gaps', () => {
+  const track = { times: Float32Array.of(0, .1, .2, .3, .4), f0: Float32Array.of(100, 200, 100, 0, 150), hop: .1 }
+  for (let i = 0; i <= 200; i++) {
+    const value = pitchAt(track, track.f0, i / 1000)
+    assert.ok(value >= 100 - 1e-10 && value <= 200 + 1e-10)
+  }
+  const eps = 1e-5, peak = pitchAt(track, track.f0, .1)
+  assert.ok(Math.abs(peak - 200) < 1e-10)
+  assert.ok(Math.abs((peak - pitchAt(track, track.f0, .1 - eps)) / eps) < 1)
+  assert.ok(Math.abs((pitchAt(track, track.f0, .1 + eps) - peak) / eps) < 1)
+  assert.equal(pitchAt(track, track.f0, .3), 0)
+  assert.equal(pitchAt(track, track.f0, -1), 100)
+  assert.equal(pitchAt(track, track.f0, 1), 150)
+  assert.equal(pitchAt({ times: [], f0: [], hop: .02 }, [], 0), 0)
 })
 
 test('small edits stay fully wet through unity; unvoiced and untouched frames stay dry', () => {
@@ -23,12 +31,7 @@ test('small edits stay fully wet through unity; unvoiced and untouched frames st
   const f0 = new Float32Array(times.length).fill(180), target = f0.slice()
   // A gentle crossing, with an exact unchanged point in its middle.
   for (let i = 20; i <= 80; i++) target[i] *= 2 ** ((i - 50) / 6000)
-  const delta = Float32Array.from(target, (x, i) => Math.log2(x / f0[i]))
-  const at = t => {
-    const pos = t / hop, i = Math.floor(pos), f = pos - i
-    return (delta[i] || 0) * (1 - f) + (delta[i + 1] || 0) * f
-  }
-  const wet = shift(a, { sampleRate: fs, ratio: t => 2 ** at(t) })
+  const wet = speechPitch(a, fs, { times, f0, hop }, target)
   const out = render(a, fs, { times, f0, hop }, target, [[0, 0], [2, 2]])
   assert.deepEqual(out.subarray(.45 * fs, 1.55 * fs), wet.subarray(.45 * fs, 1.55 * fs))
   assert.deepEqual(out.subarray(0, .35 * fs), a.subarray(0, .35 * fs))
@@ -38,33 +41,10 @@ test('small edits stay fully wet through unity; unvoiced and untouched frames st
   assert.deepEqual(gap.subarray(.92 * fs, 1.08 * fs), a.subarray(.92 * fs, 1.08 * fs))
 })
 
-test('unity automation: sample rates, silence, moving peaks, empty writes and final splits', () => {
-  for (const sampleRate of [16000, 22050, 44100, 48000]) {
-    const a = Float32Array.from({ length: sampleRate }, (_, i) => {
-      const t = i / sampleRate, f = t < .5 ? 150 : 230
-      return t < .1 || t > .4 && t < .6 || t > .9 ? 0 :
-        .3 * Math.sin(2 * Math.PI * f * t) + .1 * Math.sin(4 * Math.PI * f * t)
-    })
-    const opts = { sampleRate, ratio: () => 1 }, out = shift(a, opts)
-    assert.equal(out.length, a.length)
-    assert.ok(out.every((x, i) => Math.abs(x - a[i]) < 1e-6))
-    for (const length of [1, 511, 512, 513, a.length]) {
-      const offset = length === a.length ? 0 : Math.round(.2 * sampleRate) + 1
-      const input = a.subarray(offset, offset + length), batch = shift(input, opts), writer = shift(opts)
-      assert.ok(batch.every((x, i) => Math.abs(x - input[i]) < 1e-6))
-      const chunks = [writer(new Float32Array(0)), writer(input.subarray(0, length - 1)), writer(input.subarray(length - 1)), writer()]
-      const streamed = Float32Array.from(chunks.flatMap(c => [...c]))
-      assert.deepEqual(streamed, batch)
-    }
-    assert.deepEqual(shift(a, opts), out)
-  }
-})
-
 test('first and last edited analysis frames have the same boundary fade as interior edits', () => {
   const a = tone(), track = { times: Float32Array.of(.5, .75, 1), f0: Float32Array.of(180, 180, 180), hop: .25 }
   const target = Float32Array.of(360, 360, 360)
-  const ratio = t => 2 ** Math.max(0, Math.min(1, (t - .25) / .25, (1.25 - t) / .25))
-  const wet = shift(a, { sampleRate: fs, ratio })
+  const wet = speechPitch(a, fs, track, target)
   const out = render(a, fs, track, target, [[0, 0], [2, 2]])
   for (const t of [.375, 1.125]) {
     const i = t * fs
@@ -75,7 +55,9 @@ test('first and last edited analysis frames have the same boundary fade as inter
 })
 
 test('automated pitch follows source time rather than the left edge of its analysis window', () => {
-  const out = shift(tone(250, 1), { sampleRate: fs, ratio: t => 1 + t })
+  const a = tone(250, 1), track = analyze(a, fs)
+  const target = Float32Array.from(track.times, t => 250 * (1 + t))
+  const out = speechPitch(a, fs, track, target)
   const detected = median(analyze(out.subarray(.4 * fs, .5 * fs), fs).f0)
   assert.ok(Math.abs(detected - 362.5) < 6, `${detected} Hz near 250 × 1.45`)
 })
@@ -168,4 +150,59 @@ test('invalid targets/maps rejected; WAV export contains exact float PCM and sam
   assert.equal(view.getUint32(24, true), fs); assert.equal(view.getUint16(22, true), 1)
   assert.equal(view.getUint16(20, true), 3); assert.equal(bytes.length, 44 + a.length * 4)
   for (let i = 0; i < a.length; i++) assert.equal(view.getFloat32(44 + i * 4, true), a[i])
+})
+
+// This fails for the previous spectral renderer even when supplied perfect F0.
+// A corrected steady vowel must have coherent repeated cycles, not merely the
+// right average frequency. The changing source F0 isolates dynamic synthesis.
+test('speech normalization preserves coherent cycles while flattening moving pitch', async () => {
+  const { vowel } = await import('./prosody-fixture.mjs')
+  for (const sampleRate of [16000, 22050, 48000]) {
+    const { samples, track } = vowel(sampleRate)
+    const target = new Float32Array(track.f0.length).fill(155)
+    const out = render(samples, sampleRate, track, target, [[0, 0], [3, 3]])
+    let xy = 0, xx = 0, yy = 0
+    for (let i = Math.ceil(.3 * sampleRate); i < out.length - .3 * sampleRate; i++) {
+      const pos = i + sampleRate / 155, k = Math.floor(pos), f = pos - k
+      const x = out[i], y = out[k] * (1 - f) + out[k + 1] * f
+      xy += x * y; xx += x * x; yy += y * y
+    }
+    const coherence = xy / Math.sqrt(xx * yy)
+    assert.ok(coherence > .985, `${sampleRate} Hz: cycle coherence ${coherence}`)
+    assert.ok(Math.abs(median(analyze(out.subarray(sampleRate, 2 * sampleRate), sampleRate).f0) - 155) < 1)
+  }
+})
+
+test('speech rendering: lowered and raised pitches, silence, sample rates, A → B → A', () => {
+  for (const sampleRate of [8000, 16000, 22050, 44100, 48000, 96000]) {
+    const a = Float32Array.from({ length: sampleRate }, (_, i) => .3 * Math.sin(2 * Math.PI * 180 * i / sampleRate))
+    const track = analyze(a, sampleRate), anchors = [[0, 0], [1, 1]]
+    let first
+    for (const amount of [-3, 3, -3]) {
+      const target = transform(track, track.f0, 0, 1, 'shift', amount)
+      const out = render(a, sampleRate, track, target, anchors)
+      assert.equal(out.length, a.length)
+      assert.ok(out.every(Number.isFinite))
+      const pitch = median(analyze(out.subarray(.2 * sampleRate, .8 * sampleRate), sampleRate).f0)
+      assert.ok(Math.abs(pitch - 180 * 2 ** (amount / 12)) < 1, `${sampleRate} Hz, ${amount} semitones: ${pitch} Hz`)
+      if (!first) first = out
+      else if (amount === -3) assert.deepEqual(out, first)
+    }
+    const silence = new Float32Array(sampleRate), empty = analyze(silence, sampleRate)
+    assert.deepEqual(render(silence, sampleRate, empty, empty.f0, anchors), silence)
+  }
+})
+
+test('built-in speech: reduction preserves dry consonants, duration, finite PCM and reset', () => {
+  const { channelData: [a], sampleRate } = decodeWav(readFileSync(new URL('../util/prosody/sample.wav', import.meta.url)))
+  const track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
+  const out = render(a, sampleRate, track, transform(track, track.f0, 0, duration, 'flatten', .5), anchors)
+  assert.equal(out.length, a.length)
+  assert.ok(out.every(Number.isFinite))
+  assert.ok(out.some((x, i) => Math.abs(x - a[i]) > .01))
+  for (let i = 1; i < track.f0.length - 1; i++) if (!track.f0[i - 1] && !track.f0[i] && !track.f0[i + 1]) {
+    const k = Math.round(track.times[i] * sampleRate)
+    assert.equal(out[k], a[k], 'unvoiced interior stays bit-exact')
+  }
+  assert.deepEqual(render(a, sampleRate, track, track.f0, anchors), a)
 })

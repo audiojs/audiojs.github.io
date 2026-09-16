@@ -5,6 +5,10 @@
 .prosody fieldset:disabled { opacity: .65; }
 .prosody .legend { display: flex; flex-wrap: wrap; gap: 10px 22px; padding: 16px 20px; font-size: 13px; }
 .prosody .legend strong { color: var(--c-ink); }
+.prosody .view-controls { flex-wrap: wrap; gap: 8px; }
+.prosody #view-range { font-size: 13px; font-variant-numeric: tabular-nums; }
+.prosody .pan { flex: 1 1 180px; }
+.prosody .pan input { flex: 1; min-width: 100px; width: 100%; padding: 0; accent-color: var(--c-accent); }
 .prosody #curve { display: block; width: 100%; height: 300px; background: var(--c-panel-bg); touch-action: none; cursor: crosshair; }
 .prosody #curve > * { pointer-events: none; } /* Keep capture on the SVG while traces redraw. */
 .prosody #curve text { fill: var(--c-panel-label); font: 12px system-ui; }

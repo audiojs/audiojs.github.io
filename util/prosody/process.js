@@ -1,4 +1,5 @@
-import { yin, shift, stretch, wav } from './dsp.js'
+import { yin, stretch, wav } from './dsp.js'
+import { speechPitch } from './world.js'
 
 export function analyze(samples, sampleRate) {
   if (!(samples instanceof Float32Array) || !samples.length || !Number.isFinite(sampleRate) || sampleRate < 8000)
@@ -48,7 +49,7 @@ export function render(samples, sampleRate, track, target, anchors) {
       const i = Math.floor(pos), f = pos - i
       return (curve[i] || 0) * (1 - f) + (curve[i + 1] || 0) * f
     }
-    pitched = shift(samples, { sampleRate, ratio: t => 2 ** at(t) })
+    pitched = speechPitch(samples, sampleRate, track, target)
     // Crossfade only at edit boundaries, keeping untouched/unvoiced frames dry.
     for (let i = 0; i < samples.length; i++) {
       const wet = .5 - .5 * Math.cos(Math.PI * at(i / sampleRate, edited))

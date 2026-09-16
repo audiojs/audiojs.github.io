@@ -3,6 +3,23 @@ export const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x))
 export const hzToNote = hz => 69 + 12 * Math.log2(hz / 440)
 export const noteToHz = n => 440 * 2 ** ((n - 69) / 12)
 
+// Shape-preserving cubic interpolation in pitch (octaves), with continuous
+// slopes through voiced points. Never bend through zero into a consonant.
+export function pitchAt(track, values, time) {
+  if (!values.length) return 0
+  const pos = clamp((time - track.times[0]) / track.hop, 0, values.length - 1)
+  const a = Math.floor(pos), b = Math.min(a + 1, values.length - 1), f = pos - a
+  if (!track.f0[Math.round(pos)]) return 0
+  if (f === 0) return values[a]
+  if (a === b || !track.f0[a] || !track.f0[b]) return values[Math.round(pos)]
+  const y0 = Math.log2(values[a]), y1 = Math.log2(values[b]), d = y1 - y0
+  const slope = (x, y) => x * y <= 0 ? 0 : 2 * x * y / (x + y)
+  const m0 = track.f0[a - 1] ? slope(y0 - Math.log2(values[a - 1]), d) : d
+  const m1 = track.f0[b + 1] ? slope(d, Math.log2(values[b + 1]) - y1) : d
+  return 2 ** ((2 * f ** 3 - 3 * f ** 2 + 1) * y0 + (f ** 3 - 2 * f ** 2 + f) * m0 +
+    (-2 * f ** 3 + 3 * f ** 2) * y1 + (f ** 3 - f ** 2) * m1)
+}
+
 export function mapTime(anchors, t) {
   let i = 1
   while (i < anchors.length - 1 && anchors[i][0] < t) i++

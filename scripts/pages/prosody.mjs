@@ -10,7 +10,7 @@ export default {
   title: 'Speech prosody editor: edit pitch curves and phrase timing',
   description: 'Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce pitch variation, compare with the original and save a WAV. Nothing is uploaded.',
   lead: 'Shape how a sentence sounds. Adjust its pitch, emphasis and pace.',
-  powered: ['@audio/pitch-yin', '@audio/shift-formant', '@audio/stretch-wsola', '@audio/encode-wav'],
+  powered: ['@audio/pitch-yin', '@audio/stretch-wsola', '@audio/encode-wav'],
   repo: 'https://github.com/audiojs/audiojs.github.io/tree/main/util/prosody',
   body: `
     <link rel="stylesheet" href="/util/prosody/editor.css?v=${version}">
@@ -23,12 +23,17 @@ export default {
         <fieldset id="controls" disabled>
           <div class="row"><span id="length" class="file"></span><button id="undo" class="btn ghost" disabled>Undo</button><button id="reset" class="btn ghost">Reset all</button></div>
           <div class="legend"><span>Waveform</span><span>┄ Detected pitch</span><strong>━ Edited pitch</strong><span id="point-info">No point selected</span></div>
+          <div class="row view-controls" role="group" aria-label="Waveform view">
+            <button id="zoom-in" class="btn ghost" aria-label="Zoom in waveform">Zoom +</button><button id="zoom-less" class="btn ghost" aria-label="Zoom out waveform">Zoom −</button><button id="zoom" class="btn ghost">Fit selection</button><button id="zoom-out" class="btn ghost">Show all</button>
+            <output id="view-range" aria-live="polite"></output>
+            <label class="pan">Position<input id="view-position" type="range" min="0" max="1" step="0.001" value="0" aria-label="Waveform position"></label>
+          </div>
           <svg id="curve" viewBox="0 0 960 300" tabindex="0" role="group" aria-label="Pitch curve editor" aria-describedby="curve-help"></svg>
-          <p id="curve-help" class="hint">Drag a pitch point up or down. Drag the background to select time. Arrow keys move the selected point; left/right chooses another. Fields below offer the same controls. Timeline stays in original seconds.</p>
+          <p id="curve-help" class="hint">Drag a pitch point up or down. Drag the background to select time. Zoom with +/− or Alt + scroll; move along the recording with Position. Arrow keys edit pitch points. Timeline stays in original seconds.</p>
           <div class="row selection">
             <label>Start (s)<input id="start" type="number" min="0" step="0.01" value="0"></label>
             <label>End (s)<input id="end" type="number" min="0" step="0.01" value="1"></label>
-            <button id="select-all" class="btn ghost">Select all</button><button id="zoom" class="btn ghost">Zoom selection</button><button id="zoom-out" class="btn ghost">Show all</button>
+            <button id="select-all" class="btn ghost">Select all</button>
           </div>
           <div class="edit-grid">
             <section><h2>Intonation</h2>
@@ -52,8 +57,8 @@ export default {
   script: `import { startEditor } from '/util/prosody/editor.bundle.js?v=${version}'; startEditor('${version}')`,
   faq: [
     ['Can this automatically fix the tone of a question?', 'The rising and falling controls apply a pitch ramp to your selection. They do not infer sentence meaning. Listen and adjust the selection and pitch to match your intended delivery.'],
-    ['Will it preserve the voice?', 'Pitch shifting compensates for formant movement, but edits can still sound processed. Breathy or creaky speech, inaccurate pitch detection and large changes are harder. Compare with the original before saving.'],
+    ['Will it preserve the voice?', 'The WORLD speech engine changes pitch while retaining the estimated vocal-tract spectrum and breathiness. Consonants and untouched regions are kept from the original. Edits can still sound processed, especially with inaccurate pitch detection, creaky speech or large changes. Compare with the original before saving.'],
     ['Why are parts of the curve missing?', 'Silence and unvoiced consonants do not have a reliable fundamental pitch. Those regions stay unpitched. Very short clips may also have too little audio for detection.'],
   ],
-  seo: `<h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Changes are rendered from the original recording, so undoing an edit does not require reversing an audio effect.</p><p>This first version uses frame-level YIN detection, a formant-compensated pitch shifter and WSOLA time stretching. Timing edits stretch the whole selection, including consonants; automatic phoneme protection and linguistic intonation correction are future work. WAV export contains audio only, without source tags.</p>`,
+  seo: `<h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Zoom in above the waveform and use Position to move along the recording. Changes are rendered from the original recording, so undoing an edit does not require reversing an audio effect.</p><p>Pitch edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally, with YIN pitch detection. Phrase timing uses WSOLA and stretches the whole selection, including consonants; automatic phoneme protection and linguistic intonation correction are future work. WAV export contains audio only, without source tags.</p>`,
 }
