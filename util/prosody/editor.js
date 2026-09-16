@@ -1,5 +1,5 @@
 import { $, dropzone, decodeFile } from '../util.js'
-import { clamp, hzToNote, noteToHz, mapTime, retime, transform, movePoint, pitchAt } from './model.js'
+import { clamp, hzToNote, noteToHz, mapTime, retime, transform, movePoint, pitchAt, validatePitch } from './model.js'
 import { decodeWav } from './dsp.js'
 
 export function startEditor(version) {
@@ -25,7 +25,15 @@ export function startEditor(version) {
     $('render-state').textContent = 'Edits changed · render to listen and save'
     if (editedURL && editedURL !== originalURL) URL.revokeObjectURL(editedURL)
     editedURL = null
-    update(); draw()
+    fitPitch(); update(); draw()
+  }
+  function fitPitch() {
+    let low = Infinity, high = -Infinity
+    for (let i = 0; i < target.length; i++) if (track.f0[i]) {
+      low = Math.min(low, hzToNote(track.f0[i]) - 13, hzToNote(target[i]) - 3)
+      high = Math.max(high, hzToNote(track.f0[i]) + 13, hzToNote(target[i]) + 3)
+    }
+    pitchRange = Number.isFinite(low) ? [low, high] : [hzToNote(60), hzToNote(600)]
   }
   function update() {
     try { const [a, b] = selection(); const seconds = mapTime(anchors, b) - mapTime(anchors, a); $('duration').value = seconds.toFixed(3) } catch {}
@@ -37,7 +45,9 @@ export function startEditor(version) {
     try { fn(); status(dirty ? 'Edit ready. Render to compare with the original.' : 'Ready. Select a phrase or drag its pitch curve.') } catch (e) { status(e.message, true) }
   }
   function change(fn) {
-    const before = snapshot(); fn()
+    const before = snapshot()
+    try { fn(); validatePitch(track, target, sampleRate) }
+    catch (error) { ({ target, anchors } = before); throw error }
     if (target.every((v, i) => v === before.target[i]) && anchors.length === before.anchors.length && anchors.every((p, i) => p.every((v, j) => v === before.anchors[i][j]))) return
     remember(before); invalidate()
   }
@@ -78,11 +88,9 @@ export function startEditor(version) {
         if (data.type === 'error') { lock(false); status(data.message, true); return }
         if (data.type === 'loaded') {
           track = data.track; target = track.f0.slice(); anchors = [[0, 0], [duration, duration]]; view = [0, duration]
-          let low = Infinity, high = -Infinity
-          for (const hz of track.f0) if (hz) { const note = hzToNote(hz); low = Math.min(low, note); high = Math.max(high, note) }
-          const voiced = Number.isFinite(low)
-          pitchRange = voiced ? [low - 13, high + 13] : [hzToNote(60), hzToNote(600)]
-          selected = [0, duration]; $('variation').value = 100; $('variation-value').textContent = '100%'; $('semitones').value = 0
+          const voiced = track.f0.some(Boolean)
+          fitPitch()
+          selected = [0, duration]; $('variation').value = 100; $('variation-value').textContent = '100%'; $('semitones').value = 0; $('smoothing').value = 60
           $('undo').disabled = true; readyAudio(data.bytes, true); update(); draw()
           $('render-state').textContent = 'Original audio · no edits'
           status(voiced ? 'Ready. Select a phrase or drag its pitch curve.' : 'No reliable pitch detected. Try a longer voiced recording for intonation.')
@@ -105,7 +113,7 @@ export function startEditor(version) {
   $('undo').onclick = () => act(() => { const last = history.pop(); if (last) { ({ target, anchors } = last); invalidate() } })
   $('reset').onclick = () => act(() => change(() => { target = track.f0.slice(); anchors = [[0, 0], [duration, duration]] }))
   for (const [id, kind, amount] of [['shift', 'shift', () => +$('semitones').value], ['vary', 'variation', () => +$('variation').value / 100], ['rise', 'ramp', () => 2], ['fall', 'ramp', () => -2], ['pitch-reset', 'reset', () => 0]])
-    $(id).onclick = () => act(() => { const value = amount(); if (!Number.isFinite(value) || Math.abs(value) > 12) throw Error('Use a pitch change between −12 and +12 semitones.'); const [a, b] = selection(); change(() => { target = transform(track, target, a, b, kind, value) }) })
+    $(id).onclick = () => act(() => { const value = amount(); const [a, b] = selection(); change(() => { target = transform(track, target, a, b, kind, value, kind === 'variation' ? +$('smoothing').value / 1000 : 0) }) })
   $('variation').oninput = () => { $('variation-value').textContent = $('variation').value + '%' }
   $('retime').onclick = () => act(() => { const [a, b] = selection(); const seconds = +$('duration').value; change(() => { anchors = retime(anchors, a, b, seconds) }) })
   $('zoom').onclick = () => act(() => { view = selection(); draw() })
@@ -237,7 +245,12 @@ export function startEditor(version) {
     if (!drag.moved && Math.abs(yy - drag.yy) < 2 && Math.abs(time - drag.time) / (view[1] - view[0]) < .002) return
     drag.moved = true
     if (drag.boundary >= 0) edge(drag.boundary, time)
-    else if (drag.index >= 0) target = movePoint(track, drag.before.target, drag.index, noteToHz(hzToNote(drag.before.target[drag.index]) + (drag.yy - yy) / 205 * (pitchRange[1] - pitchRange[0])))
+    else if (drag.index >= 0) {
+      try {
+        const next = movePoint(track, drag.before.target, drag.index, noteToHz(hzToNote(drag.before.target[drag.index]) + (drag.yy - yy) / 205 * (pitchRange[1] - pitchRange[0])))
+        validatePitch(track, next, sampleRate); target = next
+      } catch (error) { status(error.message, true) }
+    }
     else {
       const start = clamp(Math.min(time, drag.time), 0, Math.max(0, duration - .02))
       selected = [start, Math.min(duration, Math.max(start + .02, time, drag.time))]

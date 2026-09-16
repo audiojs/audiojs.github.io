@@ -1,5 +1,6 @@
 import { stretch, wav } from './dsp.js'
 import { speechPitch, speechTrack } from './world.js'
+import { validatePitch } from './model.js'
 
 export function analyze(samples, sampleRate) {
   if (!(samples instanceof Float32Array) || !samples.length || !Number.isInteger(sampleRate) || sampleRate < 8000)
@@ -20,8 +21,7 @@ export function analyze(samples, sampleRate) {
 }
 
 export function render(samples, sampleRate, track, target, anchors) {
-  if (target.length !== track.f0.length || target.some((x, i) => !Number.isFinite(x) || (track.f0[i] ? x < track.f0[i] / 2 - 1e-3 || x > track.f0[i] * 2 + 1e-3 : x !== 0)))
-    throw Error('Invalid pitch curve.')
+  validatePitch(track, target, sampleRate)
   const duration = samples.length / sampleRate
   if (anchors.length < 2 || anchors[0][0] !== 0 || anchors[0][1] !== 0 || Math.abs(anchors.at(-1)[0] - duration) > 1e-6)
     throw Error('Invalid timing anchors.')

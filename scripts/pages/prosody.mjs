@@ -38,8 +38,9 @@ export default {
           <div class="edit-grid">
             <section><h2>Pitch</h2>
               <div class="parameter"><label for="variation">Intonation</label><input id="variation" type="range" min="0" max="200" step="10" value="100" aria-describedby="variation-help"><output id="variation-value" for="variation">100%</output><button id="vary" class="btn ghost">Apply</button></div>
-              <span id="variation-help" class="sr-only">100% keeps current variation. Lower values flatten intonation; higher values exaggerate it.</span>
-              <div class="parameter"><label for="semitones">Transpose</label><input id="semitones" type="number" min="-12" max="12" step="0.5" value="0" aria-label="Transpose in semitones"><span class="hint">st</span><button id="shift" class="btn ghost">Apply</button></div>
+              <span id="variation-help" class="sr-only">100% keeps the pitch range. Lower values flatten intonation; higher values exaggerate it. Smoothing softens rapid pitch fluctuations.</span>
+              <details class="pitch-options hint"><summary>Smoothing</summary><label for="smoothing">Window (ms)<input id="smoothing" type="number" min="0" max="200" step="10" value="60" aria-describedby="smoothing-help"></label><p id="smoothing-help">Applied with Intonation. Higher values soften faster pitch changes; 0 keeps every fluctuation. Selection edges blend over 80 ms.</p></details>
+              <div class="parameter"><label for="semitones">Transpose</label><input id="semitones" type="number" step="0.5" value="0" aria-label="Transpose in semitones"><span class="hint">st</span><button id="shift" class="btn ghost">Apply</button></div>
               <div class="actions"><button id="rise" class="btn ghost" aria-label="Rising end">Rise</button><button id="fall" class="btn ghost" aria-label="Falling end">Fall</button><button id="pitch-reset" class="btn ghost">Restore pitch</button></div>
             </section>
             <section><h2>Timing</h2>

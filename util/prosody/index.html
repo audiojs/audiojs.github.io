@@ -127,7 +127,7 @@
       <p>Shape how a sentence sounds. Adjust its pitch, emphasis and pace.</p>
     </section>
 
-    <link rel="stylesheet" href="/util/prosody/editor.css?v=479713daba0a874503b6b359">
+    <link rel="stylesheet" href="/util/prosody/editor.css?v=c2a21d29ba0a8745acdd37f9">
     <div class="prosody">
       <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
@@ -157,8 +157,9 @@
           <div class="edit-grid">
             <section><h2>Pitch</h2>
               <div class="parameter"><label for="variation">Intonation</label><input id="variation" type="range" min="0" max="200" step="10" value="100" aria-describedby="variation-help"><output id="variation-value" for="variation">100%</output><button id="vary" class="btn ghost">Apply</button></div>
-              <span id="variation-help" class="sr-only">100% keeps current variation. Lower values flatten intonation; higher values exaggerate it.</span>
-              <div class="parameter"><label for="semitones">Transpose</label><input id="semitones" type="number" min="-12" max="12" step="0.5" value="0" aria-label="Transpose in semitones"><span class="hint">st</span><button id="shift" class="btn ghost">Apply</button></div>
+              <span id="variation-help" class="sr-only">100% keeps the pitch range. Lower values flatten intonation; higher values exaggerate it. Smoothing softens rapid pitch fluctuations.</span>
+              <details class="pitch-options hint"><summary>Smoothing</summary><label for="smoothing">Window (ms)<input id="smoothing" type="number" min="0" max="200" step="10" value="60" aria-describedby="smoothing-help"></label><p id="smoothing-help">Applied with Intonation. Higher values soften faster pitch changes; 0 keeps every fluctuation. Selection edges blend over 80 ms.</p></details>
+              <div class="parameter"><label for="semitones">Transpose</label><input id="semitones" type="number" step="0.5" value="0" aria-label="Transpose in semitones"><span class="hint">st</span><button id="shift" class="btn ghost">Apply</button></div>
               <div class="actions"><button id="rise" class="btn ghost" aria-label="Rising end">Rise</button><button id="fall" class="btn ghost" aria-label="Falling end">Fall</button><button id="pitch-reset" class="btn ghost">Restore pitch</button></div>
             </section>
             <section><h2>Timing</h2>
@@ -207,7 +208,7 @@
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
     import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=cc0aa73d'
-    import { startEditor } from '/util/prosody/editor.bundle.js?v=479713daba0a874503b6b359'; startEditor('479713daba0a874503b6b359')
+    import { startEditor } from '/util/prosody/editor.bundle.js?v=c2a21d29ba0a8745acdd37f9'; startEditor('c2a21d29ba0a8745acdd37f9')
   </script>
 </body>
 </html>

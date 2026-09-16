@@ -44,7 +44,7 @@ The old engine's phase-history bug, zero-crossing mix and timing-offset findings
 
 ## Verification
 
-Validation: all 15 prosody tests and the full website suite passed, including all eight page modules and all three browser engines.
+Validation: all 18 prosody tests and the full website suite passed, including all eight page modules and all three browser engines.
 
 `npm run test:prosody` covers:
 
@@ -72,6 +72,22 @@ Celemony's public documentation describes separate [pitch transitions](https://h
 
 ## Plot controls
 
-Navigation, the legend and selection now live on the waveform. Instructions are behind the question mark; selection edges support dragging and keyboard arrows. Pinch supports two touch pointers, Ctrl-wheel trackpads and WebKit’s [cumulative gesture scale](https://developer.mozilla.org/en-US/docs/Web/API/Element/gesturechange_event), with provisional edits rolled back when a second finger arrives. The scrollbar has a transparent track. Identity edits do not invalidate playback/export.
+Navigation, the legend and selection now live on the waveform. Instructions are behind the question mark; selection edges support dragging and keyboard arrows. Pinch supports two touch pointers, Ctrl-wheel trackpads and WebKit’s [cumulative gesture scale](https://developer.mozilla.org/en-US/docs/Web/API/Element/gesturechange_event), with provisional edits rolled back when a second finger arrives. The scrollbar has a transparent track. Identity edits do not invalidate playback/export (100% intonation is an identity only with smoothing set to 0).
 
-Intonation scales semitone deviations around the selection’s median: 0% flattens, 100% preserves current variation, and 200% doubles it. Transposition adds a uniform semitone offset. Both operate on the current selection/current curve; Apply is an explicit edit and Undo reverses it. Existing ±12-semitone source-relative limits still apply.
+Intonation scales semitone deviations around the selection’s median: 0% flattens and 200% doubles them. Its Smoothing disclosure controls a cosine averaging window in semitones (default 60 ms, adjustable 0–200 ms). At 100%, Apply smooths the current contour without scaling its deviations; set smoothing to 0 for exact identity. Smoothing never crosses an unvoiced gap or reaches outside the selection. Transposition adds a uniform semitone offset. Both operate on the current selection/current curve; Apply is an explicit edit and Undo reverses it.
+
+## Smoothing and shift limits
+
+The user located the remaining stepping in Intonation. Scaling each detected frame preserved rapid fluctuations: at 1.335 s the built-in sample's DIO/StoneMask contour jumps about four semitones in 5 ms, and 50% intonation still requests a two-semitone jump. With the default 60 ms smoothing, the maximum requested step over 1.30–1.36 s is below 0.3 semitone. This is a contour measurement, not proof of perceptual transparency: independent output analysis around 1.33 s still shows deviations from the requested pitch. Detection and reconstructed spectral parameters remain limitations.
+
+Selected shift, intonation and ramp edits now blend into continuing voiced audio with an 80 ms cosine transition inside each selection edge (short selections use at most half their duration). They do not force a return to original pitch at a natural voiced onset/end. Dragged points also use a cosine taper over 100 ms on each side, avoiding the old triangular gesture's corners. Restore pitch remains exact.
+
+Removed the hidden ±12-semitone total clamp from rules, gestures, UI and render validation. The pitch axis fits larger edits after each committed gesture/edit and after Undo. Limits now reflect synthesis: WORLD's `fs / fft_size + 1` lower bound with integer division and CheapTrick's configured 50 Hz analysis floor, and the recording's Nyquist upper bound. Invalid targets are rejected before modifying history; they are never silently clipped or synthesized as unvoiced. These mathematical bounds are not a claim of good voice quality at extreme shifts.
+
+Regression evidence:
+
+- `selection edits glide over time; repeated shifts and dragging can exceed an octave`: constant 180 Hz on a 5 ms grid, +6-semitone selected shifts/ramps, untouched exterior, <0.6-semitone frame increments (previously 6), +18 then +6 composition, large point drag, exact reset, short/endpoint selections and consonant-separated edges.
+- `smoothing removes fast modulation in pitch and rendered audio without crossing gaps`: ±3-semitone, 25 Hz target modulation on a 180 Hz source; 100 ms smoothing leaves <0.1-semitone modulation and independently measured rendered F0 error <0.1 semitone with clarity >0.95. Also checks disabled smoothing, repeatability, a 15 ms unvoiced gap, one-point input and invalid window values.
+- `pitch range follows synthesis bounds, and output reaches shifts beyond one octave`: validates lower/upper boundaries at 8/16/22.05/48/96 kHz; renders the harmonic vowel at −18/+18/−18 semitones, checks independent output F0 near its stationary pitch maximum (<0.1 semitone), clarity >0.98, finite PCM, exact sample count and repeatability. A pure sine is unsuitable for measuring large upward formant-preserving shifts because its spectral envelope has little energy at the new harmonics.
+- The actual-speech regression now uses the UI's default 60 ms smoothing. It checks the 1.335 s target jump as well as the existing independent output probes at 1.72–1.81 s, dry consonants/silence and exact reset.
+- Browser coverage adds smoothing-only Apply/Undo, disabled smoothing identity, invalid-window rollback, +18-semitone edits, visible expanded pitch bounds, invalid extreme-shift rollback and axis restoration on Undo.

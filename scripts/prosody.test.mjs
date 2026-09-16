@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { analyze, render, encode } from '../util/prosody/process.js'
-import { retime, mapTime, transform, movePoint, pitchAt } from '../util/prosody/model.js'
+import { retime, mapTime, transform, movePoint, pitchAt, validatePitch } from '../util/prosody/model.js'
 import { decodeWav, yin } from '../util/prosody/dsp.js'
 import { speechPitch } from '../util/prosody/world.js'
 const fs = 16000
@@ -181,6 +181,83 @@ test('invalid targets/maps rejected; WAV export contains exact float PCM and sam
   for (let i = 0; i < a.length; i++) assert.equal(view.getFloat32(44 + i * 4, true), a[i])
 })
 
+test('selection edits glide over time; repeated shifts and dragging can exceed an octave', () => {
+  const track = { times: Float32Array.from({ length: 401 }, (_, i) => i * .005), f0: new Float32Array(401).fill(180), hop: .005 }
+  for (const kind of ['shift', 'ramp']) {
+    const out = transform(track, track.f0, .5, 1.5, kind, 6)
+    assert.deepEqual(out.subarray(0, 101), track.f0.subarray(0, 101))
+    assert.deepEqual(out.subarray(300), track.f0.subarray(300))
+    let maxStep = 0
+    for (let i = 1; i < out.length; i++) maxStep = Math.max(maxStep, Math.abs(12 * Math.log2(out[i] / out[i - 1])))
+    assert.ok(maxStep < .6, `${kind}: ${maxStep} semitone per 5 ms (previously 6)`)
+  }
+  const a = transform(track, track.f0, 0, 2, 'shift', 18)
+  const b = transform(track, a, 0, 2, 'shift', 6)
+  assert.ok(Math.abs(a[200] / 180 - 2 ** 1.5) < 1e-6)
+  assert.equal(b[200], 720)
+  const dragged = movePoint(track, track.f0, 200, 720)
+  assert.equal(dragged[200], 720)
+  assert.ok(Math.abs(12 * Math.log2(dragged[200] / dragged[199])) < .2, 'local gesture has no sharp corner at its peak')
+  assert.ok(Math.abs(12 * Math.log2(dragged[181] / dragged[180])) < .2, 'local gesture eases out at its support boundary')
+  assert.deepEqual(transform(track, b, 0, 2, 'reset', 0), track.f0)
+  for (const amount of [NaN, Infinity, 100000]) assert.throws(() => transform(track, track.f0, 0, 2, 'shift', amount))
+  for (const [start, end] of [[.5, .5], [.501, .509], [1.99, 2]]) {
+    const out = transform(track, track.f0, start, end, 'shift', 6)
+    assert.ok(out.every(x => Number.isFinite(x) && x >= 180 && x <= 255))
+    for (let i = 0; i < out.length; i++) if (track.times[i] < start || track.times[i] > end) assert.equal(out[i], 180)
+  }
+  // A selection separated by a consonant needs no pitch return at the gap.
+  track.f0[99] = track.f0[301] = 0
+  const phrase = transform(track, track.f0, .5, 1.5, 'shift', 6)
+  assert.ok(phrase[100] > 254 && phrase[300] > 254)
+})
+
+test('smoothing removes fast modulation in pitch and rendered audio without crossing gaps', () => {
+  const track = { times: Float32Array.from({ length: 401 }, (_, i) => i * .005), f0: new Float32Array(401).fill(180), hop: .005 }
+  const target = Float32Array.from(track.times, t => 180 * 2 ** (.25 * Math.sin(2 * Math.PI * 25 * t)))
+  const smooth = transform(track, target, 0, 2, 'variation', 1, .1)
+  for (let i = 20; i < 380; i++) assert.ok(Math.abs(12 * Math.log2(smooth[i] / 180)) < .1)
+  const out = render(tone(), fs, track, smooth, [[0, 0], [2, 2]])
+  for (let time = .3; time < 1.7; time += .02) {
+    const start = Math.round((time - .02) * fs)
+    const pitch = yin(out.subarray(start, start + .04 * fs), { fs, minFreq: 60, maxFreq: 600 })
+    assert.ok(pitch?.clarity > .95)
+    assert.ok(Math.abs(12 * Math.log2(pitch.freq / 180)) < .1, `smooth output at ${time}`)
+  }
+  assert.deepEqual(transform(track, target, 0, 2, 'variation', 1, 0), target)
+  assert.deepEqual(transform(track, target, 0, 2, 'variation', 1, .1), smooth, 'A → A after render')
+  track.f0.fill(0, 199, 202)
+  const separated = Float32Array.from(track.f0, (v, i) => v ? i < 200 ? 120 : 300 : 0)
+  const unchanged = transform(track, separated, 0, 2, 'variation', 1, .2)
+  assert.deepEqual(unchanged, separated, 'smoothing cannot bridge even a 15 ms unvoiced gap')
+  const single = { times: Float32Array.of(0), f0: Float32Array.of(180), hop: .005 }
+  assert.deepEqual(transform(single, single.f0, 0, .02, 'variation', 1, .2), single.f0)
+  for (const value of [-1, NaN, Infinity, .201]) assert.throws(() => transform(single, single.f0, 0, .02, 'variation', .5, value), /smoothing/)
+})
+
+test('pitch range follows synthesis bounds, and output reaches shifts beyond one octave', async () => {
+  const track = { times: Float32Array.from({ length: 201 }, (_, i) => i * .005), f0: new Float32Array(201).fill(180), hop: .005 }
+  for (const sampleRate of [8000, 16000, 22050, 48000, 96000]) {
+    const fs = Math.max(16000, sampleRate), low = Math.floor(fs / 2 ** (1 + Math.floor(Math.log2(3 * fs / 50 + 1)))) + 1
+    validatePitch(track, new Float32Array(201).fill(low), sampleRate)
+    for (const hz of [0, low - .01, sampleRate / 2, NaN, Infinity]) assert.throws(() => validatePitch(track, new Float32Array(201).fill(hz), sampleRate), /pitch curve/)
+  }
+  const { vowel } = await import('./prosody-fixture.mjs')
+  const { samples, track: voiced } = vowel(fs)
+  let first
+  for (const amount of [-18, 18, -18]) {
+    const target = transform(voiced, voiced.f0, 0, 3, 'shift', amount)
+    const out = render(samples, fs, voiced, target, [[0, 0], [3, 3]])
+    const pitch = yin(out.subarray(1.475 * fs, 1.525 * fs), { fs, minFreq: 40, maxFreq: 800 })
+    assert.ok(pitch?.clarity > .98)
+    assert.ok(Math.abs(12 * Math.log2(pitch.freq / pitchAt(voiced, target, 1.5))) < .1)
+    assert.equal(out.length, samples.length)
+    if (!first) first = out
+    else if (amount === -18) assert.deepEqual(out, first)
+    assert.ok(out.every(Number.isFinite))
+  }
+})
+
 // This fails for the previous spectral renderer even when supplied perfect F0.
 // A corrected steady vowel must have coherent repeated cycles, not merely the
 // right average frequency. The changing source F0 isolates dynamic synthesis.
@@ -225,7 +302,15 @@ test('speech rendering: lowered and raised pitches, silence, sample rates, A →
 test('built-in speech: correction follows continuous voicing without falling back to original pitch', () => {
   const { channelData: [a], sampleRate } = decodeWav(readFileSync(new URL('../util/prosody/sample.wav', import.meta.url)))
   const track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
-  const target = transform(track, track.f0, 0, duration, 'variation', .5)
+  const raw = transform(track, track.f0, 0, duration, 'variation', .5)
+  const target = transform(track, track.f0, 0, duration, 'variation', .5, .06)
+  const maxStep = (curve, start, end) => {
+    let max = 0
+    for (let i = 1; i < curve.length; i++) if (track.times[i] >= start && track.times[i] <= end && curve[i] && curve[i - 1]) max = Math.max(max, Math.abs(12 * Math.log2(curve[i] / curve[i - 1])))
+    return max
+  }
+  assert.ok(maxStep(raw, 1.3, 1.36) > 2, 'unsmoothed normalization retains a two-semitone frame jump')
+  assert.ok(maxStep(target, 1.3, 1.36) < .3, '60 ms smoothing removes the frame jump from the requested contour')
   const out = render(a, sampleRate, track, target, anchors)
   // Framewise YIN rejected the voiced frames at 1.745/1.765 s. The renderer
   // switched to dry ~128 Hz between corrected ~157 and ~147 Hz vowels.
