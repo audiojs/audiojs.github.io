@@ -127,7 +127,7 @@
       <p>Shape how a sentence sounds. Adjust its pitch, emphasis and pace.</p>
     </section>
 
-    <link rel="stylesheet" href="/util/prosody/editor.css?v=342dd67b4e65af637817930e">
+    <link rel="stylesheet" href="/util/prosody/editor.css?v=86b9cf8b4e65af6303b6b359">
     <div class="prosody">
       <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
@@ -173,8 +173,8 @@
         <div class="row"><a id="save" class="btn" aria-disabled="true">Save WAV</a><span class="hint">32-bit float · mono · original sample rate</span></div>
       </section>
     </div>
-    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/pitch-yin" target="_blank" rel="noopener"><code>@audio/pitch-yin</code></a>, <a href="https://npmjs.com/package/@audio/stretch-wsola" target="_blank" rel="noopener"><code>@audio/stretch-wsola</code></a>, <a href="https://npmjs.com/package/@audio/encode-wav" target="_blank" rel="noopener"><code>@audio/encode-wav</code></a>.</p>
-    <section class="seo"><h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Zoom in above the waveform and use Position to move along the recording. Changes are rendered from the original recording, so undoing an edit does not require reversing an audio effect.</p><p>Pitch edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally, with YIN pitch detection. Phrase timing uses WSOLA and stretches the whole selection, including consonants; automatic phoneme protection and linguistic intonation correction are future work. WAV export contains audio only, without source tags.</p>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/stretch-wsola" target="_blank" rel="noopener"><code>@audio/stretch-wsola</code></a> and <a href="https://npmjs.com/package/@audio/encode-wav" target="_blank" rel="noopener"><code>@audio/encode-wav</code></a>.</p>
+    <section class="seo"><h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Zoom in above the waveform and use Position to move along the recording. Changes are rendered from the original recording, so undoing an edit does not require reversing an audio effect.</p><p>Pitch edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally. DIO tracks pitch across time and StoneMask refines it against the voice waveform. Phrase timing uses WSOLA and stretches the whole selection, including consonants; automatic phoneme protection and linguistic intonation correction are future work. WAV export contains audio only, without source tags.</p>
       <section class="faq" aria-label="Questions">
         <h3>Questions</h3>
         <details><summary>Can this automatically fix the tone of a question?</summary><p>The rising and falling controls apply a pitch ramp to your selection. They do not infer sentence meaning. Listen and adjust the selection and pitch to match your intended delivery.</p></details>
@@ -209,7 +209,7 @@
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
     import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=cc0aa73d'
-    import { startEditor } from '/util/prosody/editor.bundle.js?v=342dd67b4e65af637817930e'; startEditor('342dd67b4e65af637817930e')
+    import { startEditor } from '/util/prosody/editor.bundle.js?v=86b9cf8b4e65af6303b6b359'; startEditor('86b9cf8b4e65af6303b6b359')
   </script>
 </body>
 </html>

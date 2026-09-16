@@ -3,6 +3,24 @@ import { resample } from './dsp.js'
 import { pitchAt } from './model.js'
 const engine = await createWorld()
 
+// DIO connects pitch candidates across time; StoneMask refines the resulting
+// contour against the waveform. A rejected individual frame is not a consonant.
+export function speechTrack(samples, sampleRate) {
+  const hop = .005
+  if (samples.length < Math.round(.05 * sampleRate))
+    return { times: new Float32Array(), f0: new Float32Array(), hop }
+  const count = Math.floor(1000 * samples.length / sampleRate / (hop * 1000)) + 1
+  let x = 0, f = 0
+  try {
+    x = engine._malloc(samples.length * 8); f = engine._malloc(count * 8)
+    if (!x || !f) throw Error('Not enough memory to analyze this recording. Try a shorter selection.')
+    engine.HEAPF64.set(samples, x / 8)
+    engine._world_analyze(x, samples.length, sampleRate, hop, f)
+    return { times: Float32Array.from({ length: count }, (_, i) => i * hop),
+      f0: Float32Array.from(engine.HEAPF64.subarray(f / 8, f / 8 + count)), hop }
+  } finally { engine._free(x); engine._free(f) }
+}
+
 // Resynthesize with the original spectral envelope and aperiodicity, changing
 // only F0. No spectral-bin reassignment. The caller handles dry edit boundaries.
 export function speechPitch(samples, sampleRate, track, target) {

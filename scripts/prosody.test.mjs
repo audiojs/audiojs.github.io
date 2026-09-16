@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { analyze, render, encode } from '../util/prosody/process.js'
 import { retime, mapTime, transform, movePoint, pitchAt } from '../util/prosody/model.js'
-import { decodeWav } from '../util/prosody/dsp.js'
+import { decodeWav, yin } from '../util/prosody/dsp.js'
 import { speechPitch } from '../util/prosody/world.js'
 const fs = 16000
 const tone = (frequency = 180, seconds = 2) => Float32Array.from({ length: fs * seconds }, (_, i) => 0.3 * Math.sin(2 * Math.PI * frequency * i / fs))
@@ -63,7 +63,7 @@ test('automated pitch follows source time rather than the left edge of its analy
   const a = tone(250, 1), track = analyze(a, fs)
   const target = Float32Array.from(track.times, t => 250 * (1 + t))
   const out = speechPitch(a, fs, track, target)
-  const detected = median(analyze(out.subarray(.4 * fs, .5 * fs), fs).f0)
+  const detected = yin(out.subarray(.4 * fs, .5 * fs), { fs, minFreq: 60, maxFreq: 600 })?.freq
   assert.ok(Math.abs(detected - 362.5) < 6, `${detected} Hz near 250 × 1.45`)
 })
 
@@ -72,14 +72,23 @@ test('analysis: known F0, silence, short input, and A → A → B are independen
   assert.ok(Math.abs(median(first.f0) - 180) < 1)
   assert.deepEqual(analyze(a, fs), first)
   assert.ok(Math.abs(median(analyze(tone(260), fs).f0) - 260) < 1)
+  assert.deepEqual(analyze(a, fs), first)
   assert.ok(analyze(new Float32Array(fs), fs).f0.every(x => x === 0))
+  assert.ok(analyze(tone().map(x => x * .0001), fs).f0.every(x => x === 0), 'nearly silent periodic audio stays below the existing silence floor')
   assert.equal(analyze(new Float32Array(320), fs).f0.length, 0)
-  assert.equal(analyze(new Float32Array(800), fs).times.length, 1)
+  // Under 50 ms has insufficient analysis context; at the boundary the 5 ms
+  // grid includes both endpoints, with silence remaining unvoiced everywhere.
+  const smallest = analyze(new Float32Array(800), fs)
+  assert.equal(smallest.times.length, 11)
+  assert.ok(smallest.f0.every(x => x === 0))
+  assert.equal(smallest.times[0], 0)
+  assert.ok(Math.abs(smallest.times.at(-1) - .05) < 1e-8)
   assert.equal(analyze(new Float32Array(799), fs).times.length, 0)
-  assert.equal(analyze(new Float32Array(801), fs).times.length, 1)
+  assert.equal(analyze(new Float32Array(801), fs).times.length, 11)
   assert.throws(() => analyze(new Float32Array(0), fs), /contain audio/)
   assert.throws(() => analyze(new Float32Array([NaN]), fs), /invalid samples/)
   assert.throws(() => analyze(a, 0), /8 kHz/)
+  assert.throws(() => analyze(a, 16000.5), /integer sample rate/)
 })
 
 test('identity render and short unvoiced input preserve every source sample', () => {
@@ -198,10 +207,30 @@ test('speech rendering: lowered and raised pitches, silence, sample rates, A →
   }
 })
 
-test('built-in speech: reduction preserves dry consonants, duration, finite PCM and reset', () => {
+test('built-in speech: correction follows continuous voicing without falling back to original pitch', () => {
   const { channelData: [a], sampleRate } = decodeWav(readFileSync(new URL('../util/prosody/sample.wav', import.meta.url)))
   const track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
-  const out = render(a, sampleRate, track, transform(track, track.f0, 0, duration, 'flatten', .5), anchors)
+  const target = transform(track, track.f0, 0, duration, 'flatten', .5)
+  const out = render(a, sampleRate, track, target, anchors)
+  // Framewise YIN rejected the voiced frames at 1.745/1.765 s. The renderer
+  // switched to dry ~128 Hz between corrected ~157 and ~147 Hz vowels.
+  // Measure the actual output with a detector independent of DIO/StoneMask.
+  let previous = 0
+  for (let j = 0; j <= 9; j++) {
+    const time = 1.72 + j * .01
+    assert.ok(pitchAt(track, track.f0, time) > 0, 'continuous source voicing')
+    const start = Math.round((time - .02) * sampleRate)
+    const pitch = yin(out.subarray(start, start + Math.round(.04 * sampleRate)), { fs: sampleRate, minFreq: 60, maxFreq: 600 })
+    assert.ok(pitch && pitch.clarity > .9, `coherent voiced output at ${time}`)
+    assert.ok(Math.abs(12 * Math.log2(pitch.freq / pitchAt(track, target, time))) < .2, `target pitch at ${time}`)
+    if (previous) assert.ok(Math.abs(12 * Math.log2(pitch.freq / previous)) < .5, 'no sudden pitch excursion')
+    previous = pitch.freq
+  }
+  // Continuity must not be obtained by pitching actual consonants or silence.
+  for (const [start, end] of [[.38, .42], [2.05, 2.2]]) {
+    for (let time = start; time <= end; time += .005) assert.equal(pitchAt(track, track.f0, time), 0)
+    assert.deepEqual(out.subarray(Math.ceil(start * sampleRate), Math.floor(end * sampleRate)), a.subarray(Math.ceil(start * sampleRate), Math.floor(end * sampleRate)))
+  }
   assert.equal(out.length, a.length)
   assert.ok(out.every(Number.isFinite))
   assert.ok(out.some((x, i) => Math.abs(x - a[i]) > .01))

@@ -2,6 +2,16 @@
 #include "world/cheaptrick.h"
 #include "world/d4c.h"
 #include "world/synthesis.h"
+#include "world/dio.h"
+#include "world/stonemask.h"
+extern "C" void world_analyze(const double* x, int n, int fs, double step, double* f0) {
+  DioOption opt; InitializeDioOption(&opt);
+  opt.f0_floor = 60; opt.f0_ceil = 600; opt.frame_period = step * 1000;
+  int count = GetSamplesForDIO(fs, n, opt.frame_period);
+  std::vector<double> times(count), initial(count);
+  Dio(x, n, fs, &opt, times.data(), initial.data());
+  StoneMask(x, n, fs, times.data(), initial.data(), count, f0);
+}
 extern "C" void world_render(const double* x, int n, int fs, const double* f0,
     const double* target, int count, double step, double* y) {
   CheapTrickOption opt; InitializeCheapTrickOption(fs, &opt);

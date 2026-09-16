@@ -10,7 +10,7 @@ export default {
   title: 'Speech prosody editor: edit pitch curves and phrase timing',
   description: 'Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce pitch variation, compare with the original and save a WAV. Nothing is uploaded.',
   lead: 'Shape how a sentence sounds. Adjust its pitch, emphasis and pace.',
-  powered: ['@audio/pitch-yin', '@audio/stretch-wsola', '@audio/encode-wav'],
+  powered: ['@audio/stretch-wsola', '@audio/encode-wav'],
   repo: 'https://github.com/audiojs/audiojs.github.io/tree/main/util/prosody',
   body: `
     <link rel="stylesheet" href="/util/prosody/editor.css?v=${version}">
@@ -60,5 +60,5 @@ export default {
     ['Will it preserve the voice?', 'The WORLD speech engine changes pitch while retaining the estimated vocal-tract spectrum and breathiness. Consonants and untouched regions are kept from the original. Edits can still sound processed, especially with inaccurate pitch detection, creaky speech or large changes. Compare with the original before saving.'],
     ['Why are parts of the curve missing?', 'Silence and unvoiced consonants do not have a reliable fundamental pitch. Those regions stay unpitched. Very short clips may also have too little audio for detection.'],
   ],
-  seo: `<h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Zoom in above the waveform and use Position to move along the recording. Changes are rendered from the original recording, so undoing an edit does not require reversing an audio effect.</p><p>Pitch edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally, with YIN pitch detection. Phrase timing uses WSOLA and stretches the whole selection, including consonants; automatic phoneme protection and linguistic intonation correction are future work. WAV export contains audio only, without source tags.</p>`,
+  seo: `<h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Zoom in above the waveform and use Position to move along the recording. Changes are rendered from the original recording, so undoing an edit does not require reversing an audio effect.</p><p>Pitch edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally. DIO tracks pitch across time and StoneMask refines it against the voice waveform. Phrase timing uses WSOLA and stretches the whole selection, including consonants; automatic phoneme protection and linguistic intonation correction are future work. WAV export contains audio only, without source tags.</p>`,
 }

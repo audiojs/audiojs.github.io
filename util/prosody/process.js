@@ -1,29 +1,22 @@
-import { yin, stretch, wav } from './dsp.js'
-import { speechPitch } from './world.js'
+import { stretch, wav } from './dsp.js'
+import { speechPitch, speechTrack } from './world.js'
 
 export function analyze(samples, sampleRate) {
-  if (!(samples instanceof Float32Array) || !samples.length || !Number.isFinite(sampleRate) || sampleRate < 8000)
-    throw Error('The recording must contain audio at 8 kHz or above.')
-  // Box-filter decimation is only for F0 analysis; render retains the original PCM.
-  const step = Math.max(1, Math.floor(sampleRate / 16000)), fs = sampleRate / step
-  const data = new Float32Array(Math.ceil(samples.length / step))
-  for (let i = 0; i < samples.length; i++) {
-    if (!Number.isFinite(samples[i])) throw Error('The recording contains invalid samples.')
-    data[Math.floor(i / step)] += samples[i] / step
-  }
-  const hop = Math.round(fs * 0.02), size = Math.round(fs * 0.05)
-  const count = Math.max(0, Math.floor((data.length - size) / hop) + 1)
-  const times = new Float32Array(count), f0 = new Float32Array(count), confidence = new Float32Array(count)
-  for (let i = 0; i < count; i++) {
-    times[i] = (i * hop + size / 2) / fs
-    const frame = data.subarray(i * hop, i * hop + size)
+  if (!(samples instanceof Float32Array) || !samples.length || !Number.isInteger(sampleRate) || sampleRate < 8000)
+    throw Error('The recording must contain audio at an integer sample rate of 8 kHz or above.')
+  if (samples.some(x => !Number.isFinite(x))) throw Error('The recording contains invalid samples.')
+  const track = speechTrack(samples, sampleRate), radius = Math.round(.025 * sampleRate)
+  // Keep the existing silence floor: a temporal tracker can otherwise assign
+  // pitch to the nearly silent tail of a vowel.
+  for (let i = 0; i < track.f0.length; i++) {
+    if (!track.f0[i]) continue
+    const center = Math.round(track.times[i] * sampleRate)
+    const start = Math.max(0, center - radius), end = Math.min(samples.length, center + radius)
     let power = 0
-    for (const x of frame) power += x * x
-    if (power / size < 1e-7) continue
-    const pitch = yin(frame, { fs, minFreq: 60, maxFreq: 600 })
-    if (pitch && pitch.clarity >= 0.8) { f0[i] = pitch.freq; confidence[i] = pitch.clarity }
+    for (let j = start; j < end; j++) power += samples[j] ** 2
+    if (power / (end - start) < 1e-7) track.f0[i] = 0
   }
-  return { times, f0, confidence, hop: hop / fs }
+  return track
 }
 
 export function render(samples, sampleRate, track, target, anchors) {

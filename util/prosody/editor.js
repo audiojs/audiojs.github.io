@@ -31,7 +31,7 @@ export function startEditor(version) {
     try { const [a, b] = selection(); const seconds = mapTime(anchors, b) - mapTime(anchors, a); $('duration').value = seconds.toFixed(3); $('timing').textContent = `Selection: ${(b - a).toFixed(2)} s original → ${seconds.toFixed(2)} s edited` } catch {}
     const valid = point >= 0 && !!track.f0[point]
     $('point-hz').disabled = $('set-point').disabled = !valid
-    $('point-info').textContent = valid ? `${track.times[point].toFixed(2)} s · ${target[point].toFixed(1)} Hz · confidence ${Math.round(track.confidence[point] * 100)}%` : 'No point selected'
+    $('point-info').textContent = valid ? `${track.times[point].toFixed(2)} s · ${target[point].toFixed(1)} Hz` : 'No point selected'
     $('point-hz').value = valid ? target[point].toFixed(1) : ''
   }
   function act(fn) {
