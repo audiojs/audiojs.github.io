@@ -33,9 +33,10 @@ A local Node 25 benchmark on the 6.18-second speech sample, nine warmed renders 
 - Site `vendored shifter reconstructs speech with unity automation, without bypass`: real sample relative squared error < 1e-12.
 - Site `unity automation: sample rates, silence, moving peaks, empty writes and final splits`: 16/22.05/44.1/48 kHz; two voices separated by silence; nonempty inputs of 1/511/512/513 samples and a full second; empty writes and splits immediately before the final sample; batch/stream equivalence and repeated calls.
 - Site `small edits stay fully wet through unity; unvoiced and untouched frames stay dry`: ±0.06-semitone ramp with an exact unity point; interior equals the fully processed output, exterior and unvoiced gap equal the original.
+- Site `first and last edited analysis frames have the same boundary fade as interior edits`: outer endpoints taper toward dry audio over one control interval, with exact exterior PCM.
 - Site `automated pitch follows source time rather than the left edge of its analysis window`: semantic F0 bound for a known ramp.
 
-The website full suite passes, including all eight page modules and prosody interactions in Chromium, Firefox and WebKit. The final prosody suite has 11 passing tests.
+The website full suite passes, including all eight page modules and prosody interactions in Chromium, Firefox and WebKit. The final prosody suite has 12 passing tests.
 
 The spectral full suite (33 tests), shift full suite (50 tests) and unchanged `quality:ci` bounds pass against the fixed engine. The shift suite also passes against its currently installed npm dependency. One test previously required transient processing to beat basic phase locking on a drum fixture. Transient correlation stayed ~0.957 while phase locking improved from ~0.950 to ~0.960; the test now requires both to exceed 0.95 instead of enforcing a ranking.
 

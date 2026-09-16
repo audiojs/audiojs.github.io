@@ -262,6 +262,8 @@ output
 ### Tool pages & demos (Tier-2, lower priority)
 
 * [x] **Speech prosody editor** at `/util/prosody/`: built-in speech sample, waveform/F0 overlay, draggable and keyboard/numeric pitch control, selection rules, source-anchored phrase duration, undo/reset, original/edited playback and WAV export. Shared utility styling; linked from home/tools/sitemap. Tested with local DSP bundles in Chromium, Firefox and WebKit. Experimental quality; no semantic question detection or automatic consonant protection.
+* [x] **Prosody DSP correctness:** repair source-phase history, untracked peaks and boundary energy in the shared shifter; align spectral automation to frame centers; replace correction-magnitude mixing with edit-boundary fades. Unity, automation, streaming and sample-rate regressions added. See [quality audit](prosody-quality.md).
+* [ ] **Speech correction listening gate:** compare small/large edits and unity crossings on varied real voices with an established reference; evaluate pulse-synchronous synthesis and reliable voicing before claiming high-end quality. Release the corrected spectral/shift packages to npm separately.
 * [ ] **Prosody quality and demo consolidation:** evaluate edits on varied real speech (creaky/breathy voice, consonants, detector octave errors), add phoneme-aware timing and better contour tracking; bring existing package demos into the `/util/` tools area using its shared shell before the planned visual redesign. Keep linguistic intonation rules separate from pitch detection.
 
 * [ ] BPM detector (`@audio/beat`)

@@ -44,9 +44,9 @@ export function render(samples, sampleRate, track, target, anchors) {
       (track.f0[i] > 0 && delta[i - 1] * delta[i + 1] < 0) ? 1 : 0)
     const at = (t, curve = delta) => {
       const pos = (t - (track.times[0] || 0)) / track.hop
-      if (pos < 0 || pos > delta.length - 1) return 0
+      if (pos < -1 || pos > delta.length) return 0
       const i = Math.floor(pos), f = pos - i
-      return curve[i] * (1 - f) + (curve[i + 1] || 0) * f
+      return (curve[i] || 0) * (1 - f) + (curve[i + 1] || 0) * f
     }
     pitched = shift(samples, { sampleRate, ratio: t => 2 ** at(t) })
     // Crossfade only at edit boundaries, keeping untouched/unvoiced frames dry.

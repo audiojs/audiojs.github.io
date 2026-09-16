@@ -60,6 +60,20 @@ test('unity automation: sample rates, silence, moving peaks, empty writes and fi
   }
 })
 
+test('first and last edited analysis frames have the same boundary fade as interior edits', () => {
+  const a = tone(), track = { times: Float32Array.of(.5, .75, 1), f0: Float32Array.of(180, 180, 180), hop: .25 }
+  const target = Float32Array.of(360, 360, 360)
+  const ratio = t => 2 ** Math.max(0, Math.min(1, (t - .25) / .25, (1.25 - t) / .25))
+  const wet = shift(a, { sampleRate: fs, ratio })
+  const out = render(a, fs, track, target, [[0, 0], [2, 2]])
+  for (const t of [.375, 1.125]) {
+    const i = t * fs
+    assert.ok(Math.abs(out[i] - (a[i] + wet[i]) / 2) < 1e-7, 'halfway through a boundary is a half wet mix')
+  }
+  assert.deepEqual(out.subarray(0, .25 * fs), a.subarray(0, .25 * fs))
+  assert.deepEqual(out.subarray(1.25 * fs), a.subarray(1.25 * fs))
+})
+
 test('automated pitch follows source time rather than the left edge of its analysis window', () => {
   const out = shift(tone(250, 1), { sampleRate: fs, ratio: t => 1 + t })
   const detected = median(analyze(out.subarray(.4 * fs, .5 * fs), fs).f0)
