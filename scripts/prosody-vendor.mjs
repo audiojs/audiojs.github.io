@@ -15,6 +15,8 @@ const packages = {
 const result = await build({
   stdin: { contents: Object.entries(packages).map(([name, path]) => `export { default as ${name} } from ${JSON.stringify(join(root, path))}`).join('\n'), resolveDir: root },
   bundle: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true,
+  // Use the checked-out phase engine, not an older installed transitive copy.
+  alias: { '@audio/spectral-pvoc': join(root, 'spectral/packages/spectral-pvoc/pvoc.js') },
   outfile: 'util/prosody/dsp.js', legalComments: 'eof', metafile: true,
 })
 const versions = Object.values(packages).map(path => {

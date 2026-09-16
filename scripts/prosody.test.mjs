@@ -1,10 +1,70 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { analyze, render, encode } from '../util/prosody/process.js'
 import { retime, mapTime, transform, movePoint } from '../util/prosody/model.js'
+import { shift, decodeWav } from '../util/prosody/dsp.js'
 const fs = 16000
 const tone = (frequency = 180, seconds = 2) => Float32Array.from({ length: fs * seconds }, (_, i) => 0.3 * Math.sin(2 * Math.PI * frequency * i / fs))
 const median = data => [...data].filter(Boolean).sort((a, b) => a - b).at(Math.floor([...data].filter(Boolean).length / 2))
+
+test('vendored shifter reconstructs speech with unity automation, without bypass', () => {
+  const { channelData: [a], sampleRate } = decodeWav(readFileSync(new URL('../util/prosody/sample.wav', import.meta.url)))
+  const out = shift(a, { sampleRate, ratio: () => 1 })
+  assert.equal(out.length, a.length)
+  let error = 0, energy = 0
+  for (let i = 0; i < a.length; i++) { error += (out[i] - a[i]) ** 2; energy += a[i] ** 2 }
+  assert.ok(error / energy < 1e-12, `Relative reconstruction error: ${10 * Math.log10(error / energy)} dB`)
+})
+
+test('small edits stay fully wet through unity; unvoiced and untouched frames stay dry', () => {
+  const a = tone(), hop = .02
+  const times = Float32Array.from({ length: 101 }, (_, i) => i * hop)
+  const f0 = new Float32Array(times.length).fill(180), target = f0.slice()
+  // A gentle crossing, with an exact unchanged point in its middle.
+  for (let i = 20; i <= 80; i++) target[i] *= 2 ** ((i - 50) / 6000)
+  const delta = Float32Array.from(target, (x, i) => Math.log2(x / f0[i]))
+  const at = t => {
+    const pos = t / hop, i = Math.floor(pos), f = pos - i
+    return (delta[i] || 0) * (1 - f) + (delta[i + 1] || 0) * f
+  }
+  const wet = shift(a, { sampleRate: fs, ratio: t => 2 ** at(t) })
+  const out = render(a, fs, { times, f0, hop }, target, [[0, 0], [2, 2]])
+  assert.deepEqual(out.subarray(.45 * fs, 1.55 * fs), wet.subarray(.45 * fs, 1.55 * fs))
+  assert.deepEqual(out.subarray(0, .35 * fs), a.subarray(0, .35 * fs))
+  assert.deepEqual(out.subarray(1.65 * fs), a.subarray(1.65 * fs))
+  f0.fill(0, 45, 56); target.fill(0, 45, 56)
+  const gap = render(a, fs, { times, f0, hop }, target, [[0, 0], [2, 2]])
+  assert.deepEqual(gap.subarray(.92 * fs, 1.08 * fs), a.subarray(.92 * fs, 1.08 * fs))
+})
+
+test('unity automation: sample rates, silence, moving peaks, empty writes and final splits', () => {
+  for (const sampleRate of [16000, 22050, 44100, 48000]) {
+    const a = Float32Array.from({ length: sampleRate }, (_, i) => {
+      const t = i / sampleRate, f = t < .5 ? 150 : 230
+      return t < .1 || t > .4 && t < .6 || t > .9 ? 0 :
+        .3 * Math.sin(2 * Math.PI * f * t) + .1 * Math.sin(4 * Math.PI * f * t)
+    })
+    const opts = { sampleRate, ratio: () => 1 }, out = shift(a, opts)
+    assert.equal(out.length, a.length)
+    assert.ok(out.every((x, i) => Math.abs(x - a[i]) < 1e-6))
+    for (const length of [1, 511, 512, 513, a.length]) {
+      const offset = length === a.length ? 0 : Math.round(.2 * sampleRate) + 1
+      const input = a.subarray(offset, offset + length), batch = shift(input, opts), writer = shift(opts)
+      assert.ok(batch.every((x, i) => Math.abs(x - input[i]) < 1e-6))
+      const chunks = [writer(new Float32Array(0)), writer(input.subarray(0, length - 1)), writer(input.subarray(length - 1)), writer()]
+      const streamed = Float32Array.from(chunks.flatMap(c => [...c]))
+      assert.deepEqual(streamed, batch)
+    }
+    assert.deepEqual(shift(a, opts), out)
+  }
+})
+
+test('automated pitch follows source time rather than the left edge of its analysis window', () => {
+  const out = shift(tone(250, 1), { sampleRate: fs, ratio: t => 1 + t })
+  const detected = median(analyze(out.subarray(.4 * fs, .5 * fs), fs).f0)
+  assert.ok(Math.abs(detected - 362.5) < 6, `${detected} Hz near 250 × 1.45`)
+})
 
 test('analysis: known F0, silence, short input, and A → A → B are independent', () => {
   const a = tone(), first = analyze(a, fs)

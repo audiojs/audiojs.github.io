@@ -1,5 +1,4 @@
 import { yin, shift, stretch, wav } from './dsp.js'
-import { clamp } from './model.js'
 
 export function analyze(samples, sampleRate) {
   if (!(samples instanceof Float32Array) || !samples.length || !Number.isFinite(sampleRate) || sampleRate < 8000)
@@ -39,16 +38,20 @@ export function render(samples, sampleRate, track, target, anchors) {
   let pitched = samples
   if (target.some((x, i) => x !== track.f0[i])) {
     const delta = Float32Array.from(target, (x, i) => x ? Math.log2(x / track.f0[i]) : 0)
-    const at = t => {
+    // An edit stays wet through unity: mixing by correction magnitude produces
+    // cancellations between the source and the shifted signal's accumulated phase.
+    const edited = Float32Array.from(delta, (d, i) => d !== 0 ||
+      (track.f0[i] > 0 && delta[i - 1] * delta[i + 1] < 0) ? 1 : 0)
+    const at = (t, curve = delta) => {
       const pos = (t - (track.times[0] || 0)) / track.hop
       if (pos < 0 || pos > delta.length - 1) return 0
       const i = Math.floor(pos), f = pos - i
-      return delta[i] * (1 - f) + (delta[i + 1] || 0) * f
+      return curve[i] * (1 - f) + (curve[i + 1] || 0) * f
     }
     pitched = shift(samples, { sampleRate, ratio: t => 2 ** at(t) })
-    // Leave untouched/unvoiced material dry, and taper each edit's boundary.
+    // Crossfade only at edit boundaries, keeping untouched/unvoiced frames dry.
     for (let i = 0; i < samples.length; i++) {
-      const wet = clamp(Math.abs(at(i / sampleRate)) * 120, 0, 1)
+      const wet = .5 - .5 * Math.cos(Math.PI * at(i / sampleRate, edited))
       pitched[i] = samples[i] * (1 - wet) + pitched[i] * wet
     }
   }
