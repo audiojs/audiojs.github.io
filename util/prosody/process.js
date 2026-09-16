@@ -42,7 +42,7 @@ export function render(samples, sampleRate, track, target, anchors) {
     // An edit stays wet through unity: mixing by correction magnitude produces
     // cancellations between the source and the shifted signal's accumulated phase.
     const edited = Float32Array.from(delta, (d, i) => d !== 0 ||
-      (track.f0[i] > 0 && delta[i - 1] * delta[i + 1] < 0) ? 1 : 0)
+      (track.f0[i] > 0 && delta[i - 1] && delta[i + 1]) ? 1 : 0)
     const at = (t, curve = delta) => {
       const pos = (t - (track.times[0] || 0)) / track.hop
       if (pos < -1 || pos > delta.length) return 0

@@ -11,7 +11,7 @@ The editor now uses the unmodified **WORLD reference implementation** for CheapT
 - Generated `world.wasm.js` embeds the binary as base64. No runtime CDN or binary fetch. The worker's content hash includes the engine, so changed code gets a new URL.
 - YIN still supplies the detected contour; WORLD does not repair detector errors in this integration. Pitch interpolation is a shape-preserving cubic in octaves, shared by synthesis and the displayed curve. Voiced/unvoiced boundaries do not interpolate toward zero Hz.
 - WORLD parameters use a 5 ms grid. The wrapper includes 100 ms of analysis context around the changed span. Narrowband recordings below 16 kHz are sinc-resampled for D4C, then returned to their original rate and length.
-- Unedited exterior and unvoiced interiors stay exactly dry. Crossfades occur at edit boundaries, including the outermost analysis points, not whenever correction crosses unity. No-op/reset returns the original PCM exactly.
+- Unedited exterior and unvoiced interiors stay exactly dry. Crossfades occur at edit boundaries, including the outermost analysis points, not whenever correction crosses or touches unity. No-op/reset returns the original PCM exactly.
 - Phrase timing remains WSOLA; no automatic phoneme protection has been added.
 
 ## What the measurements establish

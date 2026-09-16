@@ -36,6 +36,11 @@ test('small edits stay fully wet through unity; unvoiced and untouched frames st
   assert.deepEqual(out.subarray(.45 * fs, 1.55 * fs), wet.subarray(.45 * fs, 1.55 * fs))
   assert.deepEqual(out.subarray(0, .35 * fs), a.subarray(0, .35 * fs))
   assert.deepEqual(out.subarray(1.65 * fs), a.subarray(1.65 * fs))
+  // Touching unity at an extremum must also keep synthesis phase continuous.
+  const touch = Float32Array.from(target, (v, i) => f0[i] * 2 ** Math.abs(Math.log2(v / f0[i])))
+  const touchWet = speechPitch(a, fs, { times, f0, hop }, touch)
+  const touchOut = render(a, fs, { times, f0, hop }, touch, [[0, 0], [2, 2]])
+  assert.deepEqual(touchOut.subarray(.95 * fs, 1.05 * fs), touchWet.subarray(.95 * fs, 1.05 * fs))
   f0.fill(0, 45, 56); target.fill(0, 45, 56)
   const gap = render(a, fs, { times, f0, hop }, target, [[0, 0], [2, 2]])
   assert.deepEqual(gap.subarray(.92 * fs, 1.08 * fs), a.subarray(.92 * fs, 1.08 * fs))
