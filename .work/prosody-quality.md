@@ -44,7 +44,7 @@ The old engine's phase-history bug, zero-crossing mix and timing-offset findings
 
 ## Verification
 
-Validation: all 14 prosody tests and the full website suite passed, including all eight page modules and all three browser engines.
+Validation: all 15 prosody tests and the full website suite passed, including all eight page modules and all three browser engines.
 
 `npm run test:prosody` covers:
 
@@ -55,17 +55,23 @@ Validation: all 14 prosody tests and the full website suite passed, including al
 - Tiny edits through unity, interior/outer boundary fades, untouched PCM and source-time automation.
 - Existing short/empty input, >60-second recordings, timing edits, edit validation and exact float WAV export.
 
-`npm run test:all` also exercises the website and browser lifecycle. The prosody browser test covers zoom buttons, keyboard +/−/0, Alt-scroll, position slider, selection preservation, fit/show-all, file replacement, mobile layout, pitch edits, timing, playback, export and reset in Chromium, Firefox and WebKit, with external requests blocked.
+`npm run test:all` also exercises the website and browser lifecycle. The prosody browser test covers on-plot zoom icons, keyboard +/−/0/F, trackpad/touch pinch, transparent native scrolling, selection handles, gesture cancellation, selection preservation, fit/show-all, file replacement, mobile layout, intonation scaling (0–200%) and transposition, timing, playback, export and reset in Chromium, Firefox and WebKit, with external requests blocked. Touch-pointer pinch/cancellation uses Chromium touch injection; cumulative WebKit gesture scales and wheel events are dispatched explicitly. Layout is checked at 320, 375, 414, 768 and 812 px.
 
 ## Remaining acceptance work
 
-The user reports both their own recording and slight damage/uneven transitions on the built-in sample. Compare those exact edits by listening after this change; obtain an affected recording if the problem persists. The synthetic fixture and the WORLD reference's reputation cannot substitute for this check. Keep the editor experimental.
+The user confirmed that the DIO/StoneMask change sounds better. Broader listening comparisons on their own recording and varied voices are still needed; the synthetic fixture and the WORLD reference's reputation cannot substitute for this check. Keep the editor experimental.
 
 Next steps, in order:
 
 1. Establish a listening corpus and reference renders: original, our output and an established editor at matched loudness, using gentle correction, ±3-semitone edits and phrase-boundary edits. Include low/high, breathy/creaky voices and actual user failures. Measure voicing mistakes and pitch excursions as well as listening quality; a correct F0 is not proof of natural timbre.
-2. Represent voiced syllables and transitions explicitly. Separate slow intonation, local modulation and transition duration. “Reduce variation 50%” currently contracts every frame toward one selection median; it does not infer intended emphasis or questions. Allow analysis correction before modifying delivery.
+2. Represent voiced syllables and transitions explicitly. Separate slow intonation, local modulation and transition duration. The intonation percentage currently scales every frame’s deviation from one selection median; it does not infer intended emphasis or questions. Allow analysis correction before modifying delivery.
 3. Validate consonant/breath preservation and edited/original joins, then compare waveform-preserving pulse-synchronous processing against WORLD on the same corpus. Adopt a renderer only with evidence that the complete edit sounds better. WORLD reconstructs speech from estimated parameters; using it does not establish Melodyne-equivalent transparency.
 4. Promote the binding into `@audio/speech-world` only after the reusable analysis/synthesis API, long-recording memory behavior and quality limits are specified and tested.
 
 Celemony's public documentation describes separate [pitch transitions](https://helpcenter.celemony.com/M5/doc/melodyneStudio5/en/M5tour_ToolPitch_2?env=reaper), and [analysis correction, robust pitch curves and formant controls](https://helpcenter.celemony.com/M5/doc/melodyneStudio5/en/M5tour_NA_Mode_2?env=cubase). These describe required editing behavior, not a disclosure of Melodyne's proprietary synthesis algorithm. The [WORLD source and references](https://github.com/mmorise/World) describe the algorithms used here.
+
+## Plot controls
+
+Navigation, the legend and selection now live on the waveform. Instructions are behind the question mark; selection edges support dragging and keyboard arrows. Pinch supports two touch pointers, Ctrl-wheel trackpads and WebKit’s [cumulative gesture scale](https://developer.mozilla.org/en-US/docs/Web/API/Element/gesturechange_event), with provisional edits rolled back when a second finger arrives. The scrollbar has a transparent track. Identity edits do not invalidate playback/export.
+
+Intonation scales semitone deviations around the selection’s median: 0% flattens, 100% preserves current variation, and 200% doubles it. Transposition adds a uniform semitone offset. Both operate on the current selection/current curve; Apply is an explicit edit and Undo reverses it. Existing ±12-semitone source-relative limits still apply.

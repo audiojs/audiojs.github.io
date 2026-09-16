@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Speech prosody editor: edit pitch curves and phrase timing · audiojs</title>
-  <meta name="description" content="Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce pitch variation, compare with the original and save a WAV. Nothing is uploaded.">
+  <meta name="description" content="Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce or amplify pitch variation, compare with the original and save a WAV. Nothing is uploaded.">
   <meta name="theme-color" content="#0d1014">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://audiojs.dev/util/prosody/">
@@ -14,7 +14,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://audiojs.dev/util/prosody/">
   <meta property="og:title" content="Speech prosody editor: edit pitch curves and phrase timing">
-  <meta property="og:description" content="Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce pitch variation, compare with the original and save a WAV. Nothing is uploaded.">
+  <meta property="og:description" content="Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce or amplify pitch variation, compare with the original and save a WAV. Nothing is uploaded.">
   <meta property="og:site_name" content="audiojs">
   <meta property="og:image" content="https://audiojs.dev/icon-512.png">
   <meta property="og:image:width" content="512">
@@ -40,7 +40,7 @@
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce pitch variation, compare with the original and save a WAV. Nothing is uploaded.",
+        "description": "Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce or amplify pitch variation, compare with the original and save a WAV. Nothing is uploaded.",
         "author": {
           "@type": "Organization",
           "name": "audiojs",
@@ -127,7 +127,7 @@
       <p>Shape how a sentence sounds. Adjust its pitch, emphasis and pace.</p>
     </section>
 
-    <link rel="stylesheet" href="/util/prosody/editor.css?v=86b9cf8b4e65af6303b6b359">
+    <link rel="stylesheet" href="/util/prosody/editor.css?v=479713daba0a874503b6b359">
     <div class="prosody">
       <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
@@ -138,33 +138,31 @@
       <div class="row intro"><button class="btn ghost" id="demo">Try a speech sample</button><span>Experimental · one voice · mono output</span></div>
       <p id="status" class="status" role="status" aria-live="polite">Choose a short, clean recording to begin.</p>
       <section id="editor" class="panel" hidden aria-label="Speech editor">
-        <div class="row"><strong id="filename" class="file"></strong><button id="replace" class="btn ghost">Change file</button></div>
+        <div class="row"><strong id="filename" class="file"></strong><button id="replace" class="btn ghost">Change file</button><button id="undo" class="btn ghost" disabled>Undo</button><button id="reset" class="btn ghost" disabled>Reset</button></div>
         <fieldset id="controls" disabled>
-          <div class="row"><span id="length" class="file"></span><button id="undo" class="btn ghost" disabled>Undo</button><button id="reset" class="btn ghost">Reset all</button></div>
-          <div class="legend"><span>Waveform</span><span>┄ Detected pitch</span><strong>━ Edited pitch</strong><span id="point-info">No point selected</span></div>
-          <div class="row view-controls" role="group" aria-label="Waveform view">
-            <button id="zoom-in" class="btn ghost" aria-label="Zoom in waveform">Zoom +</button><button id="zoom-less" class="btn ghost" aria-label="Zoom out waveform">Zoom −</button><button id="zoom" class="btn ghost">Fit selection</button><button id="zoom-out" class="btn ghost">Show all</button>
-            <output id="view-range" aria-live="polite"></output>
-            <label class="pan">Position<input id="view-position" type="range" min="0" max="1" step="0.001" value="0" aria-label="Waveform position"></label>
-          </div>
-          <svg id="curve" viewBox="0 0 960 300" tabindex="0" role="group" aria-label="Pitch curve editor" aria-describedby="curve-help"></svg>
-          <p id="curve-help" class="hint">Drag a pitch point up or down. Drag the background to select time. Zoom with +/− or Alt + scroll; move along the recording with Position. Arrow keys edit pitch points. Timeline stays in original seconds.</p>
-          <div class="row selection">
-            <label>Start (s)<input id="start" type="number" min="0" step="0.01" value="0"></label>
-            <label>End (s)<input id="end" type="number" min="0" step="0.01" value="1"></label>
-            <button id="select-all" class="btn ghost">Select all</button>
+          <div class="plot">
+            <div class="legend" aria-label="Plot legend"><span class="wave-key">Waveform</span><span class="detected-key">Detected</span><span class="target-key">Edited</span></div>
+            <details class="plot-help"><summary aria-label="How to edit the plot">?</summary><div id="curve-help">Drag the curve to change pitch. Drag the background or the selection edges to select a phrase. Pinch to zoom and pan; scroll sideways to pan. Double-click or Ctrl/⌘A to select all.<br><br>Keyboard: +/− zoom, 0 shows all, F fits selection. Arrow keys choose and adjust pitch points. Tab to a selection edge and use ←/→ to move it; Shift makes larger steps. Times refer to the original recording.</div></details>
+            <svg id="curve" viewBox="0 0 960 320" tabindex="0" role="group" aria-label="Pitch curve editor" aria-describedby="curve-help"></svg>
+            <button id="selection-start" class="selection-handle" role="slider" aria-label="Selection start" aria-orientation="horizontal" aria-controls="curve"></button>
+            <button id="selection-end" class="selection-handle" role="slider" aria-label="Selection end" aria-orientation="horizontal" aria-controls="curve"></button>
+            <output id="point-info" class="point-info"></output>
+            <div class="plot-tools" role="group" aria-label="Waveform view">
+              <button id="zoom-less" aria-label="Zoom out waveform" title="Zoom out (−)">−</button><button id="zoom-in" aria-label="Zoom in waveform" title="Zoom in (+)">+</button>
+              <button id="zoom" aria-label="Fit selection" title="Fit selection (F)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5H5v14h3m8-14h3v14h-3M9 12h6"/></svg></button>
+              <button id="zoom-out" aria-label="Show full recording" title="Show full recording (0)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14m16-14v14M7 12h10m-7-3-3 3 3 3m4-6 3 3-3 3"/></svg></button>
+            </div>
+            <div id="view-scroll" class="plot-scroll" tabindex="0" role="scrollbar" aria-label="Waveform position" aria-controls="curve" aria-orientation="horizontal"><div></div></div>
           </div>
           <div class="edit-grid">
-            <section><h2>Intonation</h2>
-              <label>Pitch change (semitones)<input id="semitones" type="number" min="-12" max="12" step="0.5" value="1"></label>
-              <button id="shift" class="btn ghost">Shift selection</button>
-              <div class="actions"><button id="flatten" class="btn ghost">Reduce variation 50%</button><button id="rise" class="btn ghost">Rising end</button><button id="fall" class="btn ghost">Falling end</button><button id="pitch-reset" class="btn ghost">Restore pitch</button></div>
-              <label>Selected point (Hz)<input id="point-hz" type="number" min="1" step="1" disabled></label><button id="set-point" class="btn ghost" disabled>Set pitch point</button>
+            <section><h2>Pitch</h2>
+              <div class="parameter"><label for="variation">Intonation</label><input id="variation" type="range" min="0" max="200" step="10" value="100" aria-describedby="variation-help"><output id="variation-value" for="variation">100%</output><button id="vary" class="btn ghost">Apply</button></div>
+              <span id="variation-help" class="sr-only">100% keeps current variation. Lower values flatten intonation; higher values exaggerate it.</span>
+              <div class="parameter"><label for="semitones">Transpose</label><input id="semitones" type="number" min="-12" max="12" step="0.5" value="0" aria-label="Transpose in semitones"><span class="hint">st</span><button id="shift" class="btn ghost">Apply</button></div>
+              <div class="actions"><button id="rise" class="btn ghost" aria-label="Rising end">Rise</button><button id="fall" class="btn ghost" aria-label="Falling end">Fall</button><button id="pitch-reset" class="btn ghost">Restore pitch</button></div>
             </section>
-            <section><h2>Phrase timing</h2>
-              <p class="hint">Change the selected fragment’s length. The rest shifts in time. Select vowels or pauses for gentler edits.</p>
-              <label>New duration (s)<input id="duration" type="number" min="0.01" step="0.01" value="1"></label><button id="retime" class="btn ghost">Set duration</button>
-              <p id="timing" class="hint"></p>
+            <section><h2>Timing</h2>
+              <label>Duration (s)<input id="duration" type="number" min="0.01" step="0.01" value="1"></label><button id="retime" class="btn ghost">Apply</button>
             </section>
           </div>
           <div class="row"><button id="render" class="btn" disabled>Render edits</button><span id="render-state">Original audio · no edits</span></div>
@@ -174,7 +172,7 @@
       </section>
     </div>
     <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/stretch-wsola" target="_blank" rel="noopener"><code>@audio/stretch-wsola</code></a> and <a href="https://npmjs.com/package/@audio/encode-wav" target="_blank" rel="noopener"><code>@audio/encode-wav</code></a>.</p>
-    <section class="seo"><h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Zoom in above the waveform and use Position to move along the recording. Changes are rendered from the original recording, so undoing an edit does not require reversing an audio effect.</p><p>Pitch edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally. DIO tracks pitch across time and StoneMask refines it against the voice waveform. Phrase timing uses WSOLA and stretches the whole selection, including consonants; automatic phoneme protection and linguistic intonation correction are future work. WAV export contains audio only, without source tags.</p>
+    <section class="seo"><h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Pinch to zoom into the waveform and drag on the plot to select a phrase. Changes are rendered from the original recording, so undoing an edit does not require reversing an audio effect.</p><p>Pitch edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally. DIO tracks pitch across time and StoneMask refines it against the voice waveform. Phrase timing uses WSOLA and stretches the whole selection, including consonants; automatic phoneme protection and linguistic intonation correction are future work. WAV export contains audio only, without source tags.</p>
       <section class="faq" aria-label="Questions">
         <h3>Questions</h3>
         <details><summary>Can this automatically fix the tone of a question?</summary><p>The rising and falling controls apply a pitch ramp to your selection. They do not infer sentence meaning. Listen and adjust the selection and pitch to match your intended delivery.</p></details>
@@ -209,7 +207,7 @@
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
     import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=cc0aa73d'
-    import { startEditor } from '/util/prosody/editor.bundle.js?v=86b9cf8b4e65af6303b6b359'; startEditor('86b9cf8b4e65af6303b6b359')
+    import { startEditor } from '/util/prosody/editor.bundle.js?v=479713daba0a874503b6b359'; startEditor('479713daba0a874503b6b359')
   </script>
 </body>
 </html>

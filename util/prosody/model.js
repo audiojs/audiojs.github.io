@@ -42,6 +42,7 @@ export function retime(anchors, start, end, seconds) {
 }
 
 export function transform(track, target, start, end, kind, amount) {
+  if (kind === 'variation' && (!Number.isFinite(amount) || amount < 0 || amount > 2)) throw Error('Use intonation between 0% and 200%.')
   const ids = []
   for (let i = 0; i < target.length; i++) if (track.f0[i] && track.times[i] >= start && track.times[i] <= end) ids.push(i)
   if (!ids.length) throw Error('No voiced pitch in this selection. Select a vowel or a longer phrase.')
@@ -50,7 +51,7 @@ export function transform(track, target, start, end, kind, amount) {
   for (const i of ids) {
     let note = hzToNote(target[i])
     if (kind === 'shift') note += amount
-    else if (kind === 'flatten') note += (center - note) * amount
+    else if (kind === 'variation') note = center + (note - center) * amount
     else if (kind === 'ramp') note += amount * (track.times[i] - start) / (end - start)
     else if (kind === 'reset') { out[i] = track.f0[i]; continue }
     else throw Error('Unknown pitch edit')

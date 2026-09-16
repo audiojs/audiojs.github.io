@@ -1,15 +1,39 @@
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V3 */
 .prosody { margin-bottom: 28px; --c-panel-bg: var(--c-ink); --c-panel-fg: var(--c-paper); --c-panel-label: var(--c-rule); --c-panel-grid: var(--c-mute); --c-focus: var(--c-accent); --c-ink-2: var(--c-mute); }
 .prosody .intro { border: 0; justify-content: center; font-size: var(--fs-sm); }
 .prosody > .status { margin: 16px 0; min-height: 1.5em; }
 .prosody fieldset { padding: 0; margin: 0; min-width: 0; border: 0; }
 .prosody fieldset:disabled { opacity: .65; }
-.prosody .legend { display: flex; flex-wrap: wrap; gap: 10px 22px; padding: 16px 20px; font-size: 13px; }
-.prosody .legend strong { color: var(--c-ink); }
-.prosody .view-controls { flex-wrap: wrap; gap: 8px; }
-.prosody #view-range { font-size: 13px; font-variant-numeric: tabular-nums; }
-.prosody .pan { flex: 1 1 180px; }
-.prosody .pan input { flex: 1; min-width: 100px; width: 100%; padding: 0; accent-color: var(--c-accent); }
-.prosody #curve { display: block; width: 100%; height: 300px; background: var(--c-panel-bg); touch-action: none; cursor: crosshair; }
+.prosody .plot { position: relative; background: var(--c-panel-bg); color: var(--c-panel-fg); }
+.prosody .legend { position: absolute; z-index: 2; top: 14px; left: 14px; display: flex; flex-wrap: wrap; gap: 8px 10px; max-width: calc(100% - 64px); font-size: 12px; pointer-events: none; }
+.prosody .legend span { display: inline-flex; align-items: center; gap: 5px; }
+.prosody .legend span::before { content: ''; width: 10px; border-top: 2px solid currentColor; }
+.prosody .wave-key { color: var(--c-panel-label); }
+.prosody .wave-key::before { opacity: .5; }
+.prosody .legend .detected-key::before { border-top-style: dashed; }
+.prosody .target-key { color: var(--c-accent); }
+.prosody .plot-help { position: absolute; top: 4px; right: 4px; z-index: 5; }
+.prosody .plot-help summary { display: grid; place-items: center; width: 44px; height: 44px; cursor: pointer; list-style: none; }
+.prosody .plot-help summary::-webkit-details-marker { display: none; }
+.prosody #curve-help { position: absolute; top: 46px; right: 4px; width: min(300px, calc(100vw - 64px)); padding: 16px; background: var(--c-panel-bg); border: 1px solid var(--c-panel-grid); font-size: 13px; line-height: 1.6; }
+.prosody .plot-tools { position: absolute; z-index: 3; right: 8px; bottom: 34px; display: flex; }
+.prosody .plot-tools button { display: grid; place-items: center; width: 44px; padding: 0; border: 0; border-radius: 0; color: var(--c-panel-fg); background: transparent; font: inherit; font-size: 22px; cursor: pointer; }
+.prosody .plot-tools button:hover, .prosody .plot-help summary:hover { background: color-mix(in srgb, var(--c-panel-fg) 12%, transparent); }
+.prosody .plot-tools button:active { color: var(--c-accent); }
+.prosody .plot-tools button:disabled { opacity: .25; cursor: default; }
+.prosody .plot-tools svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.prosody .plot-scroll { position: absolute; bottom: 0; left: 55px; right: 25px; height: 12px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: var(--c-panel-grid) transparent; }
+.prosody .plot-scroll > div { height: 1px; }
+.prosody .plot-scroll::-webkit-scrollbar { height: 6px; }
+.prosody .plot-scroll::-webkit-scrollbar-track { background: transparent; }
+.prosody .plot-scroll::-webkit-scrollbar-thumb { background: var(--c-panel-grid); border-radius: 3px; }
+.prosody .selection-handle { position: absolute; z-index: 2; top: 58px; bottom: 42px; width: 44px; transform: translateX(-50%); padding: 0; border: 0; background: transparent; cursor: ew-resize; touch-action: none; }
+.prosody .selection-handle::before { content: ''; position: absolute; top: 0; bottom: 0; left: 21px; width: 2px; background: var(--c-accent); opacity: .6; }
+.prosody .selection-handle::after { content: ''; position: absolute; left: 18px; top: 45%; width: 8px; height: 26px; border-radius: 3px; background: var(--c-accent); }
+.prosody .selection-handle:hover::before, .prosody .selection-handle:active::before { opacity: 1; }
+.prosody .point-info { position: absolute; top: 36px; left: 60px; font-size: 12px; pointer-events: none; }
+.prosody .point-info:empty { display: none; }
+.prosody #curve { display: block; width: 100%; height: 320px; background: var(--c-panel-bg); touch-action: none; cursor: crosshair; }
 .prosody #curve > * { pointer-events: none; } /* Keep capture on the SVG while traces redraw. */
 .prosody #curve text { fill: var(--c-panel-label); font: 12px system-ui; }
 .prosody #curve .wave { fill: var(--c-panel-label); opacity: .24; }
@@ -19,16 +43,22 @@
 .prosody #curve .selection { fill: var(--c-accent); opacity: .12; }
 .prosody #curve .point { fill: var(--c-panel-fg); stroke: var(--c-accent); stroke-width: 2; }
 .prosody #curve .playhead { stroke: var(--c-panel-fg); stroke-width: 1; }
-.prosody :is(button, input, a.btn):focus-visible, .prosody #curve:focus-visible { outline: 3px solid var(--c-focus); outline-offset: -3px; }
+.prosody :is(button, input, a.btn, summary, [tabindex]):focus-visible { outline: 3px solid var(--c-focus); outline-offset: -3px; }
 .prosody .hint { font-size: 13px; line-height: 1.6; color: var(--c-ink-2); }
-.prosody #curve-help { padding: 12px 20px; }
 .prosody label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
 .prosody input { width: 90px; max-width: 100%; min-height: 44px; padding: 8px; border: 1px solid var(--c-rule); border-radius: 4px; background: var(--c-paper); color: var(--c-ink); font: inherit; }
 .prosody button, .prosody .btn { min-height: 44px; }
-.prosody .edit-grid { display: grid; grid-template-columns: 1.2fr 1fr; border-top: 1px solid var(--c-rule); }
+.prosody .edit-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); border-top: 1px solid var(--c-rule); }
 .prosody .edit-grid section { padding: 20px; min-width: 0; }
 .prosody h2 { font-size: 16px; margin: 0 0 12px; }
-.prosody .edit-grid p { margin-bottom: 12px; }
+.prosody .parameter { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.prosody .parameter > label { min-width: 72px; }
+.prosody .parameter input[type=range] { min-width: 60px; flex: 1; width: 100%; padding: 0; accent-color: var(--c-accent); border: 0; background: transparent; }
+.prosody .parameter input[type=number] { width: 72px; }
+.prosody .parameter output { min-width: 40px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.prosody .parameter .btn { margin: 0; }
+.prosody .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.prosody [hidden] { display: none !important; }
 .prosody .edit-grid button { margin: 6px 0; }
 .prosody .actions { display: flex; flex-wrap: wrap; gap: 0 8px; margin: 8px 0; }
 .prosody .players { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; border-top: 1px solid var(--c-rule); }
@@ -36,4 +66,4 @@
 .prosody audio { min-width: 0; }
 .prosody [aria-disabled=true] { opacity: .4; pointer-events: none; }
 .prosody #filename { overflow-wrap: anywhere; }
-@media (max-width: 620px) { .prosody .edit-grid, .prosody .players { grid-template-columns: 1fr; } .prosody .row { gap: 10px; padding: 14px; } .prosody #curve { height: 280px; } }
+@media (max-width: 620px) { .prosody .edit-grid, .prosody .players { grid-template-columns: 1fr; } .prosody .row { gap: 10px; padding: 14px; } .prosody .parameter { gap: 6px; } .prosody .parameter .btn { padding-inline: 10px; } .prosody .parameter > label { min-width: 66px; } .prosody .edit-grid section { padding: 14px; } .prosody #filename { flex-basis: 100%; } }

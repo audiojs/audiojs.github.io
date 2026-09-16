@@ -146,7 +146,7 @@ test('timing anchors compose monotonically, preserve pitch and leave exterior PC
 
 test('rules and point edits preserve unvoiced gaps and remain non-destructive', () => {
   const t = { times: Float32Array.of(0, .02, .04, .06, .08), f0: Float32Array.of(100, 200, 0, 100, 150) }
-  const result = transform(t, t.f0, 0, .08, 'flatten', .5)
+  const result = transform(t, t.f0, 0, .08, 'variation', .5)
   assert.equal(result[2], 0)
   assert.ok(result[0] > 100 && result[1] < 200)
   const point = movePoint(t, t.f0, 1, 250)
@@ -154,6 +154,21 @@ test('rules and point edits preserve unvoiced gaps and remain non-destructive', 
   assert.deepEqual(t.f0, Float32Array.of(100, 200, 0, 100, 150))
   assert.throws(() => movePoint(t, t.f0, 2, 200), /voiced/)
   assert.throws(() => transform(t, t.f0, .039, .041, 'shift', 1), /No voiced/)
+})
+
+test('intonation scales pitch intervals around the median; transposition preserves them', () => {
+  const track = { times: Float32Array.of(0, .1, .2, .3, .4), f0: Float32Array.of(100, 150, 200, 0, 120) }
+  const source = track.f0.slice()
+  for (const factor of [0, .5, 1, 1.5, 2]) {
+    const out = transform(track, source, 0, .3, 'variation', factor)
+    for (let i = 0; i < 3; i++) assert.ok(Math.abs(12 * Math.log2(out[i] / 150) - factor * 12 * Math.log2(source[i] / 150)) < 1e-5)
+    assert.equal(out[1], 150); assert.equal(out[3], 0); assert.equal(out[4], 120)
+    if (factor === 1) assert.deepEqual(out, source)
+  }
+  const shifted = transform(track, source, 0, .3, 'shift', -3)
+  for (let i = 0; i < 3; i++) assert.ok(Math.abs(12 * Math.log2(shifted[i] / source[i]) + 3) < 1e-5)
+  assert.deepEqual(track.f0, source)
+  for (const amount of [-.1, 2.1, NaN, Infinity]) assert.throws(() => transform(track, source, 0, .3, 'variation', amount), /0% and 200%/)
 })
 
 test('invalid targets/maps rejected; WAV export contains exact float PCM and sample rate', async () => {
@@ -210,7 +225,7 @@ test('speech rendering: lowered and raised pitches, silence, sample rates, A →
 test('built-in speech: correction follows continuous voicing without falling back to original pitch', () => {
   const { channelData: [a], sampleRate } = decodeWav(readFileSync(new URL('../util/prosody/sample.wav', import.meta.url)))
   const track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
-  const target = transform(track, track.f0, 0, duration, 'flatten', .5)
+  const target = transform(track, track.f0, 0, duration, 'variation', .5)
   const out = render(a, sampleRate, track, target, anchors)
   // Framewise YIN rejected the voiced frames at 1.745/1.765 s. The renderer
   // switched to dry ~128 Hz between corrected ~157 and ~147 Hz vowels.
