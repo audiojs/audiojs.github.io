@@ -1,13 +1,37 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { analyze, render, encode } from '../util/prosody/process.js'
+import { analyze, render, encode, runs } from '../util/prosody/process.js'
 import { retime, mapTime, transform, movePoint, pitchAt, validatePitch } from '../util/prosody/model.js'
 import { decodeWav, yin } from '../util/prosody/dsp.js'
-import { speechPitch } from '../util/prosody/world.js'
+import { speechRun } from '../util/prosody/world.js'
 const fs = 16000
-const tone = (frequency = 180, seconds = 2) => Float32Array.from({ length: fs * seconds }, (_, i) => 0.3 * Math.sin(2 * Math.PI * frequency * i / fs))
+// Harvest scores harmonics, as speech has them; a pure sinusoid is not voice.
+const tone = (frequency = 180, seconds = 2, rate = fs) => Float32Array.from({ length: Math.round(rate * seconds) }, (_, i) => {
+  let sum = 0
+  for (let h = 1; h <= 5 && h * frequency < rate / 2; h++) sum += Math.sin(2 * Math.PI * h * frequency * i / rate) / h
+  return .2 * sum
+})
 const median = data => [...data].filter(Boolean).sort((a, b) => a - b).at(Math.floor([...data].filter(Boolean).length / 2))
+const rms = (x, a, b) => { let s = 0; for (let i = a; i < b; i++) s += x[i] * x[i]; return Math.sqrt(s / Math.max(1, b - a)) }
+const dB = x => 20 * Math.log10(Math.max(x, 1e-12))
+const st = (a, b) => 12 * Math.log2(a / b)
+// Three tones separated by silence: independent voiced runs with dry gaps.
+const phrase = (rate = fs, hz = 180) => {
+  const x = new Float32Array(2 * rate)
+  for (const [a, b] of [[0, .45], [.55, 1.45], [1.55, 2]]) x.set(tone(hz, b - a, rate), Math.round(a * rate))
+  return x
+}
+const sample = () => decodeWav(readFileSync(new URL('../util/prosody/sample.wav', import.meta.url)))
+// Framewise YIN, independent of WORLD, on 40 ms windows.
+const measure = (x, rate, t, min = 60, max = 600) => { const a = Math.round((t - .02) * rate); return yin(x.subarray(a, a + Math.round(.04 * rate)), { fs: rate, minFreq: min, maxFreq: max }) }
+// Precise period of a steady tone: normalized autocorrelation over 100 ms with parabolic interpolation.
+function periodHz(x, rate, t, hz) {
+  const a = Math.round((t - .05) * rate), n = Math.round(.1 * rate), lo = Math.floor(rate / hz * .9), hi = Math.ceil(rate / hz * 1.1), corr = []
+  for (let lag = lo; lag <= hi; lag++) { let xy = 0, xx = 0, yy = 0; for (let i = a; i < a + n; i++) { xy += x[i] * x[i + lag]; xx += x[i] * x[i]; yy += x[i + lag] * x[i + lag] } corr.push(xy / Math.sqrt(xx * yy || 1)) }
+  const k = corr.indexOf(Math.max(...corr)), y0 = corr[k - 1] ?? corr[k], y1 = corr[k], y2 = corr[k + 1] ?? corr[k]
+  return rate / (lo + k + (y0 - y2) / (2 * (y0 - 2 * y1 + y2) || 1))
+}
 
 test('pitch interpolation has continuous slopes, no overshoot, and no pitch inside unvoiced gaps', () => {
   const track = { times: Float32Array.of(0, .1, .2, .3, .4), f0: Float32Array.of(100, 200, 100, 0, 150), hop: .1 }
@@ -25,45 +49,46 @@ test('pitch interpolation has continuous slopes, no overshoot, and no pitch insi
   assert.equal(pitchAt({ times: [], f0: [], hop: .02 }, [], 0), 0)
 })
 
-test('small edits stay fully wet through unity; unvoiced and untouched frames stay dry', () => {
-  const a = tone(), hop = .02
-  const times = Float32Array.from({ length: 101 }, (_, i) => i * hop)
-  const f0 = new Float32Array(times.length).fill(180), target = f0.slice()
-  // A gentle crossing, with an exact unchanged point in its middle.
-  for (let i = 20; i <= 80; i++) target[i] *= 2 ** ((i - 50) / 6000)
-  const wet = speechPitch(a, fs, { times, f0, hop }, target)
-  const out = render(a, fs, { times, f0, hop }, target, [[0, 0], [2, 2]])
-  assert.deepEqual(out.subarray(.45 * fs, 1.55 * fs), wet.subarray(.45 * fs, 1.55 * fs))
-  assert.deepEqual(out.subarray(0, .35 * fs), a.subarray(0, .35 * fs))
-  assert.deepEqual(out.subarray(1.65 * fs), a.subarray(1.65 * fs))
-  // Touching unity at an extremum must also keep synthesis phase continuous.
-  const touch = Float32Array.from(target, (v, i) => f0[i] * 2 ** Math.abs(Math.log2(v / f0[i])))
-  const touchWet = speechPitch(a, fs, { times, f0, hop }, touch)
-  const touchOut = render(a, fs, { times, f0, hop }, touch, [[0, 0], [2, 2]])
-  assert.deepEqual(touchOut.subarray(.95 * fs, 1.05 * fs), touchWet.subarray(.95 * fs, 1.05 * fs))
-  f0.fill(0, 45, 56); target.fill(0, 45, 56)
-  const gap = render(a, fs, { times, f0, hop }, target, [[0, 0], [2, 2]])
-  assert.deepEqual(gap.subarray(.92 * fs, 1.08 * fs), a.subarray(.92 * fs, 1.08 * fs))
+test('a touched voiced run is rebuilt whole; other runs, gaps and silence stay bit-exact', () => {
+  const a = phrase(), t = analyze(a, fs), voiced = runs(t.f0)
+  assert.equal(voiced.length, 3)
+  const [first, last] = voiced[1]
+  // Touch one frame in the middle run only.
+  const target = t.f0.slice(); target[(first + last) >> 1] *= 2 ** (1 / 12)
+  const out = render(a, fs, t, target, [[0, 0], [2, 2]])
+  assert.equal(out.length, a.length)
+  assert.deepEqual(out.subarray(0, Math.round(t.times[first - 1] * fs)), a.subarray(0, Math.round(t.times[first - 1] * fs)), 'audio before the run is untouched')
+  assert.deepEqual(out.subarray(Math.round(t.times[last + 1] * fs)), a.subarray(Math.round(t.times[last + 1] * fs)), 'audio after the run is untouched')
+  let changed = 0
+  for (let i = Math.round(.6 * fs); i < Math.round(1.4 * fs); i++) if (out[i] !== a[i]) changed++
+  assert.ok(changed > .9 * .8 * fs, 'the whole run is resynthesized, including its unchanged frames')
+  // Continuity: no cancellation dip anywhere across the run or its joins.
+  for (let time = .57; time < 1.43; time += .005) {
+    const c = Math.round(time * fs), level = dB(rms(out, c - 80, c + 80) / rms(a, c - 80, c + 80))
+    assert.ok(Math.abs(level) < 3, `level within 3 dB of the source at ${time.toFixed(3)} s (${level.toFixed(1)} dB)`)
+  }
 })
 
-test('first and last edited analysis frames have the same boundary fade as interior edits', () => {
-  const a = tone(), track = { times: Float32Array.of(.5, .75, 1), f0: Float32Array.of(180, 180, 180), hop: .25 }
-  const target = Float32Array.of(360, 360, 360)
-  const wet = speechPitch(a, fs, track, target)
-  const out = render(a, fs, track, target, [[0, 0], [2, 2]])
-  for (const t of [.375, 1.125]) {
-    const i = t * fs
-    assert.ok(Math.abs(out[i] - (a[i] + wet[i]) / 2) < 1e-7, 'halfway through a boundary is a half wet mix')
-  }
-  assert.deepEqual(out.subarray(0, .25 * fs), a.subarray(0, .25 * fs))
-  assert.deepEqual(out.subarray(1.25 * fs), a.subarray(1.25 * fs))
+test('joins sit on the run edge frames; synthesis leads in by whole periods', () => {
+  const a = phrase(), t = analyze(a, fs), [first, last] = runs(t.f0)[1]
+  const target = transform(t, t.f0, .6, 1.4, 'shift', 3), anchors = [[0, 0], [2, 2]]
+  const out = render(a, fs, t, target, anchors)
+  const onset = Math.round(t.times[first] * fs), offset = Math.round(t.times[last] * fs)
+  assert.deepEqual(out.subarray(0, onset), a.subarray(0, onset), 'dry up to the first voiced frame')
+  assert.deepEqual(out.subarray(offset), a.subarray(offset), 'dry from the last voiced frame')
+  assert.notEqual(out[onset + 40], a[onset + 40], 'wet 2.5 ms after the onset')
+  const run = speechRun(a, fs, t, target, anchors, first, last), lead = Math.ceil(.01 * t.f0[first]) / t.f0[first]
+  assert.equal(run.start, Math.round((t.times[first] - lead) * fs))
+  assert.equal(run.samples.length, Math.round((t.times[last] + Math.ceil(.01 * t.f0[last]) / t.f0[last]) * fs) - run.start)
+  const pitch = measure(out, fs, 1)
+  assert.ok(pitch.clarity > .95 && Math.abs(st(pitch.freq, 180 * 2 ** (3 / 12))) < .1)
 })
 
 test('automated pitch follows source time rather than the left edge of its analysis window', () => {
   const a = tone(250, 1), track = analyze(a, fs)
   const target = Float32Array.from(track.times, t => 250 * (1 + t))
-  const out = speechPitch(a, fs, track, target)
-  const detected = yin(out.subarray(.4 * fs, .5 * fs), { fs, minFreq: 60, maxFreq: 600 })?.freq
+  const out = render(a, fs, track, target, [[0, 0], [1, 1]])
+  const detected = measure(out, fs, .45, 60, 800)?.freq
   assert.ok(Math.abs(detected - 362.5) < 6, `${detected} Hz near 250 × 1.45`)
 })
 
@@ -91,6 +116,39 @@ test('analysis: known F0, silence, short input, and A → A → B are independen
   assert.throws(() => analyze(a, 16000.5), /integer sample rate/)
 })
 
+test('tracker: continuous voicing and accurate pitch on speech with a known contour', () => {
+  const { channelData: [a], sampleRate } = sample(), track = analyze(a, sampleRate)
+  let jumps = 0, gaps = 0
+  for (let i = 1; i < track.f0.length; i++) {
+    if (track.f0[i] && track.f0[i - 1] && Math.abs(st(track.f0[i], track.f0[i - 1])) > 5) jumps++
+    if (!track.f0[i] && track.f0[i - 1] && track.f0[i + 1]) gaps++
+  }
+  assert.equal(jumps, 0, 'no octave jumps between adjacent frames')
+  assert.ok(gaps <= 2, `at most two single-frame gaps (${gaps})`)
+  assert.ok(runs(track.f0).length <= 16, `phrase-level voiced runs (${runs(track.f0).length})`)
+  // Resynthesize the sample through WORLD at a smoothed contour one semitone
+  // down, so the true pitch is known exactly, then track the result.
+  const truth = new Float32Array(track.f0.length)
+  for (let i = 0; i < truth.length; i++) {
+    if (!track.f0[i]) continue
+    const win = []
+    for (let j = i - 3; j <= i + 3; j++) if (track.f0[j]) win.push(track.f0[j])
+    truth[i] = win.sort((p, q) => p - q)[win.length >> 1] * 2 ** (-1 / 12)
+  }
+  const duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
+  const synthetic = render(a, sampleRate, track, truth, anchors), found = analyze(synthetic, sampleRate)
+  let voiced = 0, missed = 0, gross = 0, fine = 0
+  for (let i = 2; i < truth.length - 2; i++) {
+    if (!truth[i] || !truth[i - 2] || !truth[i + 2]) continue
+    voiced++
+    if (!found.f0[i]) { missed++; continue }
+    if (Math.abs(found.f0[i] / truth[i] - 1) > .2) gross++; else fine += Math.abs(st(found.f0[i], truth[i]))
+  }
+  assert.ok(missed / voiced < .03, `missed voiced frames ${(100 * missed / voiced).toFixed(1)}%`)
+  assert.ok(gross / voiced < .02, `gross pitch errors ${(100 * gross / voiced).toFixed(1)}%`)
+  assert.ok(fine / (voiced - missed - gross) < .3, `fine pitch error ${(fine / (voiced - missed - gross)).toFixed(3)} st`)
+})
+
 test('identity render and short unvoiced input preserve every source sample', () => {
   for (const a of [tone(), Float32Array.of(.25), new Float32Array(160), new Float32Array(320), new Float32Array(fs)]) {
     const t = analyze(a, fs), copy = a.slice()
@@ -113,28 +171,31 @@ test('recordings beyond 60 seconds retain analysis and editable audio at the end
   assert.ok(Math.abs(median(analyze(out.subarray(60.3 * fs, 60.8 * fs), fs).f0) - 260 * 2 ** (3 / 12)) < 2)
 })
 
-test('pitch edits reach requested F0, preserve length, dry regions and original samples', () => {
-  const a = tone(), original = a.slice(), t = analyze(a, fs)
-  const target = transform(t, t.f0, 0.5, 1.5, 'shift', 3)
+test('pitch edits reach requested F0, preserve length, other runs and original samples', () => {
+  const a = phrase(), original = a.slice(), t = analyze(a, fs)
+  const target = transform(t, t.f0, 0.7, 1.3, 'shift', 3)
   const out = render(a, fs, t, target, [[0, 0], [2, 2]])
   assert.equal(out.length, a.length)
-  assert.deepEqual(out.subarray(0, fs * 0.4), a.subarray(0, fs * 0.4))
-  assert.deepEqual(out.subarray(fs * 1.6), a.subarray(fs * 1.6))
-  assert.ok(Math.abs(median(analyze(out.subarray(fs * 0.7, fs * 1.3), fs).f0) - 180 * 2 ** (3 / 12)) < 2)
+  assert.deepEqual(out.subarray(0, fs * 0.5), a.subarray(0, fs * 0.5))
+  assert.deepEqual(out.subarray(fs * 1.5), a.subarray(fs * 1.5))
+  assert.ok(Math.abs(median(analyze(out.subarray(fs * 0.8, fs * 1.2), fs).f0) - 180 * 2 ** (3 / 12)) < 2)
   assert.deepEqual(a, original)
   assert.deepEqual(render(a, fs, t, t.f0, [[0, 0], [2, 2]]), a)
 })
 
-test('timing anchors compose monotonically, preserve pitch and leave exterior PCM exact', () => {
-  const a = tone(), t = analyze(a, fs), anchors = retime([[0, 0], [2, 2]], 0.5, 1.5, 1.5)
-  assert.deepEqual(anchors, [[0, 0], [0.5, 0.5], [1.5, 2], [2, 2.5]])
-  assert.equal(mapTime(anchors, 1), 1.25)
+test('timing anchors compose monotonically, retimed voice keeps pitch, exterior PCM exact', () => {
+  const a = phrase(), t = analyze(a, fs), anchors = retime([[0, 0], [2, 2]], 0.55, 1.45, 1.35)
+  assert.deepEqual(anchors, [[0, 0], [0.55, 0.55], [1.45, 1.9], [2, 2.45]])
+  assert.equal(mapTime(anchors, 1), 1.225)
   const out = render(a, fs, t, t.f0, anchors)
-  assert.equal(out.length, 2.5 * fs)
+  assert.equal(out.length, 2.45 * fs)
   assert.deepEqual(out.subarray(0, fs / 2), a.subarray(0, fs / 2))
-  assert.deepEqual(out.subarray(2 * fs), a.subarray(1.5 * fs))
-  assert.ok(Math.abs(median(analyze(out.subarray(fs, 1.5 * fs), fs).f0) - 180) < 2)
-  assert.deepEqual(retime(anchors, 0.5, 1.5, 1), [[0, 0], [2, 2]])
+  assert.deepEqual(out.subarray(1.95 * fs), a.subarray(1.5 * fs))
+  for (let time = .7; time < 1.8; time += .05) {
+    const pitch = measure(out, fs, time)
+    assert.ok(pitch?.clarity > .95 && Math.abs(st(pitch.freq, 180)) < .1, `stretched voice keeps 180 Hz at ${time.toFixed(2)} s`)
+  }
+  assert.deepEqual(retime(anchors, 0.55, 1.45, .9), [[0, 0], [2, 2]])
   assert.equal(render(a, fs, t, t.f0, retime([[0, 0], [2, 2]], 0, 2, 1)).length, fs)
   assert.equal(render(a, fs, t, t.f0, retime([[0, 0], [2, 2]], 0, 2, 4)).length, 4 * fs)
   const overlapping = retime(anchors, 1, 2, 1)
@@ -142,6 +203,64 @@ test('timing anchors compose monotonically, preserve pitch and leave exterior PC
   assert.throws(() => retime(anchors, 1, 1, 1), /valid/)
   assert.throws(() => retime(anchors, 0, 2, 20), /half and twice/)
   assert.throws(() => retime(anchors, 0, 2, NaN), /valid/)
+})
+
+test('unvoiced audio in a retimed span is stretched to length without tonal grain artifacts', () => {
+  let seed = 1
+  const random = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32 - .5
+  for (const rate of [16000, 48000]) {
+    const noise = Float32Array.from({ length: rate }, () => .2 * random()), t = analyze(noise, rate)
+    assert.ok(t.f0.every(x => !x))
+    for (const factor of [1.5, .7]) {
+      const out = render(noise, rate, t, t.f0, retime([[0, 0], [1, 1]], .25, .75, .5 * factor))
+      assert.equal(out.length, Math.round((.5 + .5 * factor) * rate))
+      assert.deepEqual(out.subarray(0, .25 * rate), noise.subarray(0, .25 * rate))
+      const level = dB(rms(out, .3 * rate, .6 * rate) / rms(noise, .3 * rate, .6 * rate))
+      assert.ok(Math.abs(level) < 1.5, `${rate} ×${factor}: level ${level.toFixed(2)} dB`)
+      // Repeated grains would correlate the output with itself at the hop period.
+      const a = Math.round(.3 * rate), n = Math.round(.25 * rate)
+      for (const lag of [Math.round(.0075 * rate), Math.round(.015 * rate), Math.round(.03 * rate)]) {
+        let xy = 0, xx = 0
+        for (let i = a; i < a + n; i++) { xy += out[i] * out[i + lag]; xx += out[i] * out[i] }
+        assert.ok(Math.abs(xy / xx) < .25, `${rate} ×${factor}: autocorrelation ${(xy / xx).toFixed(3)} at ${lag} samples`)
+      }
+    }
+  }
+})
+
+test('consonant bursts are detected and keep their length when a phrase is retimed', () => {
+  let seed = 7
+  const random = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32 - .5
+  const rate = 16000, x = Float32Array.from({ length: 2 * rate }, () => .002 * random())
+  for (const t of [.3, .6, .9]) for (let i = 0; i < .008 * rate; i++) x[Math.round(t * rate) + i] += .3 * random()
+  const t = analyze(x, rate)
+  assert.equal(t.onsets.length, 3, `three bursts (${[...t.onsets]})`)
+  for (const [i, want] of [.3, .6, .9].entries()) assert.ok(Math.abs(t.onsets[i] - want) <= .0051, `burst ${i} at ${t.onsets[i]} s`)
+  assert.equal(analyze(tone(), rate).onsets.length, 0, 'steady voice has no bursts')
+  const protect = Array.from(t.onsets, s => [s - .005, s + .03])
+  // ×1.8 overall leaves the free parts at ×1.89; ×2 would need ×2.12 and fall back to uniform.
+  const anchors = retime([[0, 0], [2, 2]], .2, 1.2, 1.8, protect)
+  assert.ok(Math.abs(mapTime(anchors, 1.2) - 2) < 1e-9 && Math.abs(mapTime(anchors, 2) - 2.8) < 1e-9, 'selection lasts 1.8 s, the rest follows')
+  for (const [p, q] of protect) assert.ok(Math.abs((mapTime(anchors, q) - mapTime(anchors, p)) - (q - p)) < 1e-9, 'protected span keeps its length')
+  const spans = y => {
+    const w = Math.round(.002 * rate), found = []
+    for (let a = 0; a + w <= y.length; a += w) {
+      const loud = rms(y, a, a + w) > .03
+      if (loud && found.length && a - found.at(-1)[1] <= w) found.at(-1)[1] = a + w; else if (loud) found.push([a, a + w])
+    }
+    return found.map(([a, b]) => (b - a) / rate)
+  }
+  assert.deepEqual(spans(x).map(v => +v.toFixed(3)), [.008, .008, .008])
+  const kept = spans(render(x, rate, t, t.f0, anchors))
+  assert.equal(kept.length, 3, `three bursts after slowing down (${kept})`)
+  assert.ok(kept.every(v => v <= .012), `bursts keep their length (${kept})`)
+  const smeared = spans(render(x, rate, t, t.f0, retime([[0, 0], [2, 2]], .2, 1.2, 1.8)))
+  assert.ok(smeared.length !== 3 || smeared.some(v => v > .012), `unprotected stretching lengthens or repeats bursts (${smeared})`)
+  // A selection that is almost all burst falls back to uniform stretching.
+  const uniform = retime([[0, 0], [2, 2]], .29, .34, .1, protect)
+  assert.deepEqual(uniform, [[0, 0], [.29, .29], [.34, .39], [2, 2.05]])
+  assert.deepEqual(retime([[0, 0], [2, 2]], .2, 1.2, 1, protect), [[0, 0], [2, 2]], 'unchanged duration is a no-op')
+  assert.deepEqual(retime([[0, 0], [2, 2]], .2, 1.2, 2, protect), [[0, 0], [.2, .2], [1.2, 2.2], [2, 3]], 'too little free audio for the change: uniform fallback')
 })
 
 test('rules and point edits preserve unvoiced gaps and remain non-destructive', () => {
@@ -219,10 +338,8 @@ test('smoothing removes fast modulation in pitch and rendered audio without cros
   for (let i = 20; i < 380; i++) assert.ok(Math.abs(12 * Math.log2(smooth[i] / 180)) < .1)
   const out = render(tone(), fs, track, smooth, [[0, 0], [2, 2]])
   for (let time = .3; time < 1.7; time += .02) {
-    const start = Math.round((time - .02) * fs)
-    const pitch = yin(out.subarray(start, start + .04 * fs), { fs, minFreq: 60, maxFreq: 600 })
-    assert.ok(pitch?.clarity > .95)
-    assert.ok(Math.abs(12 * Math.log2(pitch.freq / 180)) < .1, `smooth output at ${time}`)
+    assert.ok(measure(out, fs, time)?.clarity > .95)
+    assert.ok(Math.abs(st(periodHz(out, fs, time, 180), 180)) < .02, `smooth output at ${time}: ${periodHz(out, fs, time, 180)} Hz`)
   }
   assert.deepEqual(transform(track, target, 0, 2, 'variation', 1, 0), target)
   assert.deepEqual(transform(track, target, 0, 2, 'variation', 1, .1), smooth, 'A → A after render')
@@ -248,7 +365,7 @@ test('pitch range follows synthesis bounds, and output reaches shifts beyond one
   for (const amount of [-18, 18, -18]) {
     const target = transform(voiced, voiced.f0, 0, 3, 'shift', amount)
     const out = render(samples, fs, voiced, target, [[0, 0], [3, 3]])
-    const pitch = yin(out.subarray(1.475 * fs, 1.525 * fs), { fs, minFreq: 40, maxFreq: 800 })
+    const pitch = measure(out, fs, 1.5, 40, 800)
     assert.ok(pitch?.clarity > .98)
     assert.ok(Math.abs(12 * Math.log2(pitch.freq / pitchAt(voiced, target, 1.5))) < .1)
     assert.equal(out.length, samples.length)
@@ -258,9 +375,6 @@ test('pitch range follows synthesis bounds, and output reaches shifts beyond one
   }
 })
 
-// This fails for the previous spectral renderer even when supplied perfect F0.
-// A corrected steady vowel must have coherent repeated cycles, not merely the
-// right average frequency. The changing source F0 isolates dynamic synthesis.
 test('speech normalization preserves coherent cycles while flattening moving pitch', async () => {
   const { vowel } = await import('./prosody-fixture.mjs')
   for (const sampleRate of [16000, 22050, 48000]) {
@@ -281,7 +395,7 @@ test('speech normalization preserves coherent cycles while flattening moving pit
 
 test('speech rendering: lowered and raised pitches, silence, sample rates, A → B → A', () => {
   for (const sampleRate of [8000, 16000, 22050, 44100, 48000, 96000]) {
-    const a = Float32Array.from({ length: sampleRate }, (_, i) => .3 * Math.sin(2 * Math.PI * 180 * i / sampleRate))
+    const a = tone(180, 1, sampleRate)
     const track = analyze(a, sampleRate), anchors = [[0, 0], [1, 1]]
     let first
     for (const amount of [-3, 3, -3]) {
@@ -299,44 +413,69 @@ test('speech rendering: lowered and raised pitches, silence, sample rates, A →
   }
 })
 
-test('built-in speech: correction follows continuous voicing without falling back to original pitch', () => {
-  const { channelData: [a], sampleRate } = decodeWav(readFileSync(new URL('../util/prosody/sample.wav', import.meta.url)))
+test('rebuilt voice keeps the source amplitude contour, including its onset', () => {
+  const a = tone(120, 1, 48000)
+  for (let i = 0; i < 48000; i++) a[i] *= Math.min(1, i / 4800) * Math.min(1, (48000 - i) / 9600)
+  const t = analyze(a, 48000), target = transform(t, t.f0, 0, 1, 'shift', 3)
+  const out = render(a, 48000, t, target, [[0, 0], [1, 1]])
+  for (let time = .02; time < .98; time += .01) {
+    const c = Math.round(time * 48000), level = dB(rms(out, c - 240, c + 240) / rms(a, c - 240, c + 240))
+    assert.ok(Math.abs(level) < 2, `level within 2 dB of the source at ${time.toFixed(2)} s (${level.toFixed(1)} dB)`)
+  }
+})
+
+test('built-in speech: edits follow continuous voicing; joins add no level and consonants stay dry', () => {
+  const { channelData: [a], sampleRate } = sample()
   const track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
-  const raw = transform(track, track.f0, 0, duration, 'variation', .5)
   const target = transform(track, track.f0, 0, duration, 'variation', .5, .06)
   const maxStep = (curve, start, end) => {
     let max = 0
     for (let i = 1; i < curve.length; i++) if (track.times[i] >= start && track.times[i] <= end && curve[i] && curve[i - 1]) max = Math.max(max, Math.abs(12 * Math.log2(curve[i] / curve[i - 1])))
     return max
   }
-  assert.ok(maxStep(raw, 1.3, 1.36) > 2, 'unsmoothed normalization retains a two-semitone frame jump')
-  assert.ok(maxStep(target, 1.3, 1.36) < .3, '60 ms smoothing removes the frame jump from the requested contour')
+  assert.ok(maxStep(target, 1.3, 1.36) < .3, '60 ms smoothing removes frame jumps from the requested contour')
   const out = render(a, sampleRate, track, target, anchors)
-  // Framewise YIN rejected the voiced frames at 1.745/1.765 s. The renderer
-  // switched to dry ~128 Hz between corrected ~157 and ~147 Hz vowels.
-  // Measure the actual output with a detector independent of DIO/StoneMask.
+  // Measure the output with a detector independent of Harvest.
   let previous = 0
   for (let j = 0; j <= 9; j++) {
     const time = 1.72 + j * .01
     assert.ok(pitchAt(track, track.f0, time) > 0, 'continuous source voicing')
-    const start = Math.round((time - .02) * sampleRate)
-    const pitch = yin(out.subarray(start, start + Math.round(.04 * sampleRate)), { fs: sampleRate, minFreq: 60, maxFreq: 600 })
+    const pitch = measure(out, sampleRate, time)
     assert.ok(pitch && pitch.clarity > .9, `coherent voiced output at ${time}`)
     assert.ok(Math.abs(12 * Math.log2(pitch.freq / pitchAt(track, target, time))) < .2, `target pitch at ${time}`)
     if (previous) assert.ok(Math.abs(12 * Math.log2(pitch.freq / previous)) < .5, 'no sudden pitch excursion')
     previous = pitch.freq
   }
-  // Continuity must not be obtained by pitching actual consonants or silence.
-  for (const [start, end] of [[.38, .42], [2.05, 2.2]]) {
-    for (let time = start; time <= end; time += .005) assert.equal(pitchAt(track, track.f0, time), 0)
-    assert.deepEqual(out.subarray(Math.ceil(start * sampleRate), Math.floor(end * sampleRate)), a.subarray(Math.ceil(start * sampleRate), Math.floor(end * sampleRate)))
+  // Every join: the unvoiced neighbor frame gains no level, and the first/last
+  // 10 ms of voice stay near the source's level (digital silence excluded).
+  for (const [first, last] of runs(track.f0)) {
+    for (const [i, j, direction] of [[first - 1, first, 1], [last, last + 1, -1]]) {
+      if (i < 0 || j >= track.f0.length) continue
+      const s = Math.round(track.times[i] * sampleRate), e = Math.round(track.times[j] * sampleRate), z = Math.round(.01 * sampleRate)
+      if (rms(a, s, e) > 1e-3) assert.ok(dB(rms(out, s, e) / rms(a, s, e)) < 4, `join at ${track.times[i].toFixed(3)} s adds ${dB(rms(out, s, e) / rms(a, s, e)).toFixed(1)} dB in the unvoiced frame`)
+      const [os, oe] = direction > 0 ? [e, e + z] : [s - z, s]
+      if (rms(a, os, oe) > 1e-3) assert.ok(Math.abs(dB(rms(out, os, oe) / rms(a, os, oe))) < 6, `voice edge at ${track.times[j].toFixed(3)} s is ${dB(rms(out, os, oe) / rms(a, os, oe)).toFixed(1)} dB from the source`)
+    }
   }
-  assert.equal(out.length, a.length)
-  assert.ok(out.every(Number.isFinite))
-  assert.ok(out.some((x, i) => Math.abs(x - a[i]) > .01))
+  // Continuity must not be obtained by pitching actual consonants or silence.
+  let dry = 0
   for (let i = 1; i < track.f0.length - 1; i++) if (!track.f0[i - 1] && !track.f0[i] && !track.f0[i + 1]) {
     const k = Math.round(track.times[i] * sampleRate)
-    assert.equal(out[k], a[k], 'unvoiced interior stays bit-exact')
+    assert.equal(out[k], a[k], 'unvoiced interior stays bit-exact'); dry++
   }
+  assert.ok(dry > 50, `the sample has unvoiced audio to protect (${dry} frames)`)
+  assert.equal(out.length, a.length)
+  assert.ok(out.every(Number.isFinite))
   assert.deepEqual(render(a, sampleRate, track, track.f0, anchors), a)
+  // Retiming the middle phrase keeps its pitch along the new timeline.
+  const retimed = retime(anchors, 2.5, 4, 2.1), stretched = render(a, sampleRate, track, track.f0, retimed), inverse = retimed.map(([p, q]) => [q, p])
+  assert.equal(stretched.length, Math.round(mapTime(retimed, duration) * sampleRate))
+  const errors = []
+  for (let time = 2.6; time < 4.5; time += .01) {
+    const want = pitchAt(track, track.f0, mapTime(inverse, time)), pitch = measure(stretched, sampleRate, time)
+    if (want && pitch?.clarity > .9) errors.push(Math.abs(st(pitch.freq, want)))
+  }
+  errors.sort((p, q) => p - q)
+  assert.ok(errors.length > 100 && errors[Math.floor(errors.length * .95)] < .5, `stretched speech pitch error p95 ${errors[Math.floor(errors.length * .95)]?.toFixed(3)} st over ${errors.length} frames`)
+  assert.deepEqual(stretched.subarray(0, Math.round(2.3 * sampleRate)), a.subarray(0, Math.round(2.3 * sampleRate)), "dry before the retimed phrase's first voiced run")
 })

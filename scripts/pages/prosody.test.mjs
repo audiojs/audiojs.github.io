@@ -249,7 +249,8 @@ try {
 
       const upload = async (kind, seconds = 1) => {
         const samples = new Float32Array(Math.round(16000 * seconds))
-        if (kind === 'tone') for (let i = 0; i < samples.length; i++) samples[i] = .3 * Math.sin(2 * Math.PI * 260 * i / 16000)
+        // Harvest scores harmonics: a voice-like tone, not a pure sinusoid.
+        if (kind === 'tone') for (let i = 0; i < samples.length; i++) for (let h = 1; h <= 5; h++) samples[i] += .2 * Math.sin(2 * Math.PI * h * 260 * i / 16000) / h
         const bytes = await encode(samples, 16000)
         await page.setInputFiles('#file', { name: `${kind}.wav`, mimeType: 'audio/wav', buffer: Buffer.from(bytes) })
       }

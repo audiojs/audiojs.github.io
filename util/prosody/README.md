@@ -23,30 +23,63 @@ browser memory and processing time. Empty recordings are rejected. Clips shorter
 than the 50 ms analysis window can be played and exported but have no pitch curve;
 editing selections still requires at least 20 ms.
 
-Limits: one voice, mono output. WORLD's DIO detector connects pitch candidates
-across time, with StoneMask refinement and a 60–600 Hz analysis range. WORLD
-resynthesizes edited pitch using the source spectral envelope and aperiodicity;
-unvoiced interiors and untouched audio remain dry. Rebuild the pinned WASM engine
-with `node scripts/prosody-world.mjs` (requires Emscripten), then `npm run build`.
+## Engine
 
-Intonation scales semitone deviations around the selection median (0–200%).
-Its Smoothing disclosure adjusts a 0–200 ms cosine window, default 60 ms, within
-voiced regions. At 100%, Apply smooths without scaling; set smoothing to 0 for an
-exact no-op. Transposition and point dragging have no source-relative octave cap;
-frequency limits reflect the synthesis floor and the recording's Nyquist limit.
-Invalid edits are rejected, not clipped. Extreme shifts can still sound poor.
-Selected edits ease into surrounding voiced pitch over up to 80 ms per edge;
-Restore pitch and Reset return the selected/full original contour exactly.
+Pitch is tracked by WORLD's Harvest (60–600 Hz, 5 ms frames). Harvest keeps
+voicing continuous across a phrase where a framewise detector breaks vowels into
+rejected frames; StoneMask refinement is not applied after it, because it
+introduced octave jumps on low voices. A silence floor removes pitch from nearly
+silent tails, and a voiced run whose median waveform periodicity at the tracked
+pitch is below 0.2 is dropped whole, which removes the runs Harvest finds in
+noise without fragmenting breathy or creaky phrases. Harvest scores harmonics:
+a pure sinusoid is not voice to it. Analysis costs about a tenth of the
+recording's duration.
+
+A voiced run (a maximal stretch of voiced frames) is the unit of resynthesis.
+Any run containing a pitch change or lying in a retimed span is rebuilt whole by
+WORLD from the source spectral envelope (CheapTrick) and aperiodicity (D4C), at the
+edited pitch and along the edited timeline. Joining vocoded and original voice in
+the middle of a vowel cancels harmonics, so joins sit on the run's edge frames
+with 2 ms fades. WORLD drives unvoiced stretches with a 500 Hz noise-pulse clock
+whose last pulse before an onset borrows the vowel's envelope, so synthesis stays
+voiced through a lead and tail of whole periods that the join discards, and the
+rebuilt run is shifted by up to half a period to line its first pulse up with the
+source's first glottal pulse. It then receives the source's amplitude envelope
+over two pitch periods (10–20 ms windows), warped through the timing anchors:
+WORLD's analysis window otherwise smears onsets and offsets. Untouched runs,
+consonants and silence keep their original samples bit-exactly.
+
+Timing edits warp the analysis positions given to WORLD, so stretched voice keeps
+its pitch and harmonic structure with no grain repetition. Unvoiced audio in a
+retimed span is stretched with WSOLA (30 ms frames, ±10 ms search) with 10 ms
+dry joins at the anchors. Consonant bursts, detected as abrupt broadband energy
+rises in unvoiced audio, keep their length: the change is shared by the rest of
+the selection, or by the whole selection uniformly when bursts leave no room.
+Phoneme alignment is not implemented.
+
+Rebuild the pinned WASM engine with `node scripts/prosody-world.mjs <WORLD checkout>`
+(requires Emscripten), then `npm run build`.
+
+## Limits
+
+One voice, mono output. Intonation scales semitone deviations around the
+selection median (0–200%). Its Smoothing disclosure adjusts a 0–200 ms cosine
+window, default 60 ms, within voiced regions. At 100%, Apply smooths without
+scaling; set smoothing to 0 for an exact no-op. Transposition and point dragging
+have no source-relative octave cap; frequency limits reflect the synthesis floor
+and the recording's Nyquist limit. Invalid edits are rejected, not clipped.
+Extreme shifts can still sound poor. Selected edits ease into surrounding voiced
+pitch over up to 80 ms per edge; Restore pitch and Reset return the selected/full
+original contour exactly.
 
 Local stretch factors remain 0.5–2. The timeline stays in source seconds after
-timing edits. WSOLA stretches the entire selected fragment with 10 ms dry joins;
-consonant protection and phoneme alignment are not implemented. Rising/falling
-presets are ±2-semitone ramps, not semantic question detection. Smoothing addresses
-fast contour fluctuations, not all detection errors or resynthesis artifacts.
-Edits are held in memory; reloading/changing the file discards them. Exports are
-mono 32-bit float WAV at the decoded input rate, without source metadata.
+timing edits. Rising/falling presets are ±2-semitone ramps, not semantic question
+detection. Edits are held in memory; reloading/changing the file discards them.
+Exports are mono 32-bit float WAV at the decoded input rate, without source metadata.
 
-Validation: `npm run test:prosody` for numerical and model regressions;
-`node scripts/pages-test.mjs prosody` for Chromium/Firefox/WebKit interaction tests;
-`npm run test:all` for the complete site suite. Listening evaluation on varied
-human speech remains necessary before making perceptual quality claims.
+Validation: `npm run test:prosody` for numerical and model regressions, including
+tracker accuracy on WORLD-resynthesized speech with a known pitch contour and join
+level checks on the sample; `node scripts/pages-test.mjs prosody` for
+Chromium/Firefox/WebKit interaction tests; `npm run test:all` for the complete site
+suite. Listening evaluation on varied human speech remains necessary before making
+perceptual quality claims.

@@ -19,9 +19,10 @@ export function pitchAt(track, values, time) {
   if (!values.length) return 0
   const pos = clamp((time - track.times[0]) / track.hop, 0, values.length - 1)
   const a = Math.floor(pos), b = Math.min(a + 1, values.length - 1), f = pos - a
-  if (!track.f0[Math.round(pos)]) return 0
-  if (f === 0) return values[a]
-  if (a === b || !track.f0[a] || !track.f0[b]) return values[Math.round(pos)]
+  // Voiced only between two voiced frames, so a run's pitch starts and ends
+  // exactly on its edge frames.
+  if (f === 0 || a === b) return track.f0[a] ? values[a] : 0
+  if (!track.f0[a] || !track.f0[b]) return 0
   const y0 = Math.log2(values[a]), y1 = Math.log2(values[b]), d = y1 - y0
   const slope = (x, y) => x * y <= 0 ? 0 : 2 * x * y / (x + y)
   const m0 = track.f0[a - 1] ? slope(y0 - Math.log2(values[a - 1]), d) : d
@@ -37,18 +38,41 @@ export function mapTime(anchors, t) {
   return a[1] + (t - a[0]) / (b[0] - a[0]) * (b[1] - a[1])
 }
 
-export function retime(anchors, start, end, seconds) {
+// Change the selection's duration. Spans in `protect` (source seconds, e.g.
+// consonant bursts) keep their original length; the rest of the selection
+// shares the change, keeping its relative timing. When the spans leave no
+// room for the change, the whole selection stretches uniformly.
+export function retime(anchors, start, end, seconds, protect = []) {
   if (![start, end, seconds].every(Number.isFinite) || start < 0 || end > anchors.at(-1)[0] || end <= start || seconds <= 0)
     throw Error('Choose a valid start, end and duration.')
-  const a = mapTime(anchors, start), b = mapTime(anchors, end), factor = seconds / (b - a)
-  const points = [...new Set([...anchors.map(p => p[0]), start, end])].sort((a, b) => a - b)
-  const result = points.map(t => [t, t <= start ? mapTime(anchors, t) : t >= end ? mapTime(anchors, t) + seconds - (b - a) : a + (mapTime(anchors, t) - a) * factor])
-  for (let i = 1; i < result.length; i++) {
-    const rate = (result[i][1] - result[i - 1][1]) / (result[i][0] - result[i - 1][0])
-    if (rate < 0.5 - 1e-8 || rate > 2 + 1e-8) throw Error('Keep each fragment between half and twice its original duration.')
+  const kept = []
+  for (const [p, q] of protect.map(([p, q]) => [Math.max(start, p), Math.min(end, q)]).filter(([p, q]) => q > p).sort((x, y) => x[0] - y[0]))
+    if (kept.length && p <= kept.at(-1)[1]) kept.at(-1)[1] = Math.max(kept.at(-1)[1], q); else kept.push([p, q])
+  const build = kept => {
+    const a = mapTime(anchors, start), b = mapTime(anchors, end)
+    const fixed = kept.reduce((sum, [p, q]) => sum + (q - p), 0), free = kept.reduce((sum, [p, q]) => sum - (mapTime(anchors, q) - mapTime(anchors, p)), b - a)
+    const factor = free > 1e-9 ? (seconds - fixed) / free : 1
+    if (!Number.isFinite(factor) || factor <= 0 || (free <= 1e-9 && Math.abs(seconds - fixed) > 1e-9)) throw Error('Keep each fragment between half and twice its original duration.')
+    const points = [...new Set([...anchors.map(p => p[0]), start, end, ...kept.flat()])].sort((x, y) => x - y)
+    const result = [], inside = t => kept.some(([p, q]) => t > p && t < q)
+    let at = a
+    for (const [i, t] of points.entries()) {
+      if (t <= start) result.push([t, mapTime(anchors, t)])
+      else if (t >= end) result.push([t, mapTime(anchors, t) + seconds - (b - a)])
+      else {
+        const previous = points[i - 1], middle = (previous + t) / 2
+        at += inside(middle) ? t - previous : factor * (mapTime(anchors, t) - mapTime(anchors, previous))
+        result.push([t, at])
+      }
+    }
+    for (let i = 1; i < result.length; i++) {
+      const rate = (result[i][1] - result[i - 1][1]) / (result[i][0] - result[i - 1][0])
+      if (rate < 0.5 - 1e-8 || rate > 2 + 1e-8) throw Error('Keep each fragment between half and twice its original duration.')
+    }
+    // Remove collinear anchors, so repeated edits do not split untouched audio.
+    return result.filter((p, i, all) => !i || i === all.length - 1 || Math.abs((p[1] - all[i - 1][1]) / (p[0] - all[i - 1][0]) - (all[i + 1][1] - p[1]) / (all[i + 1][0] - p[0])) > 1e-8)
   }
-  // Remove collinear anchors, so repeated edits do not split untouched audio.
-  return result.filter((p, i, all) => !i || i === all.length - 1 || Math.abs((p[1] - all[i - 1][1]) / (p[0] - all[i - 1][0]) - (all[i + 1][1] - p[1]) / (all[i + 1][0] - p[0])) > 1e-8)
+  try { return build(kept) } catch (error) { if (!kept.length) throw error; return build([]) }
 }
 
 export function transform(track, target, start, end, kind, amount, smoothing = 0) {

@@ -8,7 +8,7 @@ const revision = 'd625e7608ca23a870018f01e7c562ac683d9847f'
 const root = process.argv[2] && resolve(process.argv[2])
 if (!root || execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== revision)
   throw Error(`Supply a WORLD checkout at ${revision}.`)
-const sources = ['dio', 'stonemask', 'cheaptrick', 'd4c', 'synthesis', 'common', 'fft', 'matlabfunctions']
+const sources = ['harvest', 'cheaptrick', 'd4c', 'synthesis', 'common', 'fft', 'matlabfunctions']
 const output = 'util/prosody/world.wasm.js'
 execFileSync('emcc', ['scripts/prosody-world.cpp', ...sources.map(f => join(root, 'src', f + '.cpp')),
   '-I' + join(root, 'src'), '-O3', '-sMODULARIZE', '-sEXPORT_ES6', '-sSINGLE_FILE', '-sSINGLE_FILE_BINARY_ENCODE=0',

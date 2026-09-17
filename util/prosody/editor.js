@@ -115,7 +115,8 @@ export function startEditor(version) {
   for (const [id, kind, amount] of [['shift', 'shift', () => +$('semitones').value], ['vary', 'variation', () => +$('variation').value / 100], ['rise', 'ramp', () => 2], ['fall', 'ramp', () => -2], ['pitch-reset', 'reset', () => 0]])
     $(id).onclick = () => act(() => { const value = amount(); const [a, b] = selection(); change(() => { target = transform(track, target, a, b, kind, value, kind === 'variation' ? +$('smoothing').value / 1000 : 0) }) })
   $('variation').oninput = () => { $('variation-value').textContent = $('variation').value + '%' }
-  $('retime').onclick = () => act(() => { const [a, b] = selection(); const seconds = +$('duration').value; change(() => { anchors = retime(anchors, a, b, seconds) }) })
+  // Consonant bursts keep their length; a burst spans about 30 ms from its onset.
+  $('retime').onclick = () => act(() => { const [a, b] = selection(); const seconds = +$('duration').value; change(() => { anchors = retime(anchors, a, b, seconds, Array.from(track.onsets, t => [t - .005, t + .03])) }) })
   $('zoom').onclick = () => act(() => { view = selection(); draw() })
   $('zoom-out').onclick = () => { view = [0, duration]; draw() }
   function zoom(factor, center = point >= 0 && track.times[point] >= view[0] && track.times[point] <= view[1] ? track.times[point] : (view[0] + view[1]) / 2) {
