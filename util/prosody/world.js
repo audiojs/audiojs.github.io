@@ -1,6 +1,7 @@
 import createWorld from './world.wasm.js'
 import { resample } from './dsp.js'
 import { mapTime, pitchAt } from './model.js'
+import { bandPeriodicity, spread } from './noise.js'
 const FINE = .001
 const engine = await createWorld()
 
@@ -58,18 +59,34 @@ export function speechRun(samples, sampleRate, track, target, anchors, first, la
   const edgeOf = at => track.times[at < track.times[first] ? first : last]
   const sourceAt = at => pitchAt(track, track.f0, at) || track.f0[at < track.times[first] ? first : last]
   const targetAt = at => pitchAt(track, target, at) || pitchAt(track, target, edgeOf(at)) || target[at < track.times[first] ? first : last]
+  const fft = 2 ** (1 + Math.floor(Math.log2(3 * sampleRate / 50 + 1))), bins = fft / 2 + 1, offset = from / sampleRate
   try {
-    const x = alloc(pointers, input.length), y = alloc(pointers, length)
-    const times = alloc(pointers, count), source = alloc(pointers, count), edited = alloc(pointers, fineCount)
+    const x = alloc(pointers, input.length)
     engine.HEAPF64.set(input, x / 8)
-    for (let i = 0; i < count; i++) {
-      const at = mapTime(inverse, begin + i * step)
-      engine.HEAPF64[times / 8 + i] = at - from / sampleRate
-      engine.HEAPF64[source / 8 + i] = sourceAt(at)
-    }
+    // Reference pass: copy-synthesis of the context at the source pitch. Where
+    // it is more periodic per band than the source, D4C missed noise; that
+    // excess is added as noise power to the edited pass by source time.
+    const grid = Math.floor(input.length / sampleRate / step) + 1, gridFine = Math.floor(input.length / sampleRate / FINE) + 1
+    const copyTimes = alloc(pointers, grid), copyPitch = alloc(pointers, grid), copyFine = alloc(pointers, gridFine), copy = alloc(pointers, input.length)
+    const gridPitch = Array.from({ length: grid }, (_, k) => sourceAt(offset + k * step))
+    for (let k = 0; k < grid; k++) { engine.HEAPF64[copyTimes / 8 + k] = k * step; engine.HEAPF64[copyPitch / 8 + k] = gridPitch[k] }
+    for (let k = 0; k < gridFine; k++) engine.HEAPF64[copyFine / 8 + k] = sourceAt(offset + k * FINE)
+    const centers = Array.from({ length: grid }, (_, k) => Math.round(k * step * sampleRate))
+    if (engine._world_render(x, input.length, sampleRate, copyTimes, copyPitch, grid, step, copyFine, gridFine, FINE, 0, bins, copy, input.length) !== fft) throw Error('Engine grid mismatch.')
+    const own = bandPeriodicity(input, sampleRate, centers, gridPitch)
+    const rebuilt = bandPeriodicity(Float32Array.from(engine.HEAPF64.subarray(copy / 8, copy / 8 + input.length)), sampleRate, centers, gridPitch)
+    // WORLD generates noise per pulse, so the noisiest frames cannot be matched
+    // fully; a second correction pass buys little for twice the cost.
+    const missing = own.map((row, b) => row.map((p, k) => Math.sqrt(Math.max(0, rebuilt[b][k] - p))))
+    // Edited pass along the output timeline.
+    const y = alloc(pointers, length), times = alloc(pointers, count), source = alloc(pointers, count), edited = alloc(pointers, fineCount), extra = alloc(pointers, count * bins)
+    const at = Array.from({ length: count }, (_, i) => mapTime(inverse, begin + i * step))
+    for (let i = 0; i < count; i++) { engine.HEAPF64[times / 8 + i] = at[i] - offset; engine.HEAPF64[source / 8 + i] = sourceAt(at[i]) }
     // Synthesis pitch on a 1 ms grid follows the contour between frames smoothly.
     for (let i = 0; i < fineCount; i++) engine.HEAPF64[edited / 8 + i] = targetAt(mapTime(inverse, begin + i * FINE))
-    engine._world_render(x, input.length, sampleRate, times, source, count, step, edited, fineCount, FINE, y, length)
+    const rows = missing.map(row => Float64Array.from(at, t => row[Math.max(0, Math.min(grid - 1, Math.round((t - offset) / step)))]))
+    engine.HEAPF64.set(spread(rows, sampleRate, bins, fft), extra / 8)
+    engine._world_render(x, input.length, sampleRate, times, source, count, step, edited, fineCount, FINE, extra, bins, y, length)
     return { samples: Float32Array.from(engine.HEAPF64.subarray(y / 8, y / 8 + length)), start, vocoded: true }
   } finally { for (const p of pointers) engine._free(p) }
 }

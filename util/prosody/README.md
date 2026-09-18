@@ -66,7 +66,16 @@ or thinned cycles start to sound.
 The vocoder engine (`world.js`) rebuilds the run with WORLD from the source
 spectral envelope (CheapTrick) and aperiodicity (D4C) at the edited pitch on a
 1 ms grid interpolated from the frame contour; feeding it the measured
-cycle-level jitter sounded no more natural and measured the same. WORLD drives unvoiced stretches with a 500 Hz noise-pulse clock whose
+cycle-level jitter sounded no more natural and measured the same. D4C estimates
+aperiodicity in 3 kHz bands, where the strong low harmonics hide the noise
+between the higher ones, so a vocoded voice came out harmonic above 1 kHz where
+the original was breathy: the metallic tell. The engine now renders a reference
+copy-synthesis of the run's context at the source pitch, measures its waveform
+periodicity per band (`noise.js`) against the source's at the same frames, and
+adds the excess as noise power in the edited render. On real voices this halves
+the high-band periodicity excess at the 90th percentile and leaves the median
+at zero; WORLD generates its noise per pulse, so the noisiest frames cannot be
+matched fully, and a second correction pass buys little for twice the cost. WORLD drives unvoiced stretches with a 500 Hz noise-pulse clock whose
 last pulse before an onset borrows the vowel's envelope, so synthesis stays
 voiced through a lead and tail of whole periods that the join discards; the
 rebuilt run is shifted by up to half a period to line its first pulse up with

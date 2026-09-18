@@ -5,6 +5,7 @@ import { analyze, render, encode, runs, engines } from '../util/prosody/process.
 import { retime, mapTime, transform, movePoint, pitchAt, validatePitch } from '../util/prosody/model.js'
 import { decodeWav, yin } from '../util/prosody/dsp.js'
 import { speechRun } from '../util/prosody/world.js'
+import { bandpass, periodicity } from '../util/prosody/noise.js'
 const fs = 16000
 // Harvest scores harmonics, as speech has them; a pure sinusoid is not voice.
 const tone = (frequency = 180, seconds = 2, rate = fs) => Float32Array.from({ length: Math.round(rate * seconds) }, (_, i) => {
@@ -363,6 +364,27 @@ test('waveform engine on speech: joins add no level, consonants stay dry, pitch 
   const wide = transform(track, track.f0, 0, duration, 'variation', 1.5, .06)
   const read = engine => { const y = render(a, sampleRate, track, wide, anchors, engine), e = []; for (let time = .2; time < duration - .2; time += .01) { const want = pitchAt(track, wide, time), p = measure(y, sampleRate, time); if (want && p?.clarity > .9) e.push(Math.abs(st(p.freq, want))) } return e.sort((p, q) => p - q)[Math.floor(e.length * .9)] }
   assert.ok(Math.abs(read('waveform') - read('vocoder')) < .15, 'waveform and vocoder engines follow an exaggerated contour alike')
+})
+
+test('vocoder keeps the voice\'s breathiness: band periodicity of copy-synthesis matches the source', () => {
+  const { channelData: [a], sampleRate } = sample(), track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
+  const bands = [[1000, 3000], [3000, 7000]], excess = bands.map(() => [])
+  const filtered = bands.map(([low, high]) => bandpass(a, sampleRate, low, Math.min(high, sampleRate / 2)))
+  for (const [first, last] of runs(track.f0)) {
+    if (last - first < 20) continue
+    const run = speechRun(a, sampleRate, track, track.f0, anchors, first, last)
+    const rebuilt = bands.map(([low, high]) => bandpass(run.samples, sampleRate, low, Math.min(high, sampleRate / 2)))
+    for (let i = first + 4; i < last - 4; i += 2) {
+      const c = Math.round(track.times[i] * sampleRate), period = sampleRate / track.f0[i]
+      bands.forEach((_, b) => { const d = periodicity(rebuilt[b], c - run.start, period) - periodicity(filtered[b], c, period); if (Number.isFinite(d)) excess[b].push(d) })
+    }
+  }
+  for (const [b, values] of excess.entries()) {
+    values.sort((p, q) => p - q)
+    const p90 = values[Math.floor(values.length * .9)], p50 = values[values.length >> 1]
+    // Uncorrected, this sample measures p90 0.43–0.45; the correction halves it and centers the median.
+    assert.ok(values.length > 100 && p90 < .3 && Math.abs(p50) < .06, `${bands[b][0]}–${bands[b][1]} Hz: periodicity excess p50 ${p50.toFixed(3)} p90 ${p90.toFixed(3)} (${values.length} frames)`)
+  }
 })
 
 test('rules and point edits preserve unvoiced gaps and remain non-destructive', () => {
