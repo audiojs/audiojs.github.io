@@ -50,7 +50,8 @@ samples bit-exactly.
 
 The waveform engine (`waveform.js`) is pitch-synchronous overlap-add on the
 recording's own cycles: each cycle is windowed one period to either side of its
-mark and laid down again at the edited spacing along the edited timeline. Pulse
+mark and laid down again at the edited spacing along the edited timeline, at
+its exact fractional position through a 16-tap windowed-sinc delay. Pulse
 shapes, breath and jitter are the voice's own, formants stay put, and unchanged
 cycles reproduce the source exactly. Beyond about half an octave, repeated or
 thinned cycles start to sound.

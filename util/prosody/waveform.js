@@ -6,6 +6,20 @@
 // that, repeated or thinned cycles start to sound, and the vocoder takes over.
 import { mapTime, pitchAt } from './model.js'
 
+// A grain is the source shifted by a constant fractional amount: the kernel of
+// a 16-tap Blackman-windowed sinc for that shift, unity at integer positions.
+function kernel(frac) {
+  const taps = new Float64Array(16)
+  let sum = 0
+  for (let t = 0; t < 16; t++) {
+    const d = t - 7 - frac, sinc = d ? Math.sin(Math.PI * d) / (Math.PI * d) : 1
+    taps[t] = sinc * (.42 + .5 * Math.cos(Math.PI * d / 8) + .08 * Math.cos(Math.PI * d / 4))
+    sum += taps[t]
+  }
+  for (let t = 0; t < 16; t++) taps[t] /= sum
+  return taps
+}
+
 export function waveformRun(samples, sampleRate, track, target, anchors, first, last) {
   const period = hz => sampleRate / hz
   const from = track.times[first] * sampleRate - period(track.f0[first]) / 2, to = track.times[last] * sampleRate + period(track.f0[last]) / 2
@@ -25,14 +39,17 @@ export function waveformRun(samples, sampleRate, track, target, anchors, first, 
     while (k < marks.length - 1 && Math.abs(marks[k + 1] - at) <= Math.abs(marks[k] - at)) k++
     while (k > 0 && Math.abs(marks[k - 1] - at) < Math.abs(marks[k] - at)) k--
     // One cycle each side of the mark, with half-Hann lobes that sum to one
-    // when cycles are laid down at their own spacing.
+    // when cycles are laid down at their own spacing. The grain lands at its
+    // fractional synthesis position: source read through a fractional delay.
     const mark = marks[k], left = k ? mark - marks[k - 1] : marks[k + 1] - mark, right = k < marks.length - 1 ? marks[k + 1] - mark : left
-    const center = Math.round(synthesis) - start, m = Math.round(mark)
-    for (let i = -Math.round(left); i < Math.round(right); i++) {
-      const j = center + i, s = m + i
-      if (j < 0 || j >= out.length || s < 0 || s >= samples.length) continue
-      const w = i < 0 ? .5 - .5 * Math.cos(Math.PI * (i + left) / left) : .5 + .5 * Math.cos(Math.PI * i / right)
-      out[j] += samples[s] * w; norm[j] += w
+    const shift = mark - synthesis, whole = Math.floor(shift), taps = kernel(shift - whole)
+    for (let j = Math.ceil(synthesis - left); j < synthesis + right; j++) {
+      const u = j - synthesis, at = j + whole - 7
+      if (j - start < 0 || j - start >= out.length || at < 0 || at + 15 >= samples.length) continue
+      const w = u < 0 ? .5 - .5 * Math.cos(Math.PI * (u + left) / left) : .5 + .5 * Math.cos(Math.PI * u / right)
+      let value = 0
+      for (let t = 0; t < 16; t++) value += samples[at + t] * taps[t]
+      out[j - start] += value * w; norm[j - start] += w
     }
     // Step by this cycle's own length over the edit ratio: at a ratio of one the
     // marks fall back on the source's, and unchanged cycles reproduce the source.

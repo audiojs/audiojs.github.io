@@ -284,10 +284,10 @@ test('waveform engine: unchanged cycles reproduce the source; pitch, timing, rat
   let worst = 0
   for (let i = Math.round(.6 * fs); i < Math.round((t.times[middle] - .02) * fs); i++) worst = Math.max(worst, Math.abs(same[i] - a[i]))
   assert.ok(worst < 1e-6, `cycles before the edit reproduce the source exactly (max difference ${worst})`)
-  // A pitch edit moves every later cycle by a fraction of a sample; grains are placed on whole samples.
+  // A pitch edit moves every later cycle by a fraction of a sample; grains land at fractional positions.
   let diff = 0, ref = 0
   for (let i = Math.round((t.times[middle] + .02) * fs); i < Math.round(1.4 * fs); i++) { diff += (same[i] - a[i]) ** 2; ref += a[i] ** 2 }
-  assert.ok(Math.sqrt(diff / ref) < .1, `cycles after a hairline edit differ by at most one sample of shift (${Math.sqrt(diff / ref).toFixed(3)})`)
+  assert.ok(Math.sqrt(diff / ref) < .01, `cycles after a hairline edit are the source, delayed by a fraction of a sample (${Math.sqrt(diff / ref).toFixed(4)})`)
   assert.deepEqual(same.subarray(0, Math.round(.5 * fs)), a.subarray(0, Math.round(.5 * fs)))
   const target = transform(t, t.f0, .6, 1.4, 'shift', 3), out = render(a, fs, t, target, anchors, 'waveform')
   assert.deepEqual(out, render(a, fs, t, target, anchors, 'auto'), 'auto picks the waveform engine within half an octave')
