@@ -1,23 +1,40 @@
-// Waveform engine: pitch-synchronous overlap-add on the recording's own
-// glottal cycles. Each cycle is windowed around its mark and laid down again at
-// the edited spacing, so the voice keeps its pulse shapes, breath and jitter;
-// only the cycle spacing (pitch) and cycle choice (timing) change. Formants
-// stay where the cycles put them. Best within about half an octave; beyond
-// that, repeated or thinned cycles start to sound, and the vocoder takes over.
-import { mapTime, pitchAt } from './model.js'
+// Waveform engine: the recording's own glottal cycles, re-spaced. Each cycle
+// is resampled by the edit ratio, so its period becomes the target period and
+// the copies that overlap at the new spacing are phase-aligned: no comb, no
+// flanging. Resampling scales the formants too, so the run then passes a
+// smooth filter restoring the source spectral envelope, from CheapTrick, at
+// its original frequencies. Timing changes repeat or skip cycles. Pulse
+// shapes, breath and jitter stay the voice's own; unchanged cycles reproduce
+// the source exactly. Beyond about half an octave, repeated or thinned cycles
+// start to sound, and the vocoder takes over.
+import { mapTime, pitchAt, clamp } from './model.js'
+import { speechEnvelope } from './world.js'
+import { fft } from './fft.js'
 
-// A grain is the source shifted by a constant fractional amount: the kernel of
-// a 16-tap Blackman-windowed sinc for that shift, unity at integer positions.
-function kernel(frac) {
-  const taps = new Float64Array(16)
-  let sum = 0
-  for (let t = 0; t < 16; t++) {
-    const d = t - 7 - frac, sinc = d ? Math.sin(Math.PI * d) / (Math.PI * d) : 1
-    taps[t] = sinc * (.42 + .5 * Math.cos(Math.PI * d / 8) + .08 * Math.cos(Math.PI * d / 4))
-    sum += taps[t]
+// Fractional reads: 32-tap Blackman-windowed sinc at 64 phases, unity at
+// integer positions, with a lowpass at `cutoff` × Nyquist when reading faster.
+const TAPS = 32, tables = new Map()
+function table(cutoff) {
+  const key = Math.round(cutoff * 20) / 20
+  if (tables.has(key)) return tables.get(key)
+  const taps = new Float32Array(64 * TAPS), center = TAPS / 2 - 1
+  for (let phase = 0; phase < 64; phase++) {
+    let sum = 0
+    for (let i = 0; i < TAPS; i++) {
+      const d = i - center - phase / 64, x = d * key, sinc = x ? Math.sin(Math.PI * x) / (Math.PI * x) : 1
+      taps[phase * TAPS + i] = sinc * key * (.42 + .5 * Math.cos(2 * Math.PI * d / TAPS) + .08 * Math.cos(4 * Math.PI * d / TAPS))
+      sum += taps[phase * TAPS + i]
+    }
+    for (let i = 0; i < TAPS; i++) taps[phase * TAPS + i] /= sum
   }
-  for (let t = 0; t < 16; t++) taps[t] /= sum
+  tables.set(key, taps)
   return taps
+}
+function read(x, position, taps) {
+  const i = Math.floor(position), offset = Math.floor((position - i) * 64) * TAPS, base = i - (TAPS / 2 - 1)
+  let value = 0
+  for (let k = 0; k < TAPS; k++) value += (x[base + k] || 0) * taps[offset + k]
+  return value
 }
 
 export function waveformRun(samples, sampleRate, track, target, anchors, first, last) {
@@ -33,28 +50,64 @@ export function waveformRun(samples, sampleRate, track, target, anchors, first, 
   const edgeOf = at => track.times[at < track.times[first] ? first : last]
   const ratioAt = at => { const source = pitchAt(track, track.f0, at), edited = pitchAt(track, target, at); return source && edited ? edited / source : 0 }
   const ratio = at => ratioAt(at) || ratioAt(edgeOf(at)) || 1
-  let synthesis = mapTime(anchors, marks[0] / sampleRate) * sampleRate, k = 0
+  let synthesis = mapTime(anchors, marks[0] / sampleRate) * sampleRate, k = 0, changed = false
   while (synthesis < end) {
     const at = mapTime(inverse, synthesis / sampleRate) * sampleRate
     while (k < marks.length - 1 && Math.abs(marks[k + 1] - at) <= Math.abs(marks[k] - at)) k++
     while (k > 0 && Math.abs(marks[k - 1] - at) < Math.abs(marks[k] - at)) k--
-    // One cycle each side of the mark, with half-Hann lobes that sum to one
-    // when cycles are laid down at their own spacing. The grain lands at its
-    // fractional synthesis position: source read through a fractional delay.
-    const mark = marks[k], left = k ? mark - marks[k - 1] : marks[k + 1] - mark, right = k < marks.length - 1 ? marks[k + 1] - mark : left
-    const shift = mark - synthesis, whole = Math.floor(shift), taps = kernel(shift - whole)
+    const mark = marks[k], cycleLeft = k ? mark - marks[k - 1] : marks[k + 1] - mark, cycleRight = k < marks.length - 1 ? marks[k + 1] - mark : cycleLeft
+    const r = ratio(at / sampleRate), taps = table(Math.min(1, 1 / r))
+    if (Math.abs(r - 1) > 1e-9) changed = true
+    // One resampled cycle each side of the mark, with half-Hann lobes that sum
+    // to one at the new spacing.
+    const left = cycleLeft / r, right = cycleRight / r
     for (let j = Math.ceil(synthesis - left); j < synthesis + right; j++) {
-      const u = j - synthesis, at = j + whole - 7
-      if (j - start < 0 || j - start >= out.length || at < 0 || at + 15 >= samples.length) continue
+      const u = j - synthesis, position = mark + u * r
+      if (j - start < 0 || j - start >= out.length || position < TAPS / 2 || position >= samples.length - TAPS / 2 - 1) continue
       const w = u < 0 ? .5 - .5 * Math.cos(Math.PI * (u + left) / left) : .5 + .5 * Math.cos(Math.PI * u / right)
-      let value = 0
-      for (let t = 0; t < 16; t++) value += samples[at + t] * taps[t]
-      out[j - start] += value * w; norm[j - start] += w
+      out[j - start] += read(samples, position, taps) * w; norm[j - start] += w
     }
-    // Step by this cycle's own length over the edit ratio: at a ratio of one the
-    // marks fall back on the source's, and unchanged cycles reproduce the source.
-    synthesis += Math.min(period(30), Math.max(1, right / ratio(at / sampleRate)))
+    synthesis += Math.min(period(30), Math.max(1, right))
   }
   for (let i = 0; i < out.length; i++) out[i] /= Math.max(norm[i], .5)
+  if (changed) restoreFormants(out, start, samples, sampleRate, track, anchors, first, last, ratio)
   return { samples: out, start }
+}
+
+// Multiply the run's short-time spectrum by E(f) / E(f / r): resampling by r
+// moved the source envelope E to E(f / r). Square-root Hann windows at 75%
+// overlap sum to two and reconstruct exactly; the gain changes smoothly
+// across frames, and frames with a unit ratio pass through untouched.
+function restoreFormants(out, start, samples, sampleRate, track, anchors, first, last, ratio) {
+  const envelope = speechEnvelope(samples, sampleRate, track, first, last), inverse = anchors.map(([a, b]) => [b, a])
+  const size = 2 ** Math.ceil(Math.log2(.02 * sampleRate)), hop = size >> 2, half = size >> 1
+  const window = Float32Array.from({ length: size }, (_, i) => Math.sqrt(.5 - .5 * Math.cos(2 * Math.PI * i / size)) / Math.SQRT2)
+  const re = new Float32Array(size), im = new Float32Array(size), result = new Float32Array(out.length)
+  // Log envelope per frame; the gain keeps its full detail, since formant
+  // peaks are narrower than the pitch and smoothing only blurs the correction.
+  const logs = new Map()
+  const logRow = frame => {
+    if (logs.has(frame)) return logs.get(frame)
+    const row = Float32Array.from(envelope.frames.subarray(frame * envelope.bins, (frame + 1) * envelope.bins), v => Math.log(v + 1e-20))
+    logs.set(frame, row); return row
+  }
+  const level = (row, hz) => {
+    const position = clamp(hz / envelope.rate * envelope.fft, 0, envelope.bins - 1), a = Math.floor(position), f = position - a
+    return row[a] * (1 - f) + row[Math.min(envelope.bins - 1, a + 1)] * f
+  }
+  for (let position = hop - size; position < out.length; position += hop) {
+    const at = mapTime(inverse, (start + position + half) / sampleRate), r = ratio(at)
+    const frame = clamp(Math.round((at - envelope.from) / envelope.step), 0, envelope.count - 1), row = logRow(frame)
+    for (let i = 0; i < size; i++) { re[i] = (out[position + i] || 0) * window[i]; im[i] = 0 }
+    if (Math.abs(r - 1) < 1e-9) { for (let i = 0; i < size; i++) if (position + i >= 0 && position + i < out.length) result[position + i] += re[i] * window[i]; continue }
+    fft(re, im)
+    for (let b = 0; b <= half; b++) {
+      const hz = b * sampleRate / size, gain = clamp(Math.exp((level(row, hz) - level(row, hz / r)) / 2), .0625, 16)
+      re[b] *= gain; im[b] *= gain
+      if (b && b < half) { re[size - b] *= gain; im[size - b] *= gain }
+    }
+    fft(re, im, true)
+    for (let i = 0; i < size; i++) if (position + i >= 0 && position + i < out.length) result[position + i] += re[i] * window[i]
+  }
+  out.set(result)
 }

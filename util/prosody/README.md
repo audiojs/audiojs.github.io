@@ -39,8 +39,7 @@ Glottal cycle marks refine that contour. Within each voiced run, cycles are
 located from the loudest one outward by matching one period of waveform, with
 sub-sample refinement, so every frame's pitch is the mean of the cycles it
 covers and stays exact through fast inflections, where Harvest alone drifts by
-about a semitone. Edits apply as a smooth ratio to this cycle-level pitch: the
-macro contour follows the edit, the voice's own jitter stays.
+about a semitone. Edits apply as a smooth ratio to the frame contour.
 
 A voiced run (a maximal stretch of voiced frames) is the unit of resynthesis.
 Any run containing a pitch change or lying in a retimed span is rebuilt whole
@@ -48,17 +47,26 @@ by one of two engines and joined to its untouched neighbors with 2 ms fades at
 its edge frames. Untouched runs, consonants and silence keep their original
 samples bit-exactly.
 
-The waveform engine (`waveform.js`) is pitch-synchronous overlap-add on the
-recording's own cycles: each cycle is windowed one period to either side of its
-mark and laid down again at the edited spacing along the edited timeline, at
-its exact fractional position through a 16-tap windowed-sinc delay. Pulse
-shapes, breath and jitter are the voice's own, formants stay put, and unchanged
-cycles reproduce the source exactly. Beyond about half an octave, repeated or
-thinned cycles start to sound.
+The waveform engine (`waveform.js`) re-spaces the recording's own cycles.
+Each cycle is resampled by the edit ratio, so its period becomes the target
+period and the copies that overlap at the new spacing are phase-aligned: the
+comb that plain overlap-add produces by crossfading copies offset by the period
+difference (a sweeping flanger on real speech) does not arise. Resampling scales
+the formants too, so the run then passes a smooth short-time filter that
+multiplies its spectrum by E(f) / E(f / r), with E the CheapTrick envelope of the
+source frame, restoring formants and spectral tilt at their original
+frequencies. Cycles are read at fractional positions through a 32-tap
+windowed-sinc delay with a lowpass at Nyquist / r. Timing changes repeat or skip
+cycles at their own spacing, which is comb-free. Pulse shapes, breath and jitter
+are the voice's own, and unchanged cycles reproduce the source bit-exactly. On a
+steady synthetic voice the remaining spectral error is 1–2 dB, the envelope
+estimate's own, and grows with the shift; beyond about half an octave, repeated
+or thinned cycles start to sound.
 
 The vocoder engine (`world.js`) rebuilds the run with WORLD from the source
 spectral envelope (CheapTrick) and aperiodicity (D4C) at the edited pitch on a
-1 ms grid. WORLD drives unvoiced stretches with a 500 Hz noise-pulse clock whose
+1 ms grid interpolated from the frame contour; feeding it the measured
+cycle-level jitter sounded no more natural and measured the same. WORLD drives unvoiced stretches with a 500 Hz noise-pulse clock whose
 last pulse before an onset borrows the vowel's envelope, so synthesis stays
 voiced through a lead and tail of whole periods that the join discards; the
 rebuilt run is shifted by up to half a period to line its first pulse up with
@@ -67,7 +75,8 @@ periods, since WORLD's analysis window smears onsets. It handles any change but
 is audibly a vocoder on breathy or creaky voices.
 
 Auto, the default, uses the waveform engine for runs whose largest pitch change
-is within six semitones and the vocoder otherwise.
+is within six semitones and whose median cycle periodicity is at least 0.5, and
+the vocoder otherwise; on unreliable cycles overlap-add doubles pulses.
 
 Timing edits warp the analysis positions given to WORLD, so stretched voice keeps
 its pitch and harmonic structure with no grain repetition. Unvoiced audio in a

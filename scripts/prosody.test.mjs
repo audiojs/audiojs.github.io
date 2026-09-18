@@ -308,6 +308,36 @@ test('waveform engine: unchanged cycles reproduce the source; pitch, timing, rat
   assert.deepEqual(engines, ['auto', 'waveform', 'vocoder'])
 })
 
+test('waveform engine keeps formants: harmonic amplitudes match a voice produced at the target pitch', () => {
+  // A pulse train through three fixed resonances; the truth is the same voice produced at the target pitch.
+  const rate = 22050, voice = f0 => {
+    const x = new Float32Array(2 * rate)
+    let phase = 0
+    for (let i = 0; i < x.length; i++) { phase += f0 / rate; for (let h = 1; h * f0 < rate / 2 && h < 60; h++) x[i] += Math.sin(2 * Math.PI * h * phase) / h }
+    for (const [frequency, bandwidth] of [[700, 110], [1220, 120], [2600, 160]]) {
+      const r = Math.exp(-Math.PI * bandwidth / rate), c = 2 * r * Math.cos(2 * Math.PI * frequency / rate)
+      let y1 = 0, y2 = 0
+      for (let i = 0; i < x.length; i++) { const y = (1 - r) * x[i] + c * y1 - r * r * y2; y2 = y1; y1 = y; x[i] = y }
+    }
+    const peak = x.reduce((m, v) => Math.max(m, Math.abs(v)), 0)
+    return x.map(v => v * .5 / peak)
+  }
+  const harmonics = (x, f0, t) => {
+    const n = 4096, seg = Array.from({ length: n }, (_, i) => x[Math.round(t * rate) + i] * (.5 - .5 * Math.cos(2 * Math.PI * i / n))), out = []
+    for (let h = 1; h * f0 < 4000; h++) { const k = 2 * Math.PI * h * f0 / rate; let re = 0, im = 0; for (let i = 0; i < n; i++) { re += seg[i] * Math.cos(k * i); im -= seg[i] * Math.sin(k * i) } out.push(20 * Math.log10(Math.hypot(re, im) + 1e-9)) }
+    return out
+  }
+  const x = voice(155), t = analyze(x, rate)
+  for (const [shift, limit] of [[3, 1.6], [5, 2.6]]) {
+    const f1 = 155 * 2 ** (shift / 12), truth = voice(f1), out = render(x, rate, t, transform(t, t.f0, 0, 2, 'shift', shift), [[0, 0], [2, 2]], 'waveform')
+    const errors = [.5, .8, 1.1, 1.4].map(time => harmonics(out, f1, time).map((v, h) => v - harmonics(truth, f1, time)[h]))
+    const mean = errors[0].map((_, h) => errors.reduce((sum, e) => sum + e[h], 0) / errors.length), center = mean.reduce((a, b) => a + b) / mean.length
+    const ripple = Math.sqrt(mean.reduce((sum, v) => sum + (v - center) ** 2, 0) / mean.length)
+    assert.ok(ripple < limit, `+${shift} st: harmonic amplitude error across the spectrum ${ripple.toFixed(2)} dB (formants restored)`)
+    assert.ok(Math.abs(st(periodHz(out, rate, 1, f1), f1)) < .02, `+${shift} st: pitch exact`)
+  }
+})
+
 test('waveform engine on speech: joins add no level, consonants stay dry, pitch follows the edit', () => {
   const { channelData: [a], sampleRate } = sample(), track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
   const target = transform(track, track.f0, 0, duration, 'variation', .5, .06), out = render(a, sampleRate, track, target, anchors, 'waveform')

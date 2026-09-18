@@ -37,3 +37,15 @@ extern "C" void world_render(const double* x, int n, int fs, const double* times
   }
   Synthesis(target, target_count, spec_fine.data(), noise_fine.data(), opt.fft_size, target_step * 1000, fs, length, y);
 }
+// Spectral envelope (CheapTrick power spectrum, fft_size / 2 + 1 bins per
+// frame) at arbitrary positions with the source F0 there, for formant
+// correction after resampling the recording's own cycles.
+extern "C" int world_envelope(const double* x, int n, int fs, const double* times, const double* f0, int count, double* out) {
+  CheapTrickOption opt; InitializeCheapTrickOption(fs, &opt);
+  opt.f0_floor = 50; opt.fft_size = GetFFTSizeForCheapTrick(fs, &opt);
+  int bins = opt.fft_size / 2 + 1;
+  std::vector<double*> spec(count);
+  for (int i = 0; i < count; i++) spec[i] = out + i * bins;
+  CheapTrick(x, n, fs, times, f0, count, &opt, spec.data());
+  return opt.fft_size;
+}

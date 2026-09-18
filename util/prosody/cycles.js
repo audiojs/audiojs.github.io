@@ -3,7 +3,6 @@
 // off by about a semitone. Marks locate every cycle, so pitch is known per
 // cycle and edits can keep the voice's natural jitter.
 import { pitchAt } from './model.js'
-export const FINE = .001
 
 // Normalized correlation between windows of n samples starting at a and b.
 function ncc(x, a, b, n) {
@@ -58,39 +57,24 @@ function runMarks(x, sampleRate, track, first, last) {
   return [...step(peak, -1).reverse(), peak, ...step(peak, 1)]
 }
 
-// All marks (sample positions, fractional) and the 1 ms pitch grid they define.
+// All marks (sample positions, fractional), refining the frame contour in
+// place: each frame takes the mean pitch of the cycles it covers, with a
+// single stray cycle (typically at a run edge, where the cycle is partly
+// consonant) replaced by the median of its neighbors.
 export function cycles(x, sampleRate, track, runs) {
-  const marks = [], fine = new Float32Array(Math.floor(x.length / sampleRate / FINE) + 1)
+  const marks = []
   for (const [first, last] of runs) {
     const m = runMarks(x, sampleRate, track, first, last)
-    // Cycle periods, with a single stray cycle (typically at a run edge, where
-    // the cycle is partly consonant) replaced by the median of its neighbors.
-    const periods = Array.from({ length: m.length - 1 }, (_, k) => m[k + 1] - m[k])
-    const period = periods.map((v, k, all) => all.length < 3 ? v : [all[Math.min(Math.max(k, 1), all.length - 2) - 1], all[Math.min(Math.max(k, 1), all.length - 2)], all[Math.min(Math.max(k, 1), all.length - 2) + 1]].sort((a, b) => a - b)[1])
-    const from = Math.max(0, Math.round((track.times[first] - track.hop / 2) / FINE)), to = Math.min(fine.length - 1, Math.round((track.times[last] + track.hop / 2) / FINE))
-    for (let g = from, k = 0; g <= to; g++) {
-      const at = g * FINE * sampleRate
-      while (k < m.length - 2 && m[k + 1] <= at) k++
-      // Cycle spacing where marks exist; Harvest's value where the run is too short.
-      fine[g] = period.length ? sampleRate / period[k] : pitchAt(track, track.f0, g * FINE) || track.f0[first]
-    }
     marks.push(...m)
+    if (m.length < 3) continue
+    const periods = Array.from({ length: m.length - 1 }, (_, k) => m[k + 1] - m[k])
+    const period = periods.map((v, k, all) => all.length < 3 ? v : [all[Math.min(Math.max(k, 1), all.length - 2) - 1], all[Math.min(Math.max(k, 1), all.length - 2)], all[Math.min(Math.max(k, 1), all.length - 2) + 1]].sort((p, q) => p - q)[1])
+    for (let i = first; i <= last; i++) {
+      const from = (track.times[i] - track.hop / 2) * sampleRate, to = (track.times[i] + track.hop / 2) * sampleRate
+      let sum = 0, n = 0
+      for (let k = 0; k < period.length; k++) if (m[k + 1] > from && m[k] < to) { sum += sampleRate / period[k]; n++ }
+      if (n) track.f0[i] = sum / n
+    }
   }
-  return { marks: Float64Array.from(marks), fine }
-}
-
-// Cycle-accurate pitch at a time, or 0 outside voice. A track without a cycle
-// grid (synthetic contours) falls back to its frame contour.
-export function fineAt(track, time) {
-  if (!track.fine) return pitchAt(track, track.f0, time)
-  const pos = time / FINE, i = Math.floor(pos), f = pos - i
-  const a = track.fine[i] || 0, b = track.fine[i + 1] || 0
-  return a && b ? a * (1 - f) + b * f : a || b
-}
-
-// The edit as a smooth ratio to the frame contour, applied to the cycle pitch:
-// the macro contour follows the edit, the micro contour stays the voice's own.
-export function fineTargetAt(track, target, time) {
-  const source = pitchAt(track, track.f0, time), edited = pitchAt(track, target, time)
-  return source && edited ? fineAt(track, time) * edited / source : 0
+  return Float64Array.from(marks)
 }

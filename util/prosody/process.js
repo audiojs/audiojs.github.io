@@ -21,23 +21,17 @@ export function analyze(samples, sampleRate) {
   }
   // Harvest voices noise in runs of its own. Judge each run as a whole by its
   // median waveform periodicity at the tracked pitch, so a real breathy or
-  // creaky phrase is not broken into fragments by frame decisions.
+  // creaky phrase is not broken into fragments by frame decisions. The
+  // periodicity is kept per frame: rendering routes unreliable runs.
+  track.periodicity = new Float32Array(track.f0.length)
   for (const [first, last] of runs(track.f0)) {
     const scores = []
-    for (let i = first; i <= last; i++) scores.push(periodicity(samples, sampleRate, track.times[i], track.f0[i]))
+    for (let i = first; i <= last; i++) scores.push(track.periodicity[i] = periodicity(samples, sampleRate, track.times[i], track.f0[i]))
     if (scores.sort((a, b) => a - b)[scores.length >> 1] < .2) track.f0.fill(0, first, last + 1)
   }
   track.onsets = bursts(samples, sampleRate, track)
-  // Cycle marks refine the frame contour: each frame takes the mean pitch of
-  // the cycles it covers, exact through fast inflections.
-  const { marks, fine } = cycles(samples, sampleRate, track, runs(track.f0))
-  track.marks = marks; track.fine = fine
-  for (let i = 0; i < track.f0.length; i++) {
-    if (!track.f0[i]) continue
-    let sum = 0, n = 0
-    for (let g = Math.round((track.times[i] - track.hop / 2) / .001); g <= Math.round((track.times[i] + track.hop / 2) / .001); g++) if (fine[g]) { sum += fine[g]; n++ }
-    if (n) track.f0[i] = sum / n
-  }
+  // Cycle marks refine the frame contour, exact through fast inflections.
+  track.marks = cycles(samples, sampleRate, track, runs(track.f0))
   return track
 }
 
@@ -188,9 +182,12 @@ export function render(samples, sampleRate, track, target, anchors, engine = 'au
     let touched = false
     for (let i = first; i <= last && !touched; i++) touched = target[i] !== track.f0[i] || retimed(track.times[i])
     if (!touched) continue
+    // Auto: the recording's own cycles within half an octave, where they are
+    // reliable (median periodicity of the run at least 0.5); the vocoder beyond.
     let change = 0
     for (let i = first; i <= last; i++) change = Math.max(change, Math.abs(12 * Math.log2(target[i] / track.f0[i])))
-    const waveform = engine === 'waveform' || (engine === 'auto' && change <= 6)
+    const reliable = !track.periodicity || track.periodicity.subarray(first, last + 1).slice().sort()[(last - first) >> 1] >= .5
+    const waveform = engine === 'waveform' || (engine === 'auto' && change <= 6 && reliable)
     const run = (waveform && track.marks && waveformRun(samples, sampleRate, track, target, anchors, first, last)) || speechRun(samples, sampleRate, track, target, anchors, first, last)
     const onset = Math.round(mapTime(anchors, track.times[first]) * sampleRate), offset = Math.round(mapTime(anchors, track.times[last]) * sampleRate)
     let start = run.start, wet = run.samples
