@@ -91,7 +91,7 @@
             "name": "Will it preserve the voice?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The WORLD speech engine rebuilds each edited vowel or voiced phrase from its own vocal-tract spectrum and breathiness, at the new pitch and timing, and restores its original loudness contour. Consonants, silence and untouched phrases keep their original samples. Edits can still sound processed, especially with creaky speech or large changes. Compare with the original before saving."
+              "text": "For changes within half an octave the waveform engine re-spaces the recording's own voice cycles, so pulse shapes, breath and jitter stay the voice's own. Larger changes use the WORLD vocoder, which rebuilds the voice from its vocal-tract spectrum and breathiness and restores the original loudness contour. Consonants, silence and untouched phrases keep their original samples. Compare with the original before saving."
             }
           },
           {
@@ -127,7 +127,7 @@
       <p>Shape how a sentence sounds. Adjust its pitch, emphasis and pace.</p>
     </section>
 
-    <link rel="stylesheet" href="/util/prosody/editor.css?v=66299714ba0a8745cd4ad501">
+    <link rel="stylesheet" href="/util/prosody/editor.css?v=567b4108caac6ab2154552a5">
     <div class="prosody">
       <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
@@ -166,18 +166,19 @@
               <label>Duration (s)<input id="duration" type="number" min="0.01" step="0.01" value="1"></label><button id="retime" class="btn ghost">Apply</button>
             </section>
           </div>
-          <div class="row"><button id="render" class="btn" disabled>Render edits</button><span id="render-state">Original audio · no edits</span></div>
+          <div class="row"><button id="render" class="btn" disabled>Render edits</button><label class="engine">Engine<select id="engine" aria-describedby="engine-help"><option value="auto">Auto</option><option value="waveform">Waveform</option><option value="vocoder">Vocoder</option></select></label><span id="render-state">Original audio · no edits</span></div>
+          <p id="engine-help" class="hint">Waveform keeps the recording's own voice cycles and suits changes within half an octave. Vocoder rebuilds the voice and handles any change. Auto picks per phrase.</p>
         </fieldset>
         <div class="players"><label>Original<audio id="original" controls preload="metadata"></audio></label><label>Edited<audio id="edited" controls preload="metadata"></audio></label></div>
         <div class="row"><a id="save" class="btn" aria-disabled="true">Save WAV</a><span class="hint">32-bit float · mono · original sample rate</span></div>
       </section>
     </div>
     <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/stretch-wsola" target="_blank" rel="noopener"><code>@audio/stretch-wsola</code></a> and <a href="https://npmjs.com/package/@audio/encode-wav" target="_blank" rel="noopener"><code>@audio/encode-wav</code></a>.</p>
-    <section class="seo"><h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Pinch to zoom into the waveform and drag on the plot to select a phrase.</p><p>Pitch and timing edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally. Harvest tracks pitch continuously across each phrase. Every edited voiced phrase is rebuilt whole at the new pitch and duration with its original loudness contour; unvoiced audio in a retimed span is stretched with WSOLA and consonant bursts keep their length. WAV export contains audio only, without source tags.</p>
+    <section class="seo"><h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Pinch to zoom into the waveform and drag on the plot to select a phrase.</p><p>Pitch and timing edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally. Harvest tracks pitch continuously across each phrase and glottal cycle marks make it exact per cycle. Every edited voiced phrase is rebuilt whole at the new pitch and duration: the waveform engine re-spaces the recording's own voice cycles, the vocoder engine rebuilds the voice for large changes. Unvoiced audio in a retimed span is stretched with WSOLA and consonant bursts keep their length. WAV export contains audio only, without source tags.</p>
       <section class="faq" aria-label="Questions">
         <h3>Questions</h3>
         <details><summary>Can this automatically fix the tone of a question?</summary><p>The rising and falling controls apply a pitch ramp to your selection. They do not infer sentence meaning. Listen and adjust the selection and pitch to match your intended delivery.</p></details>
-        <details><summary>Will it preserve the voice?</summary><p>The WORLD speech engine rebuilds each edited vowel or voiced phrase from its own vocal-tract spectrum and breathiness, at the new pitch and timing, and restores its original loudness contour. Consonants, silence and untouched phrases keep their original samples. Edits can still sound processed, especially with creaky speech or large changes. Compare with the original before saving.</p></details>
+        <details><summary>Will it preserve the voice?</summary><p>For changes within half an octave the waveform engine re-spaces the recording's own voice cycles, so pulse shapes, breath and jitter stay the voice's own. Larger changes use the WORLD vocoder, which rebuilds the voice from its vocal-tract spectrum and breathiness and restores the original loudness contour. Consonants, silence and untouched phrases keep their original samples. Compare with the original before saving.</p></details>
         <details><summary>Why are parts of the curve missing?</summary><p>Silence and unvoiced consonants do not have a reliable fundamental pitch. Those regions stay unpitched. Very short clips may also have too little audio for detection.</p></details>
       </section>
       <div class="more">
@@ -208,7 +209,7 @@
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
     import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=8cf51a4e'
-    import { startEditor } from '/util/prosody/editor.bundle.js?v=66299714ba0a8745cd4ad501'; startEditor('66299714ba0a8745cd4ad501')
+    import { startEditor } from '/util/prosody/editor.bundle.js?v=567b4108caac6ab2154552a5'; startEditor('567b4108caac6ab2154552a5')
   </script>
 </body>
 </html>

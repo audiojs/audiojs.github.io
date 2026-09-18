@@ -67,3 +67,6 @@
 .prosody [aria-disabled=true] { opacity: .4; pointer-events: none; }
 .prosody #filename { overflow-wrap: anywhere; }
 @media (max-width: 620px) { .prosody .edit-grid, .prosody .players { grid-template-columns: 1fr; } .prosody .row { gap: 10px; padding: 14px; } .prosody .parameter { gap: 6px; } .prosody .parameter .btn { padding-inline: 10px; } .prosody .parameter > label { min-width: 66px; } .prosody .edit-grid section { padding: 14px; } .prosody #filename { flex-basis: 100%; } }
+
+.prosody .engine { display: inline-flex; align-items: center; gap: .4em; }
+.prosody .engine select { font: inherit; }

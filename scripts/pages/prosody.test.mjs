@@ -237,6 +237,13 @@ try {
 
       // Change file cancels any outstanding render and clears all editing state.
       await page.click('#rise')
+      for (const engine of ['waveform', 'vocoder']) {
+        await page.selectOption('#engine', engine)
+        assert.equal(await page.locator('#render').isEnabled(), true, `${engine}: changing the engine calls for a render`)
+        await page.click('#render')
+        await page.waitForFunction(() => document.querySelector('#render-state').textContent.startsWith('Rendered'))
+      }
+      await page.selectOption('#engine', 'auto')
       await page.evaluate(() => { document.querySelector('#render').click(); document.querySelector('#replace').click() })
       assert.equal(await page.locator('#editor').isVisible(), false)
       assert.equal(await page.locator('#save').getAttribute('href'), null)

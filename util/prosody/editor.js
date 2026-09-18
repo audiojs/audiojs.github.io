@@ -109,7 +109,8 @@ export function startEditor(version) {
     catch (e) { status(e.message, true) } finally { $('demo').disabled = false }
   }
   $('replace').onclick = () => { run++; release(); $('editor').hidden = true; zone.show(); status('Choose another recording.') }
-  $('render').onclick = () => { if (!track || busy) return; lock(true); status('Rendering pitch and timing…'); worker.postMessage({ type: 'render', target, anchors }) }
+  $('render').onclick = () => { if (!track || busy) return; lock(true); status('Rendering pitch and timing…'); worker.postMessage({ type: 'render', target, anchors, engine: $('engine').value }) }
+  $('engine').onchange = () => { if (!track || busy) return; invalidate(); $('render-state').textContent = 'Engine changed · render to listen and save' }
   $('undo').onclick = () => act(() => { const last = history.pop(); if (last) { ({ target, anchors } = last); invalidate() } })
   $('reset').onclick = () => act(() => change(() => { target = track.f0.slice(); anchors = [[0, 0], [duration, duration]] }))
   for (const [id, kind, amount] of [['shift', 'shift', () => +$('semitones').value], ['vary', 'variation', () => +$('variation').value / 100], ['rise', 'ramp', () => 2], ['fall', 'ramp', () => -2], ['pitch-reset', 'reset', () => 0]])

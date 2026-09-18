@@ -8,7 +8,7 @@ self.onmessage = async ({ data }) => {
       const bytes = await encode(samples, sampleRate)
       self.postMessage({ type: 'loaded', track, bytes }, [bytes.buffer])
     } else {
-      const result = render(samples, sampleRate, track, data.target, data.anchors)
+      const result = render(samples, sampleRate, track, data.target, data.anchors, data.engine)
       const bytes = await encode(result, sampleRate)
       let peak = 0
       for (const x of result) peak = Math.max(peak, Math.abs(x))

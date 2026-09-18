@@ -1,5 +1,7 @@
 import { stretch, wav } from './dsp.js'
 import { speechRun, speechTrack } from './world.js'
+import { cycles } from './cycles.js'
+import { waveformRun } from './waveform.js'
 import { validatePitch, mapTime, clamp } from './model.js'
 
 export function analyze(samples, sampleRate) {
@@ -26,6 +28,16 @@ export function analyze(samples, sampleRate) {
     if (scores.sort((a, b) => a - b)[scores.length >> 1] < .2) track.f0.fill(0, first, last + 1)
   }
   track.onsets = bursts(samples, sampleRate, track)
+  // Cycle marks refine the frame contour: each frame takes the mean pitch of
+  // the cycles it covers, exact through fast inflections.
+  const { marks, fine } = cycles(samples, sampleRate, track, runs(track.f0))
+  track.marks = marks; track.fine = fine
+  for (let i = 0; i < track.f0.length; i++) {
+    if (!track.f0[i]) continue
+    let sum = 0, n = 0
+    for (let g = Math.round((track.times[i] - track.hop / 2) / .001); g <= Math.round((track.times[i] + track.hop / 2) / .001); g++) if (fine[g]) { sum += fine[g]; n++ }
+    if (n) track.f0[i] = sum / n
+  }
   return track
 }
 
@@ -147,7 +159,12 @@ function align(wet, at, output, onset, period) {
   return best
 }
 
-export function render(samples, sampleRate, track, target, anchors) {
+// Engines: 'waveform' keeps the recording's own cycles (best within half an
+// octave), 'vocoder' rebuilds the voice with WORLD (any change), 'auto' picks
+// per run by the largest pitch change in it.
+export const engines = ['auto', 'waveform', 'vocoder']
+export function render(samples, sampleRate, track, target, anchors, engine = 'auto') {
+  if (!engines.includes(engine)) throw Error('Unknown engine.')
   validatePitch(track, target, sampleRate)
   const duration = samples.length / sampleRate
   if (anchors.length < 2 || anchors[0][0] !== 0 || anchors[0][1] !== 0 || Math.abs(anchors.at(-1)[0] - duration) > 1e-6)
@@ -171,11 +188,18 @@ export function render(samples, sampleRate, track, target, anchors) {
     let touched = false
     for (let i = first; i <= last && !touched; i++) touched = target[i] !== track.f0[i] || retimed(track.times[i])
     if (!touched) continue
-    const run = speechRun(samples, sampleRate, track, target, anchors, first, last)
+    let change = 0
+    for (let i = first; i <= last; i++) change = Math.max(change, Math.abs(12 * Math.log2(target[i] / track.f0[i])))
+    const waveform = engine === 'waveform' || (engine === 'auto' && change <= 6)
+    const run = (waveform && track.marks && waveformRun(samples, sampleRate, track, target, anchors, first, last)) || speechRun(samples, sampleRate, track, target, anchors, first, last)
     const onset = Math.round(mapTime(anchors, track.times[first]) * sampleRate), offset = Math.round(mapTime(anchors, track.times[last]) * sampleRate)
-    const start = run.start + (first ? align(run.samples, onset - run.start, output, onset, Math.round(sampleRate / track.f0[first])) : 0)
-    const pitch = track.f0.subarray(first, last + 1).slice().sort()[(last - first) >> 1]
-    const wet = restoreEnvelope(run.samples, samples, sampleRate, anchors, start, pitch)
+    let start = run.start, wet = run.samples
+    if (run.vocoded) {
+      // The vocoder's pulses have their own phase and level contour.
+      start += first ? align(wet, onset - start, output, onset, Math.round(sampleRate / track.f0[first])) : 0
+      const pitch = track.f0.subarray(first, last + 1).slice().sort()[(last - first) >> 1]
+      wet = restoreEnvelope(wet, samples, sampleRate, anchors, start, pitch)
+    }
     for (let j = Math.max(0, onset - start); j < wet.length && start + j < output.length && start + j < offset; j++) {
       const w = Math.min(first ? ease((start + j - onset) / fade) : 1, last < track.f0.length - 1 ? ease((offset - start - j) / fade) : 1)
       output[start + j] = output[start + j] * (1 - w) + wet[j] * w

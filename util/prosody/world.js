@@ -1,6 +1,7 @@
 import createWorld from './world.wasm.js'
 import { resample } from './dsp.js'
-import { pitchAt, mapTime } from './model.js'
+import { mapTime } from './model.js'
+import { fineAt, fineTargetAt, FINE } from './cycles.js'
 const engine = await createWorld()
 
 const alloc = (pointers, length) => {
@@ -38,30 +39,35 @@ export function speechRun(samples, sampleRate, track, target, anchors, first, la
   const lead = first ? periods(track.f0[first]) : 0, tail = last < track.f0.length - 1 ? periods(track.f0[last]) : 0
   const begin = mapTime(anchors, track.times[first]) - lead, finish = mapTime(anchors, track.times[last]) + tail
   const start = Math.round(begin * sampleRate), length = Math.round(finish * sampleRate) - start
-  if (length <= 0) return { samples: new Float32Array(), start }
+  if (length <= 0) return { samples: new Float32Array(), start, vocoded: true }
   // D4C's noise bands require at least 16 kHz. Upsampling adds no information,
   // but gives the reference analysis a valid frequency grid for narrowband audio.
   if (sampleRate < 16000) {
     const up = speechRun(resample(samples, { from: sampleRate, to: 16000 }), 16000, track, target, anchors, first, last)
     const out = new Float32Array(length)
     out.set(resample(up.samples, { from: 16000, to: sampleRate }).subarray(0, length))
-    return { samples: out, start }
+    return { samples: out, start, vocoded: true }
   }
-  const count = Math.ceil(length / sampleRate / step) + 1, inverse = anchors.map(([a, b]) => [b, a])
+  const count = Math.ceil(length / sampleRate / step) + 1, fineCount = Math.ceil(length / sampleRate / FINE) + 1, inverse = anchors.map(([a, b]) => [b, a])
   // WORLD needs local analysis context around the run, not the whole recording.
   const from = Math.max(0, Math.floor((track.times[first] - lead - .1) * sampleRate)), to = Math.min(samples.length, Math.ceil((track.times[last] + tail + .1) * sampleRate))
   const input = samples.subarray(from, to), pointers = []
+  // Beyond the run's edge frames, continue the edge cycle's pitch.
+  const edgeOf = at => track.times[at < track.times[first] ? first : last]
+  const sourceAt = at => fineAt(track, at) || fineAt(track, edgeOf(at))
+  const targetAt = at => fineTargetAt(track, target, at) || fineTargetAt(track, target, edgeOf(at))
   try {
     const x = alloc(pointers, input.length), y = alloc(pointers, length)
-    const times = alloc(pointers, count), source = alloc(pointers, count), edited = alloc(pointers, count)
+    const times = alloc(pointers, count), source = alloc(pointers, count), edited = alloc(pointers, fineCount)
     engine.HEAPF64.set(input, x / 8)
     for (let i = 0; i < count; i++) {
-      const at = mapTime(inverse, begin + i * step), edge = at < track.times[first] ? first : last
+      const at = mapTime(inverse, begin + i * step)
       engine.HEAPF64[times / 8 + i] = at - from / sampleRate
-      engine.HEAPF64[source / 8 + i] = pitchAt(track, track.f0, at) || track.f0[edge]
-      engine.HEAPF64[edited / 8 + i] = pitchAt(track, target, at) || target[edge]
+      engine.HEAPF64[source / 8 + i] = sourceAt(at)
     }
-    engine._world_render(x, input.length, sampleRate, times, source, edited, count, step, y, length)
-    return { samples: Float32Array.from(engine.HEAPF64.subarray(y / 8, y / 8 + length)), start }
+    // Synthesis pitch on a 1 ms grid keeps the cycle-level contour, jitter included.
+    for (let i = 0; i < fineCount; i++) engine.HEAPF64[edited / 8 + i] = targetAt(mapTime(inverse, begin + i * FINE))
+    engine._world_render(x, input.length, sampleRate, times, source, count, step, edited, fineCount, FINE, y, length)
+    return { samples: Float32Array.from(engine.HEAPF64.subarray(y / 8, y / 8 + length)), start, vocoded: true }
   } finally { for (const p of pointers) engine._free(p) }
 }
