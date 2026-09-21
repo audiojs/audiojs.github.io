@@ -1,0 +1,56 @@
+{
+  "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+  "version": "v1.0.0",
+  "entity": {
+    "type": "group",
+    "role": "maintainer",
+    "name": "audiojs",
+    "email": "dfcreative@gmail.com",
+    "description": "audiojs maintains open-source audio libraries for JavaScript. Funding supports maintainer time for the existing packages, their users, documentation and tests.",
+    "webpageUrl": {
+      "url": "https://audiojs.dev/"
+    }
+  },
+  "projects": [
+    {
+      "guid": "audiojs",
+      "name": "audiojs",
+      "description": "An open audio stack for JavaScript: reusable libraries for decoding, encoding, playback, synthesis, analysis and digital signal processing. Projects include web-audio-api, audio, audio-buffer and pcm-convert, alongside the @audio packages. Developers use these libraries to build audio applications in browsers and server runtimes. The website also provides free browser tools for conversion, loudness measurement, noise removal and other audio tasks. Funding will sustain compatibility fixes, issue triage, releases, regression tests and documentation across the existing stack.",
+      "webpageUrl": {
+        "url": "https://audiojs.dev/"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/audiojs",
+        "wellKnown": "https://github.com/audiojs/audiojs.github.io/blob/main/.well-known/funding-manifest-urls"
+      },
+      "licenses": ["spdx:MIT"],
+      "tags": ["audio", "javascript", "web-audio", "signal-processing", "developer-tools"]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "bank",
+        "type": "bank",
+        "description": "Contact dfcreative@gmail.com to arrange a grant payment by bank transfer."
+      },
+      {
+        "guid": "github-sponsors",
+        "type": "payment-provider",
+        "address": "https://github.com/sponsors/audiojs"
+      }
+    ],
+    "plans": [
+      {
+        "guid": "annual-maintenance",
+        "status": "active",
+        "name": "Annual maintenance",
+        "description": "Support part-time maintenance of the existing audiojs stack for one year: investigate and fix reported bugs, maintain browser and server-runtime compatibility, improve regression and conformance tests, review contributions, publish releases and keep usage documentation current.",
+        "amount": 25000,
+        "currency": "USD",
+        "frequency": "yearly",
+        "channels": ["bank", "github-sponsors"]
+      }
+    ]
+  }
+}
