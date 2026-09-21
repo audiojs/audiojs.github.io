@@ -128,7 +128,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=0cef0e67">
-  <link rel="modulepreload" href="/util/util.js?v=cc0aa73d">
+  <link rel="modulepreload" href="/util/util.js?v=8cf51a4e">
 </head>
 <body>
   <header class="top">
@@ -169,8 +169,6 @@
         <li>Extract audio from a WebM or MKV meeting recording</li>
         <li>Convert audio between formats without installing FFmpeg</li>
       </ul>
-      <h3>Is the video uploaded anywhere?</h3>
-      <p>No. There is no upload, account, watermark or size limit. Close the tab and nothing remains. The decoder and encoder are open source: <a href="https://github.com/audiojs/decode" target="_blank" rel="noopener">read the decoder</a>, <a href="https://github.com/audiojs/encode" target="_blank" rel="noopener">read the encoder</a>.</p>
       <section class="faq" aria-label="Questions">
         <h3>Questions</h3>
         <details><summary>Is the video uploaded anywhere?</summary><p>No. Decoding and encoding run in your browser with open-source JavaScript and WebAssembly codecs. The file never leaves your device, so there is no size limit, no queue and nothing to delete afterwards.</p></details>
@@ -206,7 +204,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=cc0aa73d'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=8cf51a4e'
     tool({ process: '/util/extract-audio/process.js?v=85c49385', ...{"formats":["mp3","wav","flac","m4a","alac","ogg","opus","aac"]} })
   </script>
 </body>

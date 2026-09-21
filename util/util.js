@@ -221,7 +221,7 @@ export function tool(cfg) {
     } catch (e) {
       if (id !== run) return
       console.error(e)
-      ui.error(`Can't read this file: no decoder for it here or in your browser. Try a different container.`)
+      ui.error(`Can't read this file: no decoder for this format. Try a different container.`)
     }
   }
 

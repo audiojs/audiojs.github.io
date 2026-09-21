@@ -25,7 +25,7 @@ export default {
       <label class="replace-only" hidden><input type="checkbox" name="loop"> Loop the audio to fill the video</label>
     </form>
     <div class="replace-only" id="dropBWrap" hidden>${drop('Drop the replacement audio here', 'audio/*,.m4a,.flac,.opus,.wma,.amr,.caf,.aiff', '2')}</div>
-    <p class="replace-only hint" hidden>AAC needs a Chromium or Safari browser (WebCodecs) and plays in every MP4 player. Opus is smaller and plays in modern browsers and VLC. ALAC and FLAC are lossless; ALAC is the safer pick on Apple players, FLAC has the narrowest support of the four. Unchecked, the audio is trimmed to the video length, or padded with silence if it runs short; checked, it loops instead.</p>
+    <p class="replace-only hint" hidden>AAC needs a Chromium or Safari browser (WebCodecs) and plays in every MP4 player. Opus is smaller and plays in modern browsers and VLC. ALAC and FLAC are lossless; ALAC is the safer pick on Apple players, FLAC has the narrowest support of the four. Without looping, the audio is trimmed to the video length, or padded with silence if it runs short.</p>
     <section class="panel" id="panel" hidden>
       <div class="row">
         <div class="file"><div class="n" id="name"></div><div class="m" id="meta"></div></div>

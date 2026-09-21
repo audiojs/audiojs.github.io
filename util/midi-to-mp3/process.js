@@ -42,7 +42,7 @@ export default async function process(a, o, ui) {
     report: [
       { k: 'Notes', v: String(parsed.notes.length) },
       { k: 'Tracks', v: String(parsed.tracks.length) },
-      { k: 'Instruments used', cls: 'list wide', v: [...names].join(' · '), note: 'Every voice is synthesized (FM, Karplus–Strong, modal resonators) from its General MIDI program number — no soundfont, no samples.' },
+      { k: 'Instruments used', cls: 'list wide', v: [...names].join(' · '), note: 'Every voice is synthesized (FM, Karplus–Strong, modal resonators) from its General MIDI program number.' },
       { k: 'Length', v: fmtTime(duration) },
       { k: 'Render time', v: Math.round(ms) + '<small>ms</small>' },
     ]

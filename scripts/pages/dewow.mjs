@@ -76,7 +76,7 @@ export default async function process(a, o, ui) {
     audio: { channelData, sampleRate: fs }, suffix: '-dewow',
     viz: { width: W, height: H, data: ctx.getImageData(0, 0, W, H).data },
     report: [
-      { k: 'Wow', v: pct(before.wowPeak) + ' → ' + pct(after.wowPeak) + '<small>% peak</small>', cls: after.wowPeak < before.wowPeak ? 'ok' : '', note: 'Peak deviation from nominal speed, unweighted (not the IEC 60386 figure). Slow drift, below about 6 Hz.' },
+      { k: 'Wow', v: pct(before.wowPeak) + ' → ' + pct(after.wowPeak) + '<small>% peak</small>', cls: after.wowPeak < before.wowPeak ? 'ok' : '', note: 'Peak deviation from nominal speed, unweighted. Slow drift, below about 6 Hz.' },
       { k: 'Flutter', v: pct(before.flutterPeak) + ' → ' + pct(after.flutterPeak) + '<small>% peak</small>', cls: after.flutterPeak < before.flutterPeak ? 'ok' : '', note: 'Peak deviation, unweighted. Faster wobble; this analysis only sees it up to about 40 Hz.' },
       { k: 'Confidence', v: (before.confidence * 100).toFixed(0) + '<small>%</small>', cls: before.confidence < 0.5 ? 'warn' : '', note: before.confidence < 0.5 ? LOW_CONF : 'Fraction of the recording with a usable speed reading.' },
       { k: 'Speed range', v: (lo * 100).toFixed(1) + '% – ' + (hi * 100).toFixed(1) + '<small>% of nominal</small>', note: 'The transport speed found in the source, before correction — 100% is nominal.' },

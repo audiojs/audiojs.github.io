@@ -6,7 +6,7 @@ export default {
   slug: 'transcribe', name: 'Transcribe audio to text and subtitles', short: 'Whisper speech-to-text; TXT, SRT, VTT; sentence or word timestamps',
   title: 'Transcribe audio to text and subtitles: free speech-to-text in your browser',
   description: 'Transcribe audio or video to text, SRT and VTT in your browser with Whisper. The model downloads once from huggingface.co, then runs offline. No upload.',
-  lead: 'Drop an audio or video file. Get a transcript plus SRT and VTT subtitle files, entirely on your device.',
+  lead: 'Drop an audio or video file. Get a transcript plus SRT and VTT subtitle files.',
   powered: ['@audio/neural-asr', '@audio/subtitle'], repo: 'https://github.com/audiojs/neural',
   body: drop('Drop an audio or video file here') + `
     <form class="opts" id="opts">
@@ -75,7 +75,7 @@ export default async function process(a, o, ui) {
   const html = result.segments.length ? result.segments.map(s => escHtml(s.text.trim())).join('<br>') : '(no speech detected)'
   return {
     report: [
-      { k: 'Language', v: LANG_NAME[language] || language, note: 'Whisper does not detect language automatically; this used the language picked above. Auto sends English.' },
+      { k: 'Language', v: LANG_NAME[language] || language },
       { k: 'Duration processed', v: fmtTime(a.duration) },
       { k: 'Words', v: wordCount },
       { k: 'Model', v: (MODEL_LABEL[baseModel] || baseModel) + '<small>' + secs.toFixed(1) + 's</small>', note: wantWords ? 'Word timestamps switched the model to ' + model + ', the export with per-word alignment data.' : 'Time includes the model download on first use; later runs on the same model are much faster.' },

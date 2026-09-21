@@ -55,9 +55,7 @@ export default async function process(a) { return { audio: a } }
         <li>Pull the soundtrack out of a MOV from a phone or camera</li>
         <li>Extract audio from a WebM or MKV meeting recording</li>
         <li>Convert audio between formats without installing FFmpeg</li>
-      </ul>
-      <h3>Is the video uploaded anywhere?</h3>
-      <p>No. There is no upload, account, watermark or size limit. Close the tab and nothing remains. The decoder and encoder are open source: <a href="https://github.com/audiojs/decode" target="_blank" rel="noopener">read the decoder</a>, <a href="https://github.com/audiojs/encode" target="_blank" rel="noopener">read the encoder</a>.</p>`,
+      </ul>`,
   },
   {
     slug: 'convert-audio', name: 'Audio converter', short: 'MP3, WAV, FLAC, M4A, ALAC, WavPack, OGG, Opus, AAC, AIFF, CAF, WebM, QOA; reads APE, TTA, Musepack, DSD, tracker modules too',
@@ -360,7 +358,7 @@ export default async function process(a, o) {
   const [L, R] = [a.channelData[0].slice(), a.channelData[1].slice()]
   const out = (o.mode === 'isolate' ? isolate : remove)([L, R])
   return { audio: { channelData: out, sampleRate: a.sampleRate }, suffix: o.mode === 'isolate' ? '-vocals' : '-karaoke',
-report: [{ k: o.mode === 'isolate' ? 'Kept' : 'Removed', v: 'center channel', note: 'Mid/side separation: whatever is panned dead center (usually the lead vocal, often also bass and kick) is ' + (o.mode === 'isolate' ? 'kept' : 'cancelled') + '. Wide reverb and doubled vocals remain. This is the classic phase-cancellation method, not AI source separation.' }] }
+report: [{ k: o.mode === 'isolate' ? 'Kept' : 'Removed', v: 'center channel', note: 'Mid/side separation: whatever is panned dead center (usually the lead vocal, often also bass and kick) is ' + (o.mode === 'isolate' ? 'kept' : 'cancelled') + '. Wide reverb and doubled vocals remain.' }] }
 }
 `,
     tool: { formats: ['mp3', 'wav', 'flac', 'ogg', 'opus', 'aac'], busy: 'Separating center and sides…' },
@@ -713,7 +711,7 @@ for (let y = 0; y < H; y++) {
         ]
         report.replaceChildren(...rows.map(r => el('div', {}, el('div', { class: 'k' }, r.k), el('div', { class: 'v', html: r.v }), el('div', { class: 'note' }, r.note))))
         viz.replaceChildren(canvas); panel.hidden = false
-        msg.textContent = 'Done. Press start to measure again from another spot.'
+        msg.textContent = 'Done.'
       } catch (e) { msg.textContent = e.message === 'rate' ? 'The microphone runs at a different sample rate than playback; try another browser.' : (e.message || 'Measurement failed') }
       start.disabled = false
     })`,

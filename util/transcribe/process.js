@@ -40,7 +40,7 @@ export default async function process(a, o, ui) {
   const html = result.segments.length ? result.segments.map(s => escHtml(s.text.trim())).join('<br>') : '(no speech detected)'
   return {
     report: [
-      { k: 'Language', v: LANG_NAME[language] || language, note: 'Whisper does not detect language automatically; this used the language picked above. Auto sends English.' },
+      { k: 'Language', v: LANG_NAME[language] || language },
       { k: 'Duration processed', v: fmtTime(a.duration) },
       { k: 'Words', v: wordCount },
       { k: 'Model', v: (MODEL_LABEL[baseModel] || baseModel) + '<small>' + secs.toFixed(1) + 's</small>', note: wantWords ? 'Word timestamps switched the model to ' + model + ', the export with per-word alignment data.' : 'Time includes the model download on first use; later runs on the same model are much faster.' },

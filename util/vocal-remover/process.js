@@ -9,5 +9,5 @@ export default async function process(a, o) {
   const [L, R] = [a.channelData[0].slice(), a.channelData[1].slice()]
   const out = (o.mode === 'isolate' ? isolate : remove)([L, R])
   return { audio: { channelData: out, sampleRate: a.sampleRate }, suffix: o.mode === 'isolate' ? '-vocals' : '-karaoke',
-report: [{ k: o.mode === 'isolate' ? 'Kept' : 'Removed', v: 'center channel', note: 'Mid/side separation: whatever is panned dead center (usually the lead vocal, often also bass and kick) is ' + (o.mode === 'isolate' ? 'kept' : 'cancelled') + '. Wide reverb and doubled vocals remain. This is the classic phase-cancellation method, not AI source separation.' }] }
+report: [{ k: o.mode === 'isolate' ? 'Kept' : 'Removed', v: 'center channel', note: 'Mid/side separation: whatever is panned dead center (usually the lead vocal, often also bass and kick) is ' + (o.mode === 'isolate' ? 'kept' : 'cancelled') + '. Wide reverb and doubled vocals remain.' }] }
 }

@@ -1,3 +1,10 @@
+## Audarya dhama - speech control demo
+
+* [ ] Normalize intonation
+* [ ] Questions - normalize intonation of questions
+* [ ] Rhythmization
+* [ ] Claude code skill
+
 ## Now (ordered)
 
 1. [~] **Package baseline and infrastructure consolidation** — audit `~/projects/@audio`, fix docs/examples and type gaps, align npm artifacts and exports, and verify clean installed consumers. [Baseline and ordered gaps](package-baseline.md). Native export/release waits for JZ v1; no interim compiler pin. Adapter work: `@audio/compile/.work/todo.md`. No registry release is complete until the installed public packages pass the same check.

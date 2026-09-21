@@ -57,7 +57,7 @@ export default async function process(a, o, ui) {
   const removedPct = duration > 0 ? out.removed / duration * 100 : 0
 
   const report = [
-    { k: 'Speech found', v: speechPct.toFixed(0) + '<small>%</small>', note: speech.length + ' phrase' + (speech.length === 1 ? '' : 's') + ' detected by voice activity detection, ' + speechSec.toFixed(1) + 's of ' + fmtTime(duration) + ' total.' },
+    { k: 'Speech found', v: speechPct.toFixed(0) + '<small>%</small>', note: speech.length + ' phrase' + (speech.length === 1 ? '' : 's') + ', ' + speechSec.toFixed(1) + 's of ' + fmtTime(duration) + ' total.' },
     { k: 'Pauses cut', v: String(cuts.length), note: cuts.length ? MODE_NOTE[mode](minSilence, mode === 'shorten' ? maxSilence : pad) : (mode === 'trim' ? 'No silence at the very start or end of this file.' : 'No pause in this file is longer than ' + minSilence + 's.') },
     { k: 'Removed', v: out.removed.toFixed(2) + 's <small>(' + removedPct.toFixed(0) + '%)</small>' },
     { k: 'New length', v: fmtTime(newDuration) },

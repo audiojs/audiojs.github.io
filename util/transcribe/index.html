@@ -128,7 +128,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=0cef0e67">
-  <link rel="modulepreload" href="/util/util.js?v=cc0aa73d">
+  <link rel="modulepreload" href="/util/util.js?v=8cf51a4e">
 </head>
 <body>
   <header class="top">
@@ -140,7 +140,7 @@
   <main class="inner">
     <section class="hero">
       <h1>Transcribe audio to text and subtitles</h1>
-      <p>Drop an audio or video file. Get a transcript plus SRT and VTT subtitle files, entirely on your device.</p>
+      <p>Drop an audio or video file. Get a transcript plus SRT and VTT subtitle files.</p>
     </section>
 
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
@@ -219,8 +219,8 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=cc0aa73d'
-    tool({ process: '/util/transcribe/process.js?v=3d332cce', ...{"busy":"Loading the speech model…"} })
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=8cf51a4e'
+    tool({ process: '/util/transcribe/process.js?v=8f6f84bf', ...{"busy":"Loading the speech model…"} })
   </script>
 </body>
 </html>

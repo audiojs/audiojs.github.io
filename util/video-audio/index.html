@@ -128,7 +128,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=0cef0e67">
-  <link rel="modulepreload" href="/util/util.js?v=cc0aa73d">
+  <link rel="modulepreload" href="/util/util.js?v=8cf51a4e">
 </head>
 <body>
   <header class="top">
@@ -167,7 +167,7 @@
       <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
       <input type="file" id="file2" accept="audio/*,.m4a,.flac,.opus,.wma,.amr,.caf,.aiff">
     </div></div>
-    <p class="replace-only hint" hidden>AAC needs a Chromium or Safari browser (WebCodecs) and plays in every MP4 player. Opus is smaller and plays in modern browsers and VLC. ALAC and FLAC are lossless; ALAC is the safer pick on Apple players, FLAC has the narrowest support of the four. Unchecked, the audio is trimmed to the video length, or padded with silence if it runs short; checked, it loops instead.</p>
+    <p class="replace-only hint" hidden>AAC needs a Chromium or Safari browser (WebCodecs) and plays in every MP4 player. Opus is smaller and plays in modern browsers and VLC. ALAC and FLAC are lossless; ALAC is the safer pick on Apple players, FLAC has the narrowest support of the four. Without looping, the audio is trimmed to the video length, or padded with silence if it runs short.</p>
     <section class="panel" id="panel" hidden>
       <div class="row">
         <div class="file"><div class="n" id="name"></div><div class="m" id="meta"></div></div>
@@ -233,7 +233,7 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=cc0aa73d'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=8cf51a4e'
     const remuxLib = import('https://esm.sh/@audio/encode-mp4@1.0.0/remux').then(m => m.remux)
     const decodeLib = import('https://esm.sh/@audio/decode@3.15.0').then(m => m.default)
 

@@ -128,7 +128,7 @@
   <link rel="preconnect" href="https://esm.sh">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/util/util.css?v=0cef0e67">
-  <link rel="modulepreload" href="/util/util.js?v=cc0aa73d">
+  <link rel="modulepreload" href="/util/util.js?v=8cf51a4e">
 </head>
 <body>
   <header class="top">
@@ -209,12 +209,12 @@
   </main>
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=cc0aa73d'
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=8cf51a4e'
     const form = $('opts'), refRow = $('refRow'), mode = form.querySelector('[name=mode]')
     const syncMode = () => refRow.hidden = mode.value !== 'reference'
     mode.addEventListener('change', syncMode)
     syncMode()
-    tool({ process: '/util/dewow/process.js?v=3618bc6a', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"defaultFormat":"wav","busy":"Tracking pitch drift…"} })
+    tool({ process: '/util/dewow/process.js?v=d2edb866', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"defaultFormat":"wav","busy":"Tracking pitch drift…"} })
   </script>
 </body>
 </html>

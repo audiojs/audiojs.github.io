@@ -135,8 +135,8 @@ keyConfidence = k.confidence
   return {
 report: [
   { k: 'Notes found', v: String(notes.length) },
-  { k: 'Tempo used', v: bpm + '<small>BPM</small>', note: tempoAuto ? (tempoConfidence < 0.4 ? 'Detected automatically, low confidence — set it manually if the notes look mistimed.' : 'Detected automatically from the beat.') : 'Set manually.' },
-  { k: 'Key', v: keyLabel(keyStr) + (keyAuto ? '<small>' + Math.round(keyConfidence * 100) + '% sure</small>' : ''), note: keyAuto ? 'Detected from chroma frames over the first two minutes; used to spell the notation.' : 'Set manually.' },
+  { k: 'Tempo used', v: bpm + '<small>BPM</small>', note: tempoAuto && (tempoConfidence < 0.4 ? 'Detected automatically, low confidence — set it manually if the notes look mistimed.' : 'Detected automatically from the beat.') },
+  { k: 'Key', v: keyLabel(keyStr) + (keyAuto ? '<small>' + Math.round(keyConfidence * 100) + '% sure</small>' : ''), note: keyAuto && 'Detected from chroma frames over the first two minutes; used to spell the notation.' },
   { k: 'Pitch range', v: name(lo) + '–' + name(hi) },
   { k: 'First bars', cls: 'list wide', v: '<code>' + esc(bars) + '</code>', note: 'ABC notation. Polyphonic recognition is approximate: best on monophonic melodies, piano and clean guitar. For a full mix, use an ML transcription tool instead.' },
 ],
