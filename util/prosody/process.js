@@ -153,9 +153,9 @@ function align(wet, at, output, onset, period) {
   return best
 }
 
-// Engines: 'waveform' keeps the recording's own cycles (best within half an
-// octave), 'vocoder' rebuilds the voice with WORLD (any change), 'auto' picks
-// per run by the largest pitch change in it.
+// Engines: 'waveform' keeps the recording's own cycles (within an octave),
+// 'vocoder' rebuilds the voice with WORLD (any change), 'auto' picks per run
+// by the largest pitch change in it and the reliability of its cycles.
 export const engines = ['auto', 'waveform', 'vocoder']
 export function render(samples, sampleRate, track, target, anchors, engine = 'auto') {
   if (!engines.includes(engine)) throw Error('Unknown engine.')
@@ -182,12 +182,12 @@ export function render(samples, sampleRate, track, target, anchors, engine = 'au
     let touched = false
     for (let i = first; i <= last && !touched; i++) touched = target[i] !== track.f0[i] || retimed(track.times[i])
     if (!touched) continue
-    // Auto: the recording's own cycles within half an octave, where they are
+    // Auto: the recording's own cycles within an octave, where they are
     // reliable (median periodicity of the run at least 0.5); the vocoder beyond.
     let change = 0
     for (let i = first; i <= last; i++) change = Math.max(change, Math.abs(12 * Math.log2(target[i] / track.f0[i])))
     const reliable = !track.periodicity || track.periodicity.subarray(first, last + 1).slice().sort()[(last - first) >> 1] >= .5
-    const waveform = engine === 'waveform' || (engine === 'auto' && change <= 6 && reliable)
+    const waveform = engine === 'waveform' || (engine === 'auto' && change <= 12 && reliable)
     const run = (waveform && track.marks && waveformRun(samples, sampleRate, track, target, anchors, first, last)) || speechRun(samples, sampleRate, track, target, anchors, first, last)
     const onset = Math.round(mapTime(anchors, track.times[first]) * sampleRate), offset = Math.round(mapTime(anchors, track.times[last]) * sampleRate)
     let start = run.start, wet = run.samples

@@ -102,7 +102,8 @@ function restoreFormants(out, start, samples, sampleRate, track, anchors, first,
     if (Math.abs(r - 1) < 1e-9) { for (let i = 0; i < size; i++) if (position + i >= 0 && position + i < out.length) result[position + i] += re[i] * window[i]; continue }
     fft(re, im)
     for (let b = 0; b <= half; b++) {
-      const hz = b * sampleRate / size, gain = clamp(Math.exp((level(row, hz) - level(row, hz / r)) / 2), .0625, 16)
+      // Attenuation is safe at any depth; only amplification of an envelope valley is bounded.
+      const hz = b * sampleRate / size, gain = clamp(Math.exp((level(row, hz) - level(row, hz / r)) / 2), 1e-4, 32)
       re[b] *= gain; im[b] *= gain
       if (b && b < half) { re[size - b] *= gain; im[size - b] *= gain }
     }

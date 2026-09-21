@@ -60,8 +60,10 @@ windowed-sinc delay with a lowpass at Nyquist / r. Timing changes repeat or skip
 cycles at their own spacing, which is comb-free. Pulse shapes, breath and jitter
 are the voice's own, and unchanged cycles reproduce the source bit-exactly. On a
 steady synthetic voice the remaining spectral error is 1–2 dB, the envelope
-estimate's own, and grows with the shift; beyond about half an octave, repeated
-or thinned cycles start to sound.
+estimate's own, up to an octave; the correction attenuates freely and bounds
+only amplification, since a clamp on attenuation once left harmonics 5–18 dB too
+loud at +8 st. Its roughness stays at the source's own even at an octave, where
+the vocoder's sub-harmonic energy rises by about 5 dB.
 
 The vocoder engine (`world.js`) rebuilds the run with WORLD from the source
 spectral envelope (CheapTrick) and aperiodicity (D4C) at the edited pitch on a
@@ -72,7 +74,9 @@ between the higher ones, so a vocoded voice came out harmonic above 1 kHz where
 the original was breathy: the metallic tell. The engine now renders a reference
 copy-synthesis of the run's context at the source pitch, measures its waveform
 periodicity per band (`noise.js`) against the source's at the same frames, and
-adds the excess as noise power in the edited render. On real voices this halves
+adds the excess as noise power in the edited render, above 1 kHz only, since
+noise added in the low band modulates the fundamental cycle to cycle and
+sounds rough. On real voices this halves
 the high-band periodicity excess at the 90th percentile and leaves the median
 at zero; WORLD generates its noise per pulse, so the noisiest frames cannot be
 matched fully, and a second correction pass buys little for twice the cost. WORLD drives unvoiced stretches with a 500 Hz noise-pulse clock whose
@@ -84,8 +88,8 @@ periods, since WORLD's analysis window smears onsets. It handles any change but
 is audibly a vocoder on breathy or creaky voices.
 
 Auto, the default, uses the waveform engine for runs whose largest pitch change
-is within six semitones and whose median cycle periodicity is at least 0.5, and
-the vocoder otherwise; on unreliable cycles overlap-add doubles pulses.
+is within an octave and whose median cycle periodicity is at least 0.5, and the
+vocoder otherwise; on unreliable cycles overlap-add doubles pulses.
 
 Timing edits warp the analysis positions given to WORLD, so stretched voice keeps
 its pitch and harmonic structure with no grain repetition. Unvoiced audio in a
@@ -100,8 +104,11 @@ Rebuild the pinned WASM engine with `node scripts/prosody-world.mjs <WORLD check
 
 ## Limits
 
-One voice, mono output. Intonation scales semitone deviations around the
-selection median (0–200%). Its Smoothing disclosure adjusts a 0–200 ms cosine
+One voice, mono output. Intonation below 100% scales semitone deviations toward
+the selection median; above 100% it scales the intervals above the selection's
+pitch floor (10th percentile) and leaves the valleys, as expressive speech does.
+Symmetric exaggeration drove a low voice below 80 Hz, where every engine and the
+voice itself turn creaky. Its Smoothing disclosure adjusts a 0–200 ms cosine
 window, default 60 ms, within voiced regions. At 100%, Apply smooths without
 scaling; set smoothing to 0 for an exact no-op. Transposition and point dragging
 have no source-relative octave cap; frequency limits reflect the synthesis floor

@@ -1,7 +1,7 @@
 import createWorld from './world.wasm.js'
 import { resample } from './dsp.js'
 import { mapTime, pitchAt } from './model.js'
-import { bandPeriodicity, spread } from './noise.js'
+import { bandPeriodicity, spread, BANDS } from './noise.js'
 const FINE = .001
 const engine = await createWorld()
 
@@ -77,7 +77,9 @@ export function speechRun(samples, sampleRate, track, target, anchors, first, la
     const rebuilt = bandPeriodicity(Float32Array.from(engine.HEAPF64.subarray(copy / 8, copy / 8 + input.length)), sampleRate, centers, gridPitch)
     // WORLD generates noise per pulse, so the noisiest frames cannot be matched
     // fully; a second correction pass buys little for twice the cost.
-    const missing = own.map((row, b) => row.map((p, k) => Math.sqrt(Math.max(0, rebuilt[b][k] - p))))
+    // Only above 1 kHz: the low band never lacked noise, and noise added there
+    // modulates the fundamental cycle to cycle and sounds rough.
+    const missing = own.map((row, b) => row.map((p, k) => BANDS[b][1] <= 1000 ? 0 : Math.sqrt(Math.max(0, rebuilt[b][k] - p))))
     // Edited pass along the output timeline.
     const y = alloc(pointers, length), times = alloc(pointers, count), source = alloc(pointers, count), edited = alloc(pointers, fineCount), extra = alloc(pointers, count * bins)
     const at = Array.from({ length: count }, (_, i) => mapTime(inverse, begin + i * step))
@@ -113,3 +115,4 @@ export function speechEnvelope(samples, sampleRate, track, first, last) {
     return { frames: Float32Array.from(engine.HEAPF64.subarray(out / 8, out / 8 + count * bins)), bins, count, step, from, rate, fft }
   } finally { for (const p of pointers) engine._free(p) }
 }
+

@@ -82,8 +82,13 @@ export function transform(track, target, start, end, kind, amount, smoothing = 0
   const ids = []
   for (let i = 0; i < target.length; i++) if (track.f0[i] && track.times[i] >= start && track.times[i] <= end) ids.push(i)
   if (!ids.length) throw Error('No voiced pitch in this selection. Select a vowel or a longer phrase.')
+  // Flattening pulls toward the median. Exaggeration raises the peaks above the
+  // pitch floor (the 10th percentile) and leaves the valleys, as expressive
+  // speech does: a larynx has a floor, and symmetric scaling drives a low voice
+  // into creak.
   const notes = ids.map(i => hzToNote(target[i])).sort((a, b) => a - b)
-  const center = notes[notes.length >> 1], out = target.slice()
+  const median = notes[notes.length >> 1], floor = notes[Math.floor(notes.length * .1)], out = target.slice()
+  const scale = note => kind === 'variation' && amount > 1 ? (note > floor ? floor + (note - floor) * amount : note) : median + (note - median) * amount
   const first = ids[0], last = ids.at(-1), fade = Math.min(.08, (end - start) / 2)
   const ease = x => .5 - .5 * Math.cos(Math.PI * clamp(x, 0, 1))
   for (const i of ids) {
@@ -101,7 +106,7 @@ export function transform(track, target, start, end, kind, amount, smoothing = 0
           sum += hzToNote(target[j]) * w; weight += w
         }
       }
-      note = center + (sum / weight - center) * amount
+      note = scale(sum / weight)
     }
     else if (kind === 'ramp') note += amount * (track.times[i] - start) / (end - start)
     else if (kind === 'reset') { out[i] = track.f0[i]; continue }

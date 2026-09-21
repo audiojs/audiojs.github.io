@@ -291,10 +291,12 @@ test('waveform engine: unchanged cycles reproduce the source; pitch, timing, rat
   assert.ok(Math.sqrt(diff / ref) < .01, `cycles after a hairline edit are the source, delayed by a fraction of a sample (${Math.sqrt(diff / ref).toFixed(4)})`)
   assert.deepEqual(same.subarray(0, Math.round(.5 * fs)), a.subarray(0, Math.round(.5 * fs)))
   const target = transform(t, t.f0, .6, 1.4, 'shift', 3), out = render(a, fs, t, target, anchors, 'waveform')
-  assert.deepEqual(out, render(a, fs, t, target, anchors, 'auto'), 'auto picks the waveform engine within half an octave')
+  assert.deepEqual(out, render(a, fs, t, target, anchors, 'auto'), 'auto picks the waveform engine for a small change')
   assert.notDeepEqual(out, render(a, fs, t, target, anchors, 'vocoder'))
-  const big = transform(t, t.f0, .6, 1.4, 'shift', 9)
-  assert.deepEqual(render(a, fs, t, big, anchors, 'auto'), render(a, fs, t, big, anchors, 'vocoder'), 'auto picks the vocoder beyond six semitones')
+  const big = transform(t, t.f0, .6, 1.4, 'shift', 15)
+  assert.deepEqual(render(a, fs, t, big, anchors, 'auto'), render(a, fs, t, big, anchors, 'vocoder'), 'auto picks the vocoder beyond an octave')
+  const octave = transform(t, t.f0, .6, 1.4, 'shift', 11)
+  assert.deepEqual(render(a, fs, t, octave, anchors, 'auto'), render(a, fs, t, octave, anchors, 'waveform'), 'auto keeps the waveform engine up to an octave')
   assert.ok(Math.abs(st(periodHz(out, fs, 1, 180 * 2 ** (3 / 12)), 180 * 2 ** (3 / 12))) < .02, 'shifted pitch is exact')
   assert.deepEqual(out.subarray(0, Math.round(t.times[first] * fs)), a.subarray(0, Math.round(t.times[first] * fs)))
   assert.deepEqual(out.subarray(Math.round(t.times[last] * fs)), a.subarray(Math.round(t.times[last] * fs)))
@@ -329,7 +331,8 @@ test('waveform engine keeps formants: harmonic amplitudes match a voice produced
     return out
   }
   const x = voice(155), t = analyze(x, rate)
-  for (const [shift, limit] of [[3, 1.6], [5, 2.6]]) {
+  // Before the correction's lower clamp was lifted, +8 st measured 7.2 dB.
+  for (const [shift, limit] of [[3, 1.6], [5, 1.6], [8, 1.6], [12, 1.6]]) {
     const f1 = 155 * 2 ** (shift / 12), truth = voice(f1), out = render(x, rate, t, transform(t, t.f0, 0, 2, 'shift', shift), [[0, 0], [2, 2]], 'waveform')
     const errors = [.5, .8, 1.1, 1.4].map(time => harmonics(out, f1, time).map((v, h) => v - harmonics(truth, f1, time)[h]))
     const mean = errors[0].map((_, h) => errors.reduce((sum, e) => sum + e[h], 0) / errors.length), center = mean.reduce((a, b) => a + b) / mean.length
@@ -399,14 +402,21 @@ test('rules and point edits preserve unvoiced gaps and remain non-destructive', 
   assert.throws(() => transform(t, t.f0, .039, .041, 'shift', 1), /No voiced/)
 })
 
-test('intonation scales pitch intervals around the median; transposition preserves them', () => {
+test('intonation flattens toward the median and exaggerates above the floor; transposition preserves intervals', () => {
   const track = { times: Float32Array.of(0, .1, .2, .3, .4), f0: Float32Array.of(100, 150, 200, 0, 120) }
   const source = track.f0.slice()
-  for (const factor of [0, .5, 1, 1.5, 2]) {
+  for (const factor of [0, .5, 1]) {
     const out = transform(track, source, 0, .3, 'variation', factor)
     for (let i = 0; i < 3; i++) assert.ok(Math.abs(12 * Math.log2(out[i] / 150) - factor * 12 * Math.log2(source[i] / 150)) < 1e-5)
     assert.equal(out[1], 150); assert.equal(out[3], 0); assert.equal(out[4], 120)
     if (factor === 1) assert.deepEqual(out, source)
+  }
+  // Exaggeration keeps the floor (the lowest note here) and scales the intervals above it.
+  for (const factor of [1.5, 2]) {
+    const out = transform(track, source, 0, .3, 'variation', factor)
+    assert.equal(out[0], 100, 'the floor stays')
+    for (let i = 1; i < 3; i++) assert.ok(Math.abs(12 * Math.log2(out[i] / 100) - factor * 12 * Math.log2(source[i] / 100)) < 1e-5, `interval above the floor × ${factor}`)
+    assert.equal(out[3], 0); assert.equal(out[4], 120)
   }
   const shifted = transform(track, source, 0, .3, 'shift', -3)
   for (let i = 0; i < 3; i++) assert.ok(Math.abs(12 * Math.log2(shifted[i] / source[i]) + 3) < 1e-5)
