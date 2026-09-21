@@ -98,15 +98,20 @@ function restoreFormants(out, start, samples, sampleRate, track, anchors, first,
     const position = clamp(hz / envelope.rate * envelope.fft, 0, envelope.bins - 1), a = Math.floor(position), f = position - a
     return row[a] * (1 - f) + row[Math.min(envelope.bins - 1, a + 1)] * f
   }
+  // The correction ramps in over the run's first and last 20 ms: there the
+  // envelope window straddles silence and vowel, and a gain from that ratio
+  // lifted soft onsets by up to 5 dB.
+  const onsetAt = mapTime(anchors, track.times[first]) * sampleRate - start, offsetAt = mapTime(anchors, track.times[last]) * sampleRate - start, edge = .02 * sampleRate
   for (let position = hop - size; position < out.length; position += hop) {
     const at = mapTime(inverse, (start + position + half) / sampleRate), r = ratio(at)
+    const ramp = clamp(Math.min((position + half - onsetAt) / edge, (offsetAt - position - half) / edge), 0, 1)
     const frame = clamp(Math.round((at - envelope.from) / envelope.step), 0, envelope.count - 1), row = logRow(frame)
     for (let i = 0; i < size; i++) { re[i] = (out[position + i] || 0) * window[i]; im[i] = 0 }
     if (Math.abs(r - 1) < 1e-9) { for (let i = 0; i < size; i++) if (position + i >= 0 && position + i < out.length) result[position + i] += re[i] * window[i]; continue }
     fft(re, im)
     for (let b = 0; b <= half; b++) {
       // Attenuation is safe at any depth; only amplification of an envelope valley is bounded.
-      const hz = b * sampleRate / size, gain = clamp(Math.exp((level(row, hz) - level(row, hz / r)) / 2), 1e-4, 32)
+      const hz = b * sampleRate / size, gain = clamp(Math.exp(ramp * (level(row, hz) - level(row, hz / r)) / 2), 1e-4, 32)
       re[b] *= gain; im[b] *= gain
       if (b && b < half) { re[size - b] *= gain; im[size - b] *= gain }
     }

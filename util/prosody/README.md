@@ -65,8 +65,9 @@ windowed-sinc delay with a lowpass at Nyquist / r. Timing changes repeat or skip
 cycles at their own spacing, which is comb-free. Pulse shapes, breath and jitter
 are the voice's own, and unchanged cycles reproduce the source bit-exactly. On a
 steady synthetic voice the remaining spectral error is 1–2 dB, the envelope
-estimate's own, up to an octave; the correction attenuates freely and bounds
-only amplification, since a clamp on attenuation once left harmonics 5–18 dB too
+estimate's own, up to an octave; the correction ramps in over a run's first
+and last 20 ms, where the envelope window straddles silence and vowel, and
+attenuates freely while bounding only amplification, since a clamp on attenuation once left harmonics 5–18 dB too
 loud at +8 st. Its roughness stays at the source's own even at an octave, where
 the vocoder's sub-harmonic energy rises by about 5 dB.
 
