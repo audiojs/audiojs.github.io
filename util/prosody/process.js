@@ -138,6 +138,17 @@ function restoreEnvelope(wet, samples, sampleRate, anchors, start, hz) {
   return wet
 }
 
+// Fourth-order Butterworth high-pass (two cascaded biquads), zero state.
+function highpass(x, sampleRate, hz) {
+  const y = Float32Array.from(x), w = 2 * Math.PI * hz / sampleRate, cos = Math.cos(w), alpha = Math.sin(w) / Math.SQRT2, a0 = 1 + alpha
+  const b0 = (1 + cos) / 2 / a0, b1 = -(1 + cos) / a0, b2 = (1 + cos) / 2 / a0, a1 = -2 * cos / a0, a2 = (1 - alpha) / a0
+  for (let pass = 0; pass < 2; pass++) {
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0
+    for (let i = 0; i < y.length; i++) { const v = y[i], out = b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = v; y2 = y1; y1 = out; y[i] = out }
+  }
+  return y
+}
+
 // Lag (±half a period) that best aligns `wet`, whose index `at` falls on the
 // output index `onset`, with the output over the first two periods of voice.
 function align(wet, at, output, onset, period) {
@@ -212,6 +223,12 @@ export function render(samples, sampleRate, track, target, anchors, engine = 'au
       start += first ? align(wet, onset - start, output, onset, Math.round(sampleRate / track.f0[first])) : 0
       const pitch = track.f0.subarray(first, last + 1).slice().sort()[(last - first) >> 1]
       wet = restoreEnvelope(wet, samples, sampleRate, anchors, start, pitch)
+      // WORLD fills the spectral envelope below the fundamental with noise,
+      // gated by the pulses; at breathy phrase edges that is a low thump the
+      // source never had. A voiced run has nothing below its fundamental.
+      let low = Infinity
+      for (let i = first; i <= last; i++) low = Math.min(low, target[i])
+      wet = highpass(wet, sampleRate, .7 * low)
       tail = offset - start; delta = -align(wet, tail - 2 * Math.round(sampleRate / track.f0[last]), output, offset - 2 * Math.round(sampleRate / track.f0[last]), Math.round(sampleRate / track.f0[last]))
     }
     // The rebuilt voice has drifted by `delta` from the source by its last

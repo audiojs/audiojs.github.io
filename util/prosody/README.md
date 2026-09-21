@@ -89,7 +89,10 @@ last pulse before an onset borrows the vowel's envelope, so synthesis stays
 voiced through a lead and tail of whole periods that the join discards; the
 rebuilt run is shifted by up to half a period to line its first pulse up with
 the source's, then receives the source's amplitude envelope over two pitch
-periods, since WORLD's analysis window smears onsets. It handles any change but
+periods, since WORLD's analysis window smears onsets, and is high-passed at 0.7
+times its lowest target pitch: WORLD fills the envelope below the fundamental
+with pulse-gated noise, which at breathy phrase edges was a low thump 14 dB
+above anything in the source. It handles any change but
 is audibly a vocoder on breathy or creaky voices.
 
 Auto, the default, uses the waveform engine for runs whose largest pitch change

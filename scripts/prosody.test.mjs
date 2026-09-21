@@ -390,6 +390,18 @@ test('vocoder keeps the voice\'s breathiness: band periodicity of copy-synthesis
   }
 })
 
+test('vocoder adds no energy below the fundamental at phrase edges', () => {
+  const { channelData: [a], sampleRate } = sample(), track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
+  const out = render(a, sampleRate, track, transform(track, track.f0, 0, duration, 'shift', 5), anchors, 'vocoder')
+  const low = x => bandpass(x, sampleRate, 20, 70), la = low(a), lo = low(out), w = Math.round(.01 * sampleRate), excess = []
+  for (const [first, last] of runs(track.f0)) for (const i of [first, last]) {
+    const c = Math.round(track.times[i] * sampleRate)
+    if (rms(a, c - w, c + w) > 1e-3) excess.push(dB(rms(lo, c - w, c + w) / rms(la, c - w, c + w)))
+  }
+  excess.sort((p, q) => p - q)
+  assert.ok(excess.length > 10 && excess[excess.length >> 1] < 3 && excess[Math.floor(excess.length * .9)] < 8, `20–70 Hz at run edges, rebuilt over source: p50 ${excess[excess.length >> 1].toFixed(1)} dB, p90 ${excess[Math.floor(excess.length * .9)].toFixed(1)} dB`)
+})
+
 test('rules and point edits preserve unvoiced gaps and remain non-destructive', () => {
   const t = { times: Float32Array.of(0, .02, .04, .06, .08), f0: Float32Array.of(100, 200, 0, 100, 150) }
   const result = transform(t, t.f0, 0, .08, 'variation', .5)
