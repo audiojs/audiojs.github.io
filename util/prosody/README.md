@@ -43,9 +43,14 @@ about a semitone. Edits apply as a smooth ratio to the frame contour.
 
 A voiced run (a maximal stretch of voiced frames) is the unit of resynthesis.
 Any run containing a pitch change or lying in a retimed span is rebuilt whole
-by one of two engines and joined to its untouched neighbors with 2 ms fades at
-its edge frames. Untouched runs, consonants and silence keep their original
-samples bit-exactly.
+by one of two engines. It fades in over 2 ms at its first frame, aligned to the
+source's first pulse. By its last cycle the rebuilt voice has drifted by up to
+half a period from the source, and fading it into the unshifted source there
+cancelled harmonics and clicked at every phrase end, so the source itself
+continues from the last cycle, shifted by that drift, and rejoins the true
+timeline over 10 ms at the quietest unvoiced moment within the next 80 ms,
+where phase means nothing. Untouched runs, consonants and silence beyond that
+handover keep their original samples bit-exactly.
 
 The waveform engine (`waveform.js`) re-spaces the recording's own cycles.
 Each cycle is resampled by the edit ratio, so its period becomes the target

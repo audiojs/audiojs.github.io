@@ -59,7 +59,7 @@ test('vocoder: a touched voiced run is rebuilt whole; other runs, gaps and silen
   const out = render(a, fs, t, target, [[0, 0], [2, 2]], 'vocoder')
   assert.equal(out.length, a.length)
   assert.deepEqual(out.subarray(0, Math.round(t.times[first - 1] * fs)), a.subarray(0, Math.round(t.times[first - 1] * fs)), 'audio before the run is untouched')
-  assert.deepEqual(out.subarray(Math.round(t.times[last + 1] * fs)), a.subarray(Math.round(t.times[last + 1] * fs)), 'audio after the run is untouched')
+  assert.deepEqual(out.subarray(Math.round((t.times[last] + .1) * fs)), a.subarray(Math.round((t.times[last] + .1) * fs)), 'audio beyond the handover after the run is untouched')
   let changed = 0
   for (let i = Math.round(.6 * fs); i < Math.round(1.4 * fs); i++) if (out[i] !== a[i]) changed++
   assert.ok(changed > .9 * .8 * fs, 'the whole run is resynthesized, including its unchanged frames')
@@ -76,7 +76,7 @@ test('joins sit on the run edge frames; synthesis leads in by whole periods', ()
   const out = render(a, fs, t, target, anchors)
   const onset = Math.round(t.times[first] * fs), offset = Math.round(t.times[last] * fs)
   assert.deepEqual(out.subarray(0, onset), a.subarray(0, onset), 'dry up to the first voiced frame')
-  assert.deepEqual(out.subarray(offset), a.subarray(offset), 'dry from the last voiced frame')
+  assert.deepEqual(out.subarray(offset + Math.round(.1 * fs)), a.subarray(offset + Math.round(.1 * fs)), 'dry beyond the handover after the last voiced frame')
   assert.notEqual(out[Math.round(fs)], a[Math.round(fs)], 'wet inside the run')
   const run = speechRun(a, fs, t, target, anchors, first, last), lead = Math.ceil(.01 * t.f0[first]) / t.f0[first]
   assert.equal(run.start, Math.round((t.times[first] - lead) * fs))
@@ -348,11 +348,11 @@ test('waveform engine on speech: joins add no level, consonants stay dry, pitch 
   for (const [first, last] of runs(track.f0)) for (const [i, j, direction] of [[first - 1, first, 1], [last, last + 1, -1]]) {
     if (i < 0 || j >= track.f0.length) continue
     const s = Math.round(track.times[i] * sampleRate), e = Math.round(track.times[j] * sampleRate), z = Math.round(.01 * sampleRate)
-    if (rms(a, s, e) > 1e-3) assert.ok(dB(rms(out, s, e) / rms(a, s, e)) < 4, `join at ${track.times[i].toFixed(3)} s adds level in the unvoiced frame`)
+    if (rms(a, s, e) > 1e-3) assert.ok(dB(rms(out, s, e) / rms(a, s, e)) < 4, `join at ${track.times[i].toFixed(3)} s adds ${dB(rms(out, s, e) / rms(a, s, e)).toFixed(1)} dB in the unvoiced frame`)
     const [os, oe] = direction > 0 ? [e, e + z] : [s - z, s]
     if (rms(a, os, oe) > 1e-3) assert.ok(Math.abs(dB(rms(out, os, oe) / rms(a, os, oe))) < 6, `voice edge at ${track.times[j].toFixed(3)} s is ${dB(rms(out, os, oe) / rms(a, os, oe)).toFixed(1)} dB from the source`)
   }
-  for (let i = 1; i < track.f0.length - 1; i++) if (!track.f0[i - 1] && !track.f0[i] && !track.f0[i + 1]) assert.equal(out[Math.round(track.times[i] * sampleRate)], a[Math.round(track.times[i] * sampleRate)])
+  for (let i = 1; i < track.f0.length - 1; i++) if (!track.f0[i - 1] && !track.f0[i] && !track.f0[i + 1] && !track.f0.subarray(Math.max(0, i - 20), i).some(Boolean)) assert.equal(out[Math.round(track.times[i] * sampleRate)], a[Math.round(track.times[i] * sampleRate)])
   // YIN averages its 40 ms window, so compare with the target averaged the same way.
   const errors = []
   for (let time = .2; time < duration - .2; time += .01) {
@@ -594,9 +594,9 @@ test('built-in speech: edits follow continuous voicing; joins add no level and c
   }
   // Continuity must not be obtained by pitching actual consonants or silence.
   let dry = 0
-  for (let i = 1; i < track.f0.length - 1; i++) if (!track.f0[i - 1] && !track.f0[i] && !track.f0[i + 1]) {
+  for (let i = 1; i < track.f0.length - 1; i++) if (!track.f0[i - 1] && !track.f0[i] && !track.f0[i + 1] && !track.f0.subarray(Math.max(0, i - 20), i).some(Boolean)) {
     const k = Math.round(track.times[i] * sampleRate)
-    assert.equal(out[k], a[k], 'unvoiced interior stays bit-exact'); dry++
+    assert.equal(out[k], a[k], 'unvoiced interior stays bit-exact beyond the handover'); dry++
   }
   assert.ok(dry > 50, `the sample has unvoiced audio to protect (${dry} frames)`)
   assert.equal(out.length, a.length)

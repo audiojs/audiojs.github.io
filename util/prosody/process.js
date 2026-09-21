@@ -157,6 +157,22 @@ function align(wet, at, output, onset, period) {
 // 'vocoder' rebuilds the voice with WORLD (any change), 'auto' picks per run
 // by the largest pitch change in it and the reliability of its cycles.
 export const engines = ['auto', 'waveform', 'vocoder']
+// Output index of the quietest 10 ms in the unvoiced frames that follow a
+// run, within 80 ms, or the run's end when none follows.
+function quietest(output, from, last, track, anchors, sampleRate) {
+  let end = last + 1
+  while (end < track.f0.length && !track.f0[end] && track.times[end] - track.times[last] <= .08) end++
+  if (end === last + 1) return from
+  const stop = Math.min(output.length, Math.round(mapTime(anchors, track.times[end - 1]) * sampleRate)) - Math.round(.01 * sampleRate)
+  let best = from, level = Infinity
+  for (let i = from; i <= stop; i += Math.round(.0025 * sampleRate)) {
+    let power = 0
+    for (let j = i; j < i + Math.round(.01 * sampleRate); j++) power += output[j] * output[j]
+    if (power < level) { level = power; best = i }
+  }
+  return best
+}
+
 export function render(samples, sampleRate, track, target, anchors, engine = 'auto') {
   if (!engines.includes(engine)) throw Error('Unknown engine.')
   validatePitch(track, target, sampleRate)
@@ -190,16 +206,30 @@ export function render(samples, sampleRate, track, target, anchors, engine = 'au
     const waveform = engine === 'waveform' || (engine === 'auto' && change <= 12 && reliable)
     const run = (waveform && track.marks && waveformRun(samples, sampleRate, track, target, anchors, first, last)) || speechRun(samples, sampleRate, track, target, anchors, first, last)
     const onset = Math.round(mapTime(anchors, track.times[first]) * sampleRate), offset = Math.round(mapTime(anchors, track.times[last]) * sampleRate)
-    let start = run.start, wet = run.samples
+    let start = run.start, wet = run.samples, tail = run.tail, delta = run.delta
     if (run.vocoded) {
       // The vocoder's pulses have their own phase and level contour.
       start += first ? align(wet, onset - start, output, onset, Math.round(sampleRate / track.f0[first])) : 0
       const pitch = track.f0.subarray(first, last + 1).slice().sort()[(last - first) >> 1]
       wet = restoreEnvelope(wet, samples, sampleRate, anchors, start, pitch)
+      tail = offset - start; delta = -align(wet, tail - 2 * Math.round(sampleRate / track.f0[last]), output, offset - 2 * Math.round(sampleRate / track.f0[last]), Math.round(sampleRate / track.f0[last]))
     }
-    for (let j = Math.max(0, onset - start); j < wet.length && start + j < output.length && start + j < offset; j++) {
-      const w = Math.min(first ? ease((start + j - onset) / fade) : 1, last < track.f0.length - 1 ? ease((offset - start - j) / fade) : 1)
+    // The rebuilt voice has drifted by `delta` from the source by its last
+    // cycle. Fading it into the unshifted source there cancels harmonics and
+    // clicks, so the source itself continues from the last cycle, shifted by
+    // `delta`, and rejoins the true timeline at the quietest unvoiced moment
+    // within 80 ms, where phase means nothing.
+    const bridge = start + tail, quiet = quietest(output, bridge, last, track, anchors, sampleRate), join = Math.round(.01 * sampleRate)
+    for (let j = Math.max(0, onset - start); j < wet.length && start + j < output.length && start + j < bridge + fade; j++) {
+      const w = Math.min(first ? ease((start + j - onset) / fade) : 1, ease((bridge + fade - start - j) / fade))
       output[start + j] = output[start + j] * (1 - w) + wet[j] * w
+    }
+    const shifted = output.slice(Math.max(0, bridge - delta - fade), Math.min(output.length, quiet + join - delta + 1))
+    for (let i = bridge; i < Math.min(output.length, quiet + join); i++) {
+      const s = i - delta - Math.max(0, bridge - delta - fade)
+      const value = s >= 0 && s < shifted.length ? shifted[s] : output[i]
+      const w = i < bridge + fade ? ease((i - bridge) / fade) : i < quiet ? 1 : ease((quiet + join - i) / join)
+      output[i] = output[i] * (1 - w) + value * w
     }
   }
   if (output.some(x => !Number.isFinite(x))) throw Error('Rendering produced invalid audio.')

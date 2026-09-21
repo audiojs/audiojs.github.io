@@ -50,11 +50,14 @@ export function waveformRun(samples, sampleRate, track, target, anchors, first, 
   const edgeOf = at => track.times[at < track.times[first] ? first : last]
   const ratioAt = at => { const source = pitchAt(track, track.f0, at), edited = pitchAt(track, target, at); return source && edited ? edited / source : 0 }
   const ratio = at => ratioAt(at) || ratioAt(edgeOf(at)) || 1
-  let synthesis = mapTime(anchors, marks[0] / sampleRate) * sampleRate, k = 0, changed = false
+  let synthesis = mapTime(anchors, marks[0] / sampleRate) * sampleRate, k = 0, changed = false, tail = 0, delta = 0
   while (synthesis < end) {
     const at = mapTime(inverse, synthesis / sampleRate) * sampleRate
     while (k < marks.length - 1 && Math.abs(marks[k + 1] - at) <= Math.abs(marks[k] - at)) k++
     while (k > 0 && Math.abs(marks[k - 1] - at) < Math.abs(marks[k] - at)) k--
+    // Past the last cycle the voice is handed back to the source: remember
+    // where, and by how much the re-spaced cycles have drifted from it.
+    if (k === marks.length - 1) { tail = Math.round(synthesis) - start; delta = Math.round(synthesis - mapTime(anchors, marks[k] / sampleRate) * sampleRate); break }
     const mark = marks[k], cycleLeft = k ? mark - marks[k - 1] : marks[k + 1] - mark, cycleRight = k < marks.length - 1 ? marks[k + 1] - mark : cycleLeft
     const r = ratio(at / sampleRate), taps = table(Math.min(1, 1 / r))
     if (Math.abs(r - 1) > 1e-9) changed = true
@@ -71,7 +74,7 @@ export function waveformRun(samples, sampleRate, track, target, anchors, first, 
   }
   for (let i = 0; i < out.length; i++) out[i] /= Math.max(norm[i], .5)
   if (changed) restoreFormants(out, start, samples, sampleRate, track, anchors, first, last, ratio)
-  return { samples: out, start }
+  return { samples: out, start, tail, delta }
 }
 
 // Multiply the run's short-time spectrum by E(f) / E(f / r): resampling by r
