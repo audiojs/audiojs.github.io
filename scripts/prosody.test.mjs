@@ -349,8 +349,10 @@ test('waveform engine on speech: joins add no level, consonants stay dry, pitch 
     if (i < 0 || j >= track.f0.length) continue
     const s = Math.round(track.times[i] * sampleRate), e = Math.round(track.times[j] * sampleRate), z = Math.round(.01 * sampleRate)
     if (rms(a, s, e) > 1e-3) assert.ok(dB(rms(out, s, e) / rms(a, s, e)) < 4, `join at ${track.times[i].toFixed(3)} s adds ${dB(rms(out, s, e) / rms(a, s, e)).toFixed(1)} dB in the unvoiced frame`)
-    const [os, oe] = direction > 0 ? [e, e + z] : [s - z, s]
-    if (rms(a, os, oe) > 1e-3) assert.ok(Math.abs(dB(rms(out, os, oe) / rms(a, os, oe))) < 6, `voice edge at ${track.times[j].toFixed(3)} s is ${dB(rms(out, os, oe) / rms(a, os, oe)).toFixed(1)} dB from the source`)
+    // The handover continues the source shifted by up to half a period, so compare within ±4 ms.
+    const [os, oe] = direction > 0 ? [e, e + z] : [s - z, s], shifts = [-4, -2, 0, 2, 4].map(ms => Math.round(ms * sampleRate / 1000))
+    const deviation = Math.min(...shifts.map(d => Math.abs(dB(rms(out, os, oe) / rms(a, os + d, oe + d)))))
+    if (rms(a, os, oe) > 1e-3) assert.ok(deviation < 6, `voice edge at ${track.times[j].toFixed(3)} s is ${deviation.toFixed(1)} dB from the source`)
   }
   for (let i = 1; i < track.f0.length - 1; i++) if (!track.f0[i - 1] && !track.f0[i] && !track.f0[i + 1] && !track.f0.subarray(Math.max(0, i - 20), i).some(Boolean)) assert.equal(out[Math.round(track.times[i] * sampleRate)], a[Math.round(track.times[i] * sampleRate)])
   // YIN averages its 40 ms window, so compare with the target averaged the same way.

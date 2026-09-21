@@ -236,17 +236,17 @@ export function render(samples, sampleRate, track, target, anchors, engine = 'au
     // clicks, so the source itself continues from the last cycle, shifted by
     // `delta`, and rejoins the true timeline at the quietest unvoiced moment
     // within 80 ms, where phase means nothing.
-    const bridge = start + tail, quiet = quietest(output, bridge, last, track, anchors, sampleRate), join = Math.round(.01 * sampleRate)
-    for (let j = Math.max(0, onset - start); j < wet.length && start + j < output.length && start + j < bridge + fade; j++) {
-      const w = Math.min(first ? ease((start + j - onset) / fade) : 1, ease((bridge + fade - start - j) / fade))
-      output[start + j] = output[start + j] * (1 - w) + wet[j] * w
-    }
-    const shifted = output.slice(Math.max(0, bridge - delta - fade), Math.min(output.length, quiet + join - delta + 1))
-    for (let i = bridge; i < Math.min(output.length, quiet + join); i++) {
-      const s = i - delta - Math.max(0, bridge - delta - fade)
-      const value = s >= 0 && s < shifted.length ? shifted[s] : output[i]
-      const w = i < bridge + fade ? ease((i - bridge) / fade) : i < quiet ? 1 : ease((quiet + join - i) / join)
-      output[i] = output[i] * (1 - w) + value * w
+    // The rejoin crossfade is 10 ms, or half of a short gap, so that no burst
+    // in the gap is heard twice, once from each copy.
+    const bridge = start + tail, quiet = quietest(output, bridge, last, track, anchors, sampleRate), join = Math.max(Math.round(.002 * sampleRate), Math.min(Math.round(.01 * sampleRate), (quiet - bridge) >> 1))
+    // The continuation is the untouched dry timeline, copied before anything
+    // is mixed in, so no part of the rebuilt voice can repeat itself.
+    const from = Math.max(0, Math.min(onset, bridge - Math.abs(delta) - fade)), to = Math.min(output.length, quiet + join + Math.abs(delta) + 1), dry = output.slice(from, to)
+    for (let i = Math.max(0, onset); i < Math.min(output.length, quiet + join); i++) {
+      const voice = i < bridge ? Math.min(first ? ease((i - onset) / fade) : 1, ease((bridge - i) / fade)) : 0
+      const carry = i < bridge - fade ? 0 : i < bridge ? 1 - ease((bridge - i) / fade) : i < quiet ? 1 : ease((quiet + join - i) / join)
+      const s = i - delta - from, shifted = s >= 0 && s < dry.length ? dry[s] : output[i]
+      output[i] = output[i] * (1 - voice - carry) + (i - start < wet.length && i >= start ? wet[i - start] : 0) * voice + shifted * carry
     }
   }
   if (output.some(x => !Number.isFinite(x))) throw Error('Rendering produced invalid audio.')
