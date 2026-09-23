@@ -6,6 +6,7 @@ import { retime, mapTime, transform, movePoint, pitchAt, validatePitch } from '.
 import { decodeWav, yin } from '../util/prosody/dsp.js'
 import { speechRun } from '../util/prosody/world.js'
 import { bandpass, periodicity } from '../util/prosody/noise.js'
+import { fft } from '../util/prosody/fft.js'
 const fs = 16000
 // Harvest scores harmonics, as speech has them; a pure sinusoid is not voice.
 const tone = (frequency = 180, seconds = 2, rate = fs) => Float32Array.from({ length: Math.round(rate * seconds) }, (_, i) => {
@@ -284,7 +285,8 @@ test('waveform engine: unchanged cycles reproduce the source; pitch, timing, rat
   const same = render(a, fs, t, touched, anchors, 'waveform')
   let worst = 0
   for (let i = Math.round(.6 * fs); i < Math.round((t.times[middle] - .02) * fs); i++) worst = Math.max(worst, Math.abs(same[i] - a[i]))
-  assert.ok(worst < 1e-6, `cycles before the edit reproduce the source exactly (max difference ${worst})`)
+  // In a run with a pitch change the band split's complementary filters rebuild them to float precision.
+  assert.ok(worst < 1e-5, `cycles before the edit reproduce the source (max difference ${worst})`)
   // A pitch edit moves every later cycle by a fraction of a sample; grains land at fractional positions.
   let diff = 0, ref = 0
   for (let i = Math.round((t.times[middle] + .02) * fs); i < Math.round(1.4 * fs); i++) { diff += (same[i] - a[i]) ** 2; ref += a[i] ** 2 }
@@ -483,6 +485,45 @@ test('analysis keeps a short voiced island whose Harvest pitch is off', () => {
     const before = yin(x.subarray(a, a + n), { fs: sampleRate, minFreq: 60, maxFreq: 600 }), after = yin(out.subarray(a, a + n), { fs: sampleRate, minFreq: 60, maxFreq: 600 })
     assert.ok(after?.clarity > .8 && Math.abs(st(after.freq, before.freq) - 4) < .5, `the island is shifted with its neighbours at ${time} s (${before?.freq.toFixed(0)} → ${after?.freq.toFixed(0)} Hz)`)
   }
+})
+
+test('waveform engine keeps the high band where it was: codec patches are not moved up with the pitch', () => {
+  // A vowel with an intermittent 10–12 kHz noise patch and nothing above 12.5 kHz, like an MP3's high
+  // band. Resampling the whole cycle moved such patches up with the pitch, into bands the source never
+  // had, where the formant correction turned them into bright narrow spikes around 10–15 kHz. Laid
+  // unresampled, overlapping copies of the noise summed 2.4 dB below it until the engine gave that back.
+  const rate = 44100, seconds = 1.5, x = new Float32Array(rate * seconds)
+  let phase = 0, seed = 11
+  const random = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32 - .5
+  for (let i = 0; i < x.length; i++) { phase += 120 / rate; for (let h = 1; h * 120 < 4000; h++) x[i] += Math.sin(2 * Math.PI * h * phase) / h }
+  for (const [frequency, bandwidth] of [[700, 110], [1220, 120], [2600, 160]]) {
+    const r = Math.exp(-Math.PI * bandwidth / rate), c = 2 * r * Math.cos(2 * Math.PI * frequency / rate)
+    let y1 = 0, y2 = 0
+    for (let i = 0; i < x.length; i++) { const y = (1 - r) * x[i] + c * y1 - r * r * y2; y2 = y1; y1 = y; x[i] = y }
+  }
+  const peak = x.reduce((m, v) => Math.max(m, Math.abs(v)), 0)
+  for (let i = 0; i < x.length; i++) x[i] *= .3 / peak
+  const patch = bandpass(Float32Array.from({ length: x.length }, random), rate, 10000, 12000)
+  for (let i = 0; i < x.length; i++) if (i / rate % .1 < .04) x[i] += .02 * patch[i]
+  // Nothing above 12.5 kHz: a zero-phase FFT low-pass, as sharp as a codec's.
+  let N = 2 ** Math.ceil(Math.log2(x.length)), re = new Float32Array(N), im = new Float32Array(N)
+  re.set(x); fft(re, im)
+  for (let k = 0; k <= N / 2; k++) if (k * rate / N > 12500) { re[k] = im[k] = 0; if (k && k < N / 2) re[N - k] = im[N - k] = 0 }
+  fft(re, im, true); x.set(re.subarray(0, x.length))
+  // Band energy of a Hann-windowed interior stretch, away from the signal's abrupt ends.
+  const level = (y, lo, hi) => {
+    const a = Math.round(.2 * rate), n = Math.round(1.1 * rate)
+    N = 2 ** 16; re = new Float32Array(N); im = new Float32Array(N)
+    for (let i = 0; i < Math.min(N, n); i++) re[i] = y[a + i] * (.5 - .5 * Math.cos(2 * Math.PI * i / n))
+    fft(re, im)
+    let e = 0
+    for (let k = Math.round(lo / rate * N); k <= Math.round(hi / rate * N); k++) e += re[k] ** 2 + im[k] ** 2
+    return 10 * Math.log10(e + 1e-20)
+  }
+  const t = analyze(x, rate), out = render(x, rate, t, transform(t, t.f0, 0, seconds, 'shift', 4), [[0, 0], [seconds, seconds]], 'waveform')
+  const patchLevel = level(x, 10000, 12000), moved = level(out, 10000, 12000) - patchLevel, above = level(out, 13000, 15500) - patchLevel
+  assert.ok(Math.abs(moved) < 1, `the patch keeps its level at 10–12 kHz (${moved.toFixed(1)} dB)`)
+  assert.ok(above < -60, `13–15.5 kHz stays empty: ${above.toFixed(1)} dB re the patch, where resampling the whole band left −33 dB`)
 })
 
 test('rules and point edits preserve unvoiced gaps and remain non-destructive', () => {

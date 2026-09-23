@@ -56,14 +56,30 @@ where phase means nothing. Untouched runs, consonants and silence beyond that
 handover keep their original samples bit-exactly.
 
 The waveform engine (`waveform.js`) re-spaces the recording's own cycles.
-Each cycle is resampled by the edit ratio, so its period becomes the target
-period and the copies that overlap at the new spacing are phase-aligned: the
-comb that plain overlap-add produces by crossfading copies offset by the period
-difference (a sweeping flanger on real speech) does not arise. Cycles are read
-at fractional positions through a 32-tap windowed-sinc delay with a lowpass at
-Nyquist / r. Timing changes repeat or skip cycles at their own spacing, which is
-comb-free. Pulse shapes, breath and jitter are the voice's own, and unchanged
-cycles reproduce the source bit-exactly.
+Below 4 kHz each cycle is resampled by the edit ratio, so its period becomes the
+target period and the copies that overlap at the new spacing are phase-aligned:
+the comb that plain overlap-add produces by crossfading copies offset by the
+period difference (a sweeping flanger on real speech) does not arise. Cycles are
+read at fractional positions through a 32-tap windowed-sinc delay with a lowpass
+at Nyquist / r. Timing changes repeat or skip cycles at their own spacing, which
+is comb-free. Pulse shapes, breath and jitter are the voice's own, and unchanged
+cycles reproduce the source: bit-exactly in runs without a pitch change, to float
+precision in runs with one, which the band split's complementary filters rebuild.
+
+Above 4 kHz (a ±300 Hz raised-cosine crossover) the same cycles are laid at the
+new spacing without resampling, so breath, clicks and codec texture keep their
+frequencies. Resampling the whole band moved every patch and hole of an MP3's
+high band up with the pitch, into bands the source never had, where the formant
+correction turned them into bright narrow spikes at 10–15 kHz: on an MP3-like
+10–12 kHz patch raised 4 st, the empty 13–15.5 kHz band held −33 dB re the patch,
+and now −71 dB. A raised pitch overlaps about r copies at any instant, and their
+breath and noise are partly unrelated, so they sum to less power than their
+parts: 2 dB less at +4 st, 3.4 dB at +12. A gain smoothed over a 20 ms triangle
+gives back the power the copies read. A lowered pitch spaces the copies wider
+than a cycle, so their lobes reach out to the new spacing; one-cycle lobes left
+gaps where the noise dipped 7 dB between pulses at −4 st, a buzz. Every band
+above 4.3 kHz stays within 0.5 dB of the source from −4 to +12 st. In the
+crossover the two bands are unrelated too, and a raised pitch dips it about 1 dB.
 
 Resampling scales the formants too, so the run then passes a short-time filter
 that multiplies its spectrum by E(f) / E(f / r), with E the CheapTrick envelope

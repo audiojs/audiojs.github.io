@@ -1,12 +1,11 @@
-// Waveform engine: the recording's own glottal cycles, re-spaced. Each cycle
-// is resampled by the edit ratio, so its period becomes the target period and
-// the copies that overlap at the new spacing are phase-aligned: no comb, no
-// flanging. Resampling scales the formants too, so the run then passes a
-// smooth filter restoring the source spectral envelope, from CheapTrick, at
-// its original frequencies. Timing changes repeat or skip cycles. Pulse
-// shapes, breath and jitter stay the voice's own; unchanged cycles reproduce
-// the source exactly. Beyond about half an octave, repeated or thinned cycles
-// start to sound, and the vocoder takes over.
+// Waveform engine: the recording's own glottal cycles, re-spaced. Below 4 kHz
+// each cycle is resampled by the edit ratio, so its period becomes the target
+// period and the copies that overlap at the new spacing are phase-aligned: no
+// comb, no flanging; a causal filter then restores the source's formants.
+// Above 4 kHz the same cycles are laid down without resampling, so breath,
+// clicks and codec texture keep their frequencies. Timing changes repeat or
+// skip cycles. Pulse shapes, breath and jitter stay the voice's own, and
+// unchanged cycles reproduce the source exactly.
 import { mapTime, pitchAt, clamp } from './model.js'
 import { speechEnvelope } from './world.js'
 import { fft } from './fft.js'
@@ -37,6 +36,28 @@ function read(x, position, taps) {
   return value
 }
 
+// Band split. Below the crossover, cycles are resampled and their formants
+// restored; that keeps resolved harmonics comb-free. Above it, the recording's
+// own cycles are laid at the new spacing without resampling: breath, clicks
+// and codec texture keep their frequencies. Resampling the high band moved
+// every MP3 patch and click up with the pitch, into bands the source never
+// had, where the correction turned them into bright narrow spikes.
+const CROSSOVER = 4000, WIDTH = 300
+const lowPart = hz => hz <= CROSSOVER - WIDTH ? 1 : hz >= CROSSOVER + WIDTH ? 0 : .5 + .5 * Math.cos(Math.PI * (hz - CROSSOVER + WIDTH) / (2 * WIDTH))
+
+// The high band of x[a, b): zero-phase FFT filter, complementary to lowPart.
+function highBand(x, a, b, sampleRate) {
+  const n = b - a, N = 2 ** Math.ceil(Math.log2(n + 1)), re = new Float32Array(N), im = new Float32Array(N)
+  re.set(x.subarray(a, b)); fft(re, im)
+  for (let k = 0; k <= N / 2; k++) {
+    const g = 1 - lowPart(k * sampleRate / N)
+    re[k] *= g; im[k] *= g
+    if (k && k < N / 2) { re[N - k] *= g; im[N - k] *= g }
+  }
+  fft(re, im, true)
+  return re.subarray(0, n)
+}
+
 export function waveformRun(samples, sampleRate, track, target, anchors, first, last) {
   const period = hz => sampleRate / hz
   const from = track.times[first] * sampleRate - period(track.f0[first]) / 2, to = track.times[last] * sampleRate + period(track.f0[last]) / 2
@@ -51,7 +72,14 @@ export function waveformRun(samples, sampleRate, track, target, anchors, first, 
   const ratioAt = at => { const source = pitchAt(track, track.f0, at), edited = pitchAt(track, target, at); return source && edited ? edited / source : 0 }
   const ratio = at => ratioAt(at) || ratioAt(edgeOf(at)) || 1
   let synthesis = mapTime(anchors, marks[0] / sampleRate) * sampleRate, k = 0, changed = false, tail = 0, delta = 0
-  const grains = []
+  const grains = [], plain = table(1)
+  let high = null, power = null, hx = null, hFrom = 0
+  const pitched = sampleRate / 2 > CROSSOVER + 2 * WIDTH && target.subarray(first, last + 1).some((v, i) => v !== track.f0[first + i])
+  if (pitched) {
+    hFrom = Math.max(0, Math.floor(from - 4 * longest))
+    hx = highBand(samples, hFrom, Math.min(samples.length, Math.ceil(to + 4 * longest)), sampleRate)
+    high = new Float32Array(end - start); power = new Float32Array(end - start)
+  }
   while (synthesis < end) {
     const at = mapTime(inverse, synthesis / sampleRate) * sampleRate
     while (k < marks.length - 1 && Math.abs(marks[k + 1] - at) <= Math.abs(marks[k] - at)) k++
@@ -72,11 +100,46 @@ export function waveformRun(samples, sampleRate, track, target, anchors, first, 
       const w = u < 0 ? .5 - .5 * Math.cos(Math.PI * (u + left) / left) : .5 + .5 * Math.cos(Math.PI * u / right)
       out[j - start] += read(samples, position, taps) * w; norm[j - start] += w
     }
+    if (high) {
+      // The same cycle, not resampled, from the high band: lobes of a source
+      // cycle, or of the new spacing where that is longer, so a lowered pitch
+      // leaves no gaps between copies (one-cycle lobes buzzed there, the
+      // noise dipping 7 dB between pulses at −4 st). A raised pitch overlaps
+      // about r copies at any instant, each weighted 1 / r.
+      const lobeLeft = Math.max(cycleLeft, left), lobeRight = Math.max(cycleRight, right), weight = 1 / Math.max(1, r)
+      for (let j = Math.ceil(synthesis - lobeLeft); j < synthesis + lobeRight; j++) {
+        const u = j - synthesis, position = mark + u - hFrom
+        if (j - start < 0 || j - start >= high.length || position < TAPS / 2 || position >= hx.length - TAPS / 2 - 1) continue
+        const w = (u < 0 ? .5 - .5 * Math.cos(Math.PI * (u + lobeLeft) / lobeLeft) : .5 + .5 * Math.cos(Math.PI * u / lobeRight)) * weight
+        const value = read(hx, position, plain)
+        high[j - start] += value * w; power[j - start] += value * value * w
+      }
+    }
     synthesis += Math.min(period(30), Math.max(1, right))
   }
   for (let i = 0; i < out.length; i++) out[i] /= Math.max(norm[i], .5)
-  if (changed) restoreFormants(out, start, samples, sampleRate, track, anchors, first, last, grains)
+  if (changed) restoreFormants(out, start, samples, sampleRate, track, anchors, first, last, grains, !!high)
+  if (high) {
+    const gain = levelGain(high, power, Math.round(.01 * sampleRate))
+    for (let i = 0; i < out.length; i++) out[i] += high[i] * gain[i]
+  }
   return { samples: out, start, tail, delta }
+}
+
+// Overlapping copies carry partly unrelated breath and noise, whose sum has
+// less power than its parts: 2 dB less at +4 semitones, 3.4 dB at +12. Give
+// back the power the copies read, over a 20 ms triangle: two box passes, so the
+// gain has no corners that would spread the band. Coherent harmonics and
+// unchanged cycles lost none and keep a gain of one.
+function levelGain(high, power, size) {
+  const e = average(average(Float64Array.from(high, v => v * v), size), size), p = average(average(power, size), size)
+  return Float32Array.from(e, (v, i) => v > 0 ? Math.min(2, Math.max(1, Math.sqrt(p[i] / v))) : 1)
+}
+function average(x, size) {
+  const n = x.length, sum = new Float64Array(n + 1), out = new Float64Array(n)
+  for (let i = 0; i < n; i++) sum[i + 1] = sum[i] + x[i]
+  for (let i = 0; i < n; i++) { const a = Math.max(0, i - (size >> 1)), b = Math.min(n, a + size); out[i] = (sum[b] - sum[a]) / (b - a) }
+  return out
 }
 
 // Multiply the run's short-time spectrum by E(f) / E(f / r): resampling by r
@@ -87,8 +150,9 @@ export function waveformRun(samples, sampleRate, track, target, anchors, first, 
 // predicted naturalness). Hann frames at 75% overlap sum to one; each is
 // zero-padded to twice its length, with the frame first so the filter's tail
 // has room, so the correction filters linearly. Frames with a unit ratio pass
-// through untouched.
-function restoreFormants(out, start, samples, sampleRate, track, anchors, first, last, grains) {
+// through untouched, unless the run is band-split: then every frame keeps only
+// the low band, which the unresampled high band completes.
+function restoreFormants(out, start, samples, sampleRate, track, anchors, first, last, grains, split) {
   const envelope = speechEnvelope(samples, sampleRate, track, first, last), inverse = anchors.map(([a, b]) => [b, a])
   const size = 2 ** Math.ceil(Math.log2(.02 * sampleRate)), hop = size >> 2, half = size >> 1, N = 2 * size, H = size
   const window = Float32Array.from({ length: size }, (_, i) => (.5 - .5 * Math.cos(2 * Math.PI * i / size)) / 2)
@@ -125,7 +189,7 @@ function restoreFormants(out, start, samples, sampleRate, track, anchors, first,
     const r = weight > 0 ? Math.exp(sum / weight) : 1
     const ramp = clamp(Math.min((position + half - onsetAt) / edge, (offsetAt - position - half) / edge), 0, 1)
     const frame = clamp(Math.round((at - envelope.from) / envelope.step), 0, envelope.count - 1), row = logRow(frame)
-    if (Math.abs(r - 1) < 1e-9 || !ramp) { for (let i = 0; i < size; i++) if (position + i >= 0 && position + i < out.length) result[position + i] += out[position + i] * window[i]; continue }
+    if (!split && (Math.abs(r - 1) < 1e-9 || !ramp)) { for (let i = 0; i < size; i++) if (position + i >= 0 && position + i < out.length) result[position + i] += out[position + i] * window[i]; continue }
     re.fill(0); im.fill(0)
     for (let i = 0; i < size; i++) re[i] = (out[position + i] || 0) * window[i]
     fft(re, im)
@@ -149,7 +213,7 @@ function restoreFormants(out, start, samples, sampleRate, track, anchors, first,
     ci.fill(0)
     fft(cr, ci)
     for (let b = 0; b < N; b++) {
-      const m = Math.exp(cr[b]), gr = m * Math.cos(ci[b]), gi = m * Math.sin(ci[b]), xr = re[b], xi = im[b]
+      const m = Math.exp(cr[b]) * (split ? lowPart(Math.min(b, N - b) * sampleRate / N) : 1), gr = m * Math.cos(ci[b]), gi = m * Math.sin(ci[b]), xr = re[b], xi = im[b]
       re[b] = xr * gr - xi * gi; im[b] = xr * gi + xi * gr
     }
     fft(re, im, true)
