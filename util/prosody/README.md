@@ -29,9 +29,12 @@ Pitch is tracked by WORLD's Harvest (60–600 Hz, 5 ms frames). Harvest keeps
 voicing continuous across a phrase where a framewise detector breaks vowels into
 rejected frames; StoneMask refinement is not applied after it, because it
 introduced octave jumps on low voices. A silence floor removes pitch from nearly
-silent tails, and a voiced run whose median waveform periodicity at the tracked
-pitch is below 0.2 is dropped whole, which removes the runs Harvest finds in
-noise without fragmenting breathy or creaky phrases. Harvest scores harmonics:
+silent tails, and a voiced run whose median waveform periodicity is below 0.2 is
+dropped whole, which removes the runs Harvest finds in noise without fragmenting
+breathy or creaky phrases. Periodicity is judged at the tracked pitch and, when
+that fails, at the best lag within ±20%: on short voiced islands Harvest's pitch
+can be a few semitones off, and judged only at its lag such a syllable was
+discarded and then left at the old pitch by every edit. Harvest scores harmonics:
 a pure sinusoid is not voice to it. Analysis costs about a tenth of the
 recording's duration.
 
@@ -56,20 +59,37 @@ The waveform engine (`waveform.js`) re-spaces the recording's own cycles.
 Each cycle is resampled by the edit ratio, so its period becomes the target
 period and the copies that overlap at the new spacing are phase-aligned: the
 comb that plain overlap-add produces by crossfading copies offset by the period
-difference (a sweeping flanger on real speech) does not arise. Resampling scales
-the formants too, so the run then passes a smooth short-time filter that
-multiplies its spectrum by E(f) / E(f / r), with E the CheapTrick envelope of the
-source frame, restoring formants and spectral tilt at their original
-frequencies. Cycles are read at fractional positions through a 32-tap
-windowed-sinc delay with a lowpass at Nyquist / r. Timing changes repeat or skip
-cycles at their own spacing, which is comb-free. Pulse shapes, breath and jitter
-are the voice's own, and unchanged cycles reproduce the source bit-exactly. On a
-steady synthetic voice the remaining spectral error is 1–2 dB, the envelope
-estimate's own, up to an octave; the correction ramps in over a run's first
-and last 20 ms, where the envelope window straddles silence and vowel, and
-attenuates freely while bounding only amplification, since a clamp on attenuation once left harmonics 5–18 dB too
-loud at +8 st. Its roughness stays at the source's own even at an octave, where
-the vocoder's sub-harmonic energy rises by about 5 dB.
+difference (a sweeping flanger on real speech) does not arise. Cycles are read
+at fractional positions through a 32-tap windowed-sinc delay with a lowpass at
+Nyquist / r. Timing changes repeat or skip cycles at their own spacing, which is
+comb-free. Pulse shapes, breath and jitter are the voice's own, and unchanged
+cycles reproduce the source bit-exactly.
+
+Resampling scales the formants too, so the run then passes a short-time filter
+that multiplies its spectrum by E(f) / E(f / r), with E the CheapTrick envelope
+of the source frame, restoring formants and spectral tilt at their original
+frequencies:
+
+- The filter is minimum phase. Like the vocal tract it models, it rings only
+  after each glottal pulse; a zero-phase filter also rang before every pulse and
+  matched the period waveform of the true voice at the new pitch with a
+  correlation of 0.8, against 0.98 for the causal filter.
+- Each frame's ratio is the window-weighted log-mean of the ratios its cycles
+  were actually resampled by. A single ratio at the frame centre misdescribes a
+  frame where a smoothed contour swings the ratio from cycle to cycle, and once
+  blew such a frame up by 13 dB, far above the source's peak.
+- The correction keeps each frame's energy: resampled overlap-add already keeps
+  the source's power, so the filter only reshapes the spectrum.
+- Frames are zero-padded to twice their length, so the filter acts linearly
+  instead of wrapping its impulse response around the frame.
+- It ramps in over a run's first and last 20 ms, where the envelope window
+  straddles silence and vowel, and attenuates freely while bounding only
+  amplification.
+
+On a steady or gliding synthetic voice the rebuilt envelope is within 1 dB of the
+true voice at the new pitch, the envelope estimate's own spread, from −4 to
++8 st. Its roughness stays at the source's own even at an octave, where the
+vocoder's sub-harmonic energy rises by about 5 dB.
 
 The vocoder engine (`world.js`) rebuilds the run with WORLD from the source
 spectral envelope (CheapTrick) and aperiodicity (D4C) at the edited pitch on a

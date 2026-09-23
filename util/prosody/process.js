@@ -21,13 +21,25 @@ export function analyze(samples, sampleRate) {
   }
   // Harvest voices noise in runs of its own. Judge each run as a whole by its
   // median waveform periodicity at the tracked pitch, so a real breathy or
-  // creaky phrase is not broken into fragments by frame decisions. The
-  // periodicity is kept per frame: rendering routes unreliable runs.
+  // creaky phrase is not broken into fragments by frame decisions. On short
+  // voiced islands Harvest's pitch can be off by a few semitones (141 Hz
+  // where the cycles repeat at 125), which the cycle marks correct later, so a
+  // run that fails at Harvest's lag is judged again at the best lag within
+  // ±20% before it is discarded: noise stays near 0.1 there, and those islands
+  // measured 0.35 to 0.5. The periodicity is kept per frame: rendering routes
+  // unreliable runs.
   track.periodicity = new Float32Array(track.f0.length)
+  const median = values => values.slice().sort((a, b) => a - b)[values.length >> 1]
   for (const [first, last] of runs(track.f0)) {
     const scores = []
     for (let i = first; i <= last; i++) scores.push(track.periodicity[i] = periodicity(samples, sampleRate, track.times[i], track.f0[i]))
-    if (scores.sort((a, b) => a - b)[scores.length >> 1] < .2) track.f0.fill(0, first, last + 1)
+    if (median(scores) >= .2) continue
+    for (let i = first; i <= last; i++) {
+      let best = -1
+      for (let r = .8; r <= 1.25; r *= 1.01) best = Math.max(best, periodicity(samples, sampleRate, track.times[i], track.f0[i] * r))
+      scores[i - first] = track.periodicity[i] = best
+    }
+    if (median(scores) < .2) track.f0.fill(0, first, last + 1)
   }
   track.onsets = bursts(samples, sampleRate, track)
   // Cycle marks refine the frame contour, exact through fast inflections.

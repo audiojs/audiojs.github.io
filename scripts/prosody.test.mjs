@@ -404,6 +404,87 @@ test('vocoder adds no energy below the fundamental at phrase edges', () => {
   assert.ok(excess.length > 10 && excess[excess.length >> 1] < 3 && excess[Math.floor(excess.length * .9)] < 8, `20–70 Hz at run edges, rebuilt over source: p50 ${excess[excess.length >> 1].toFixed(1)} dB, p90 ${excess[Math.floor(excess.length * .9)].toFixed(1)} dB`)
 })
 
+test('waveform engine: a smoothed pitch jump never raises the level above the source', () => {
+  // A formant-filtered voice whose pitch leaps 5 semitones for 30 ms, as real speech does at a
+  // voice break. Smoothing the contour swings the resampling ratio from cycle to cycle; the
+  // formant correction once evaluated one ratio per frame and blew such a frame up by 13 dB.
+  const rate = 44100, f0 = t => t > 1 && t < 1.03 ? 138 : 104, x = new Float32Array(2 * rate)
+  let phase = 0
+  for (let i = 0; i < x.length; i++) { phase += f0(i / rate) / rate; for (let h = 1; h * f0(i / rate) < 8000 && h < 70; h++) x[i] += Math.sin(2 * Math.PI * h * phase) / h }
+  for (const [frequency, bandwidth] of [[700, 110], [1220, 120], [2600, 160]]) {
+    const r = Math.exp(-Math.PI * bandwidth / rate), c = 2 * r * Math.cos(2 * Math.PI * frequency / rate)
+    let y1 = 0, y2 = 0
+    for (let i = 0; i < x.length; i++) { const y = (1 - r) * x[i] + c * y1 - r * r * y2; y2 = y1; y1 = y; x[i] = y }
+  }
+  const peak = x.reduce((m, v) => Math.max(m, Math.abs(v)), 0)
+  for (let i = 0; i < x.length; i++) x[i] *= .3 / peak
+  const t = analyze(x, rate), anchors = [[0, 0], [2, 2]]
+  for (const amount of [.5, 1.5]) {
+    const out = render(x, rate, t, transform(t, t.f0, 0, 2, 'variation', amount, .06), anchors, 'waveform')
+    let top = 0
+    for (const v of out) top = Math.max(top, Math.abs(v))
+    assert.ok(top < .3 * 1.12, `intonation ${amount * 100}%: peak ${top.toFixed(3)} against the source's .300`)
+    const w = Math.round(.01 * rate)
+    for (let c = Math.round(.2 * rate); c < Math.round(1.8 * rate); c += w) {
+      const level = dB(rms(out, c - w, c + w) / rms(x, c - w, c + w))
+      assert.ok(level < 2, `intonation ${amount * 100}%: ${level.toFixed(1)} dB above the source at ${(c / rate).toFixed(2)} s`)
+    }
+  }
+})
+
+test('waveform engine: each glottal period keeps the shape of the true voice at the new pitch', () => {
+  // Pulses through three resonances; the truth is the same filter excited at the target pitch.
+  // The formant correction must be causal like a vocal tract: a zero-phase correction rang before
+  // every pulse and matched the true period shape with a correlation of only 0.79 to 0.81.
+  const rate = 44100, seconds = 1.2
+  const voice = f0 => {
+    const x = new Float32Array(Math.round(rate * seconds)), period = rate / f0
+    for (let k = 0; k * period < x.length; k++) x[Math.round(k * period)] = 1
+    for (const [frequency, bandwidth] of [[700, 110], [1220, 120], [2600, 160]]) {
+      const r = Math.exp(-Math.PI * bandwidth / rate), c = 2 * r * Math.cos(2 * Math.PI * frequency / rate)
+      let y1 = 0, y2 = 0
+      for (let i = 0; i < x.length; i++) { const y = (1 - r) * x[i] + c * y1 - r * r * y2; y2 = y1; y1 = y; x[i] = y }
+    }
+    const peak = x.reduce((m, v) => Math.max(m, Math.abs(v)), 0)
+    return x.map(v => v * .3 / peak)
+  }
+  // Average period, folded at the known period, and its best circular correlation with the truth's.
+  const shape = (y, f0) => {
+    const P = rate / f0, fold = new Float64Array(256), n = new Float64Array(256)
+    for (let i = Math.round(.3 * rate); i < Math.round(.9 * rate); i++) { const b = Math.floor(i % P / P * 256); fold[b] += y[i]; n[b]++ }
+    return fold.map((v, b) => v / n[b])
+  }
+  const match = (a, b) => {
+    let best = -1
+    for (let s = 0; s < 256; s++) { let xy = 0, xx = 0, yy = 0; for (let i = 0; i < 256; i++) { const v = b[(i + s) % 256]; xy += a[i] * v; xx += a[i] * a[i]; yy += v * v } best = Math.max(best, xy / Math.sqrt(xx * yy)) }
+    return best
+  }
+  const x = voice(110), t = analyze(x, rate)
+  for (const shift of [7, -4]) {
+    const f1 = 110 * 2 ** (shift / 12), out = render(x, rate, t, transform(t, t.f0, 0, seconds, 'shift', shift), [[0, 0], [seconds, seconds]], 'waveform')
+    const m = match(shape(out, f1), shape(voice(f1), f1))
+    assert.ok(m > .95, `${shift > 0 ? '+' : ''}${shift} st: period shape correlation ${m.toFixed(3)}`)
+  }
+})
+
+test('analysis keeps a short voiced island whose Harvest pitch is off', () => {
+  // 0.55 s of real speech (the committed a.aac recording, 0.85–1.40 s): a 45 ms falling syllable
+  // end, voiced by any listener (Praat strength 0.61), where Harvest reads 141 Hz against cycles
+  // at 125 Hz. Judged only at Harvest's lag, its periodicity was 0.16 and the run was discarded,
+  // so a pitch edit left it at the old pitch between shifted neighbours.
+  const { channelData: [x], sampleRate } = decodeWav(readFileSync(new URL('./fixtures/prosody-island.wav', import.meta.url)))
+  const t = analyze(x, sampleRate), island = Array.from(t.f0).filter((v, i) => t.times[i] >= .235 && t.times[i] <= .28)
+  assert.ok(island.length === 8 && island.every(Boolean), `island voiced (${island.map(v => v.toFixed(0))})`)
+  assert.ok(island.every(v => v > 105 && v < 135), `cycle marks correct Harvest's pitch (${island.map(v => v.toFixed(0))})`)
+  const out = render(x, sampleRate, t, transform(t, t.f0, 0, x.length / sampleRate, 'shift', 4), [[0, 0], [x.length / sampleRate, x.length / sampleRate]])
+  // A 30 ms window: the island is shorter than the usual 40 ms.
+  for (const time of [.255, .265]) {
+    const a = Math.round((time - .015) * sampleRate), n = Math.round(.03 * sampleRate)
+    const before = yin(x.subarray(a, a + n), { fs: sampleRate, minFreq: 60, maxFreq: 600 }), after = yin(out.subarray(a, a + n), { fs: sampleRate, minFreq: 60, maxFreq: 600 })
+    assert.ok(after?.clarity > .8 && Math.abs(st(after.freq, before.freq) - 4) < .5, `the island is shifted with its neighbours at ${time} s (${before?.freq.toFixed(0)} → ${after?.freq.toFixed(0)} Hz)`)
+  }
+})
+
 test('rules and point edits preserve unvoiced gaps and remain non-destructive', () => {
   const t = { times: Float32Array.of(0, .02, .04, .06, .08), f0: Float32Array.of(100, 200, 0, 100, 150) }
   const result = transform(t, t.f0, 0, .08, 'variation', .5)
