@@ -18,20 +18,34 @@ function render(name, x, at, seconds = 1.5, opts = {}) {
   for (let i = 0; i < out.length / BLOCK; i++) { voice.render(block, at(i)); out.set(block, i * BLOCK) }
   return { out, voice }
 }
-// The frequency of the loudest bin of y's mean power spectrum from `from` on (Hann frames of 8,192, half overlapping:
-// a method that blurs a line, as grains do, scatters one frame's peak across the blur), refined by the parabola
-// through its log neighbours
-function pitch(y, from) {
-  const n = 8192, w = window('hann', n), re = new Float64Array(n), im = new Float64Array(n), power = new Float64Array(n / 2)
+// y's mean power spectrum from `from` on, Hann frames of n, half overlapping, added into `into`
+function power(y, from = 0, n = 8192, into = new Float64Array(n / 2)) {
+  const w = window('hann', n), re = new Float64Array(n), im = new Float64Array(n)
   for (let at = from; at + n <= y.length; at += n / 2) {
     for (let i = 0; i < n; i++) { re[i] = y[at + i] * w[i]; im[i] = 0 }
     fft(re, im)
-    for (let k = 0; k < n / 2; k++) power[k] += re[k] ** 2 + im[k] ** 2
+    for (let k = 0; k < n / 2; k++) into[k] += re[k] ** 2 + im[k] ** 2
   }
+  return into
+}
+// The frequency of the loudest bin of y's mean power spectrum (frames of 8,192: a method that blurs a line, as grains
+// do, scatters one frame's peak across the blur), refined by the parabola through its log neighbours
+function pitch(y, from) {
+  const n = 8192, p = power(y, from, n)
   let k = 1
-  for (let j = 1; j < n / 2 - 1; j++) if (power[j] > power[k]) k = j
-  const a = Math.log(power[k - 1]), b = Math.log(power[k]), c = Math.log(power[k + 1])
+  for (let j = 1; j < n / 2 - 1; j++) if (p[j] > p[k]) k = j
+  const a = Math.log(p[k - 1]), b = Math.log(p[k]), c = Math.log(p[k + 1])
   return (k + .5 * (a - c) / (a - 2 * b + c)) * sr / n
+}
+// The width in Hz of a spectrum's loudest line where it falls to `level` of its peak, the crossings found linearly
+function width(p, level, n) {
+  let k = 1
+  for (let j = 1; j < p.length; j++) if (p[j] > p[k]) k = j
+  const at = p[k] * level
+  let l = k, r = k
+  while (l > 0 && p[l] > at) l--
+  while (r < p.length - 1 && p[r] > at) r++
+  return (r - (at - p[r]) / (p[r - 1] - p[r]) - l - (at - p[l]) / (p[l + 1] - p[l])) * sr / n
 }
 
 test('every method stays finite: silence, and carets at both ends', () => {
@@ -58,9 +72,9 @@ test('held, tape falls silent: a still head reads a constant', () => {
 })
 
 // How far a held sine may move, and why. The vocoders, the lines and the reassigned bank play the peak's own frequency.
-// Grains blur a line to their length (80 ms: ±6 Hz). Random phase plays only the frame's bin frequencies: within half
-// a bin, 10.8 Hz at 2,048 (a 220 Hz sine comes out 45 cents sharp). A bank read from the bins spreads a line over its
-// bands anywhere in the analysis lobe, ±2 bins.
+// Grains blur a line to their length (80 ms: ±6 Hz). Random phase blurs it over about two bins, centred on it, so one
+// hold's loudest point lands within half a bin, 10.8 Hz at 2,048 (for a 220 Hz sine, up to 83 cents off). A bank
+// read from the bins spreads a line over its bands anywhere in the analysis lobe, ±2 bins.
 const drift = { grains: 6.25, random: sr / 2048 / 2, bank: 1, lines: 1, vocoder: 1, hybrid: 1 }
 test('held, a sine keeps its pitch within each method\'s resolution', () => {
   for (const f0 of [220, 440, 1234.5]) for (const name of Object.keys(drift)) {
@@ -168,9 +182,9 @@ test('reassigned, the noisc bank puts a sine\'s power in one band, a line at its
   assert.ok(bank.tone[loud] > .99, `tone ${bank.tone[loud].toFixed(3)}`)
 })
 
-test('every kind of line plays a held sine at its pitch; FM lines and sines keep its level, and an FM line\'s level stays still', () => {
+test('every kind of line plays a held sine at its pitch; FM and drifting lines and sines keep its level, and an FM line\'s level stays still', () => {
   const x = sine(440), caret = len / 2, source = rms(x, caret - 4096, caret + 4096)
-  for (const name of ['bank', 'lines']) for (const line of ['band', 'fm', 'rice']) {
+  for (const name of ['bank', 'lines']) for (const line of ['band', 'fm', 'ou', 'rice']) {
     const { out } = render(name, x, () => caret, 3, { line }), f = pitch(out, Math.round(.3 * sr))
     assert.ok(Math.abs(f - 440) < 1, `${name}, ${line}: ${f.toFixed(2)} Hz`)
     if (line === 'band') continue
@@ -179,6 +193,65 @@ test('every kind of line plays a held sine at its pitch; FM lines and sines keep
   }
   const { out, g } = play('bank', x, sr, caret, { line: 'fm' }), { flutter } = fidelity(x, out, sr, caret, g.hold)
   assert.ok(flutter < .3, `flutter ${flutter.toFixed(2)} dB`)
+})
+
+// One walking noiscillator, W Hz wide at f, of RMS 0.3, rendered block by block, from its first whole block after a second
+function lone(line, f, W, seconds, seed) {
+  const { bank } = bankOf(1, undefined, { line }), out = new Float32Array(BLOCK), y = new Float32Array(Math.floor(seconds * sr / BLOCK) * BLOCK)
+  if (seed) bank.s = seed
+  bank.set(0, f, W, .3, 1, true)
+  for (let i = 0; i < y.length / BLOCK; i++) { out.fill(0); bank.render(out); y.set(out, i * BLOCK) }
+  return y.subarray(Math.ceil(sr / BLOCK) * BLOCK)
+}
+
+test('a walking line keeps its level at any width, and does not swell over a block', () => {
+  for (const line of ['fm', 'ou']) for (const W of [50, 1000, 3000]) {
+    const y = lone(line, 4000, W, 4)
+    let first = 0, last = 0
+    for (let i = 0; i < y.length; i += BLOCK) for (let t = 0; t < 16; t++) { first += y[i + t] ** 2; last += y[i + BLOCK - 16 + t] ** 2 }
+    const swell = db(Math.sqrt(last / first))
+    assert.ok(Math.abs(rms(y) / .3 - 1) < .03, `${line}, ${W} Hz: RMS ${(rms(y) / .3).toFixed(3)} of its level`)
+    assert.ok(Math.abs(swell) < .1, `${line}, ${W} Hz: ${swell.toFixed(2)} dB from a block's start to its end`)
+  }
+})
+
+// Kubo's line (Anderson 1954, Kubo 1954): a sine whose frequency walks by σ with memory τc has the correlation
+// exp(−α²(e^(−x) − 1 + x)), x = τ/τc, α = 2πστc, and its spectrum is that correlation's transform. Its half-power width
+// in σ, integrated: 2α when the walk is fast, 2.355 (a Gaussian's) when slow.
+function kubo(alpha) {
+  const dx = Math.min(.05, .02 / alpha), g = []
+  for (let x = 0, v = 1; v > 1e-14; x += dx) g.push(v = Math.exp(-alpha * alpha * (Math.exp(-x) - 1 + x)))
+  const S = nu => g.reduce((s, v, i) => s + v * Math.cos(2 * Math.PI * nu * i * dx), -g[0] / 2) * dx, half = S(0) / 2
+  let lo = 0, hi = alpha
+  for (let k = 0; k < 50; k++) { const m = (lo + hi) / 2; if (S(m) > half) lo = m; else hi = m }
+  return 2 * lo / (alpha / (2 * Math.PI))
+}
+
+test('a drifting line walks as Kubo\'s line W wide: α = 4, σ = W over the line\'s width in σ', () => {
+  assert.ok(Math.abs(kubo(.1) / .2 - 1) < .01, `fast: ${kubo(.1).toFixed(4)} σ, 2α = 0.2`)
+  assert.ok(Math.abs(kubo(40) / 2.3548 - 1) < .01, `slow: ${kubo(40).toFixed(4)} σ, a Gaussian's 2.3548`)
+  const { bank } = bankOf(1, undefined, { line: 'ou' }), width = kubo(4)
+  for (const W of [5, 100, 3000]) {
+    bank.set(0, 2000, W, 1, 1, true)
+    const pole = bank.pole[0], σ = bank.jitter[0] / Math.sqrt(1 - pole * pole) * sr / (2 * Math.PI), τ = -1 / (sr * Math.log(pole)), α = 2 * Math.PI * σ * τ
+    assert.ok(Math.abs(α - 4) < 1e-9, `${W} Hz: α ${α}`)
+    assert.ok(Math.abs(W / σ / width - 1) < 1e-3, `${W} Hz: ${(W / σ).toFixed(4)} σ wide, Kubo's line ${width.toFixed(4)}`)
+  }
+})
+
+test('rendered, a drifting line reads Gaussian and an FM line Lorentzian, each W wide (±5 %)', () => {
+  // the width at −12 dB over the width at −3 dB: a Gaussian's is 2, a Lorentzian's √15 = 3.87. Frames of 2,048 make
+  // 21.5 Hz bins, 46 across the line, averaged over 9 so that noise does not lift the loudest (a peak read 6 % high
+  // puts the half-power crossings of a Lorentzian 6 % closer).
+  const n = 2048, W = 1000
+  for (const [line, lo, hi] of [['ou', 1.8, 2.6], ['fm', 3.3, 4.6]]) {
+    const p = new Float64Array(n / 2)
+    for (let seed = 1; seed <= 4; seed++) power(lone(line, 5000, W, 6, seed * 0x9e3779b1 | 1), 0, n, p)
+    const q = p.map((_, k) => p.slice(Math.max(0, k - 4), k + 5).reduce((s, v) => s + v) / (Math.min(p.length, k + 5) - Math.max(0, k - 4)))
+    const half = width(q, .5, n), ratio = width(q, 1 / 16, n) / half
+    assert.ok(Math.abs(half / W - 1) < .05, `${line}: ${half.toFixed(0)} Hz wide at half power`)
+    assert.ok(ratio > lo && ratio < hi, `${line}: −12/−3 dB widths ${ratio.toFixed(2)}`)
+  }
 })
 
 test('renders repeat exactly: every random draw is seeded', () => {

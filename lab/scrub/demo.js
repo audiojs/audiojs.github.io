@@ -12,7 +12,7 @@ const seconds = t => `${(t / RATE).toFixed(2)} s`, minus = s => s.replace('-', '
 const state = { x: sound('voice'), name: sounds.voice.name, version: 0, caret: 0, method: 'hybrid', frame: 2048, overlap: 4, spread: 0, bands: 256, analysis: 'reassigned', line: 'rice', hold: false, pressed: false, keyed: false, heard: null }
 const opts = () => ({ frame: state.frame, overlap: state.overlap, spread: state.spread, bands: state.bands, analysis: state.analysis, line: state.line })
 const sounding = () => state.pressed || state.hold
-const LINE = { band: 'noise bands', fm: 'FM lines', rice: 'sines and noise' }
+const LINE = { band: 'noise bands', fm: 'FM lines', ou: 'drifting lines', rice: 'sines and noise' }
 
 // ── Audio ───────────────────────────────────────────────────────
 

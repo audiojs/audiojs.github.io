@@ -305,20 +305,26 @@ class Vocoder extends Frames {
 
 // ── Noiscillators ───────────────────────────────────────────────
 
-// Noiscillators (dy/noisc, "oscillation with uncertain frequency"): a line of width W Hz at f, of one of three kinds.
+// Noiscillators (dy/noisc, "oscillation with uncertain frequency"): a line of width W Hz at f, of one of four kinds.
 // A noise band (nosc's `quadrature`): complex Gaussian noise through four one-pole lowpasses (half power at 0.435 of
 // their corner), turned up to f; its envelope wanders as noise does. The noise going in is uniform, of unit variance:
 // four poles average it into a Gaussian (the central limit), so the line is the same without Gaussian draws. An FM line
 // (nosc's `walker`): a sine of constant level whose frequency jitters, white, by √(W · sr / 2π) Hz, a Lorentzian line
-// W wide (Wiener phase noise). Sine and noise (nosc's `rice`): `tone`, a share of the power, a steady sine at f, the
-// rest a noise band. Frequencies glide over ~10 ms, levels over 10 ms.
-const UNIFORM = Math.sqrt(3) / 2 ** 31
+// W wide (Wiener phase noise). A drifting line (nosc's `ou`): a sine of constant level whose frequency wanders off by
+// σ Hz and back over τ s, an Ornstein–Uhlenbeck walk; its one pole averages the uniform draws as the band's four do.
+// The line's shape follows α = 2πστ (Anderson 1954, Kubo 1954): a slow walk's line is its frequencies' Gaussian,
+// 2.355σ wide, a fast walk's narrows to a Lorentzian 2σα wide. At nosc's α = 4 it is nearly Gaussian and 2.1468σ
+// wide, the half-power width of Kubo's line exp(−α²(e^(−τ/τc) − 1 + τ/τc)) (nosc's σ = W (1/2.355 + 1/2α) sets
+// lines 18 % too wide). An FM line is a walk with no memory, its pole 0. Sine and noise (nosc's `rice`): `tone`, a
+// share of the power, a steady sine at f, the rest a noise band. Frequencies glide over ~10 ms, levels over 10 ms.
+const UNIFORM = Math.sqrt(3) / 2 ** 31, SHAPE = 4, KUBO = 2.1468
 class Noiscs {
   constructor(count, sr, kind = 'rice') {
     this.count = count
     this.sr = sr
     this.kind = kind
-    for (const k of ['f', 'to', 'c', 'norm', 'tone', 'jitter', 'g', 'level', 'pr', 'pi']) this[k] = new Float64Array(count)
+    this.walks = kind === 'fm' || kind === 'ou'
+    for (const k of ['f', 'to', 'c', 'norm', 'tone', 'jitter', 'pole', 'walk', 'g', 'level', 'pr', 'pi']) this[k] = new Float64Array(count)
     this.state = new Float64Array(count * 8)
     this.k = 1 - Math.exp(-1 / (.01 * sr))
     this.s = 0x6d2b79f5
@@ -330,22 +336,29 @@ class Noiscs {
     this.c[j] = c
     // the cascade's impulse energy, Σ C(n+3, 3)² c⁸ z^n, in closed form: c (1 + 9z + 9z² + z³) / (2 − c)⁷
     this.norm[j] = 1 / Math.sqrt(c * (1 + 9 * z + 9 * z * z + z * z * z) / (2 - c) ** 7)
-    // an FM line's turn a sample, in radians: 2π σ / sr for a frequency jitter σ = √(W · sr / 2π)
-    this.jitter[j] = TAU * Math.sqrt(Math.max(W, 0) * this.sr / TAU) / this.sr
+    // a walk's random turn a sample, in radians. An FM line's is white, 2πσ / sr for a jitter σ = √(W · sr / 2π) Hz.
+    // A drifting line's keeps `pole` of the last each sample, e^(−1 / τ sr), and adds a push of 2πσ √(1 − pole²) / sr,
+    // for a spread of σ Hz; its memory τ = α / 2πσ.
+    if (this.kind === 'ou') {
+      const σ = Math.max(W, 0) / KUBO, pole = Math.exp(-TAU * σ / (SHAPE * this.sr))
+      this.pole[j] = pole
+      this.jitter[j] = TAU * σ * Math.sqrt(1 - pole * pole) / this.sr
+    } else this.jitter[j] = TAU * Math.sqrt(Math.max(W, 0) * this.sr / TAU) / this.sr
     this.level[j] = level
-    this.tone[j] = this.kind === 'rice' ? tone : this.kind === 'fm' ? 1 : 0
+    this.tone[j] = this.kind === 'rice' ? tone : this.walks ? 1 : 0
     if (!jump) return
     this.s = xorshift(this.s)
     const t = (this.s >>> 20) << 1
     this.f[j] = f
     this.g[j] = 0
+    this.walk[j] = 0
     this.pr[j] = TURNS[t]
     this.pi[j] = TURNS[t + 1]
     this.state.fill(0, j * 8, j * 8 + 8)
   }
   // adds every voice into out
   render(out) {
-    const n = out.length, { f, to, c, norm, tone, jitter, g, level, pr, pi, state, k } = this, step = TAU / this.sr, fm = this.kind === 'fm'
+    const n = out.length, { f, to, c, norm, tone, jitter, pole, walk, g, level, pr, pi, state, k, walks } = this, step = TAU / this.sr
     let s = this.s
     for (let j = 0; j < this.count; j++) {
       const target = level[j]
@@ -353,15 +366,18 @@ class Noiscs {
       f[j] += (to[j] - f[j]) * .25
       const rr = Math.cos(f[j] * step), ri = Math.sin(f[j] * step), cj = c[j]
       const sine = Math.SQRT2 * Math.sqrt(tone[j]), band = norm[j] * Math.sqrt(1 - tone[j]), o = j * 8
-      let r = pr[j], i = pi[j], gg = g[j]
+      let r = pr[j], i = pi[j], gg = g[j], e = walk[j]
       let i0 = state[o], i1 = state[o + 1], i2 = state[o + 2], i3 = state[o + 3]
       let q0 = state[o + 4], q1 = state[o + 5], q2 = state[o + 6], q3 = state[o + 7]
-      if (fm) for (let t = 0, e0 = jitter[j] * UNIFORM; t < n; t++) {
-        // the sample's turn, and a small random one e on top, to second order: (1 − e²/2) + ie
+      if (walks) for (let t = 0, p = pole[j], e0 = jitter[j] * UNIFORM; t < n; t++) {
+        // the sample's turn, and the walk's random one e on top: (1 + ih) / (1 − ih), exactly unit length (the Cayley
+        // transform), turning by 2 atan h, which for h = tan(e/2) ≈ e/2 + e³/24 is e to fifth order. A second-order
+        // turn, (1 − e²/2) + ie, grows by 1 + e⁴/4 a sample: a line 1 kHz wide would swell 4 dB over each block.
         s = xorshift(s)
-        const e = s * e0, ec = 1 - e * e / 2, u = r * rr - i * ri, v = r * ri + i * rr
-        r = u * ec - v * e
-        i = u * e + v * ec
+        e = e * p + s * e0
+        const h = e * (.5 + e * e / 24), q = 1 / (1 + h * h), ec = (1 - h * h) * q, es = 2 * h * q, u = r * rr - i * ri, v = r * ri + i * rr
+        r = u * ec - v * es
+        i = u * es + v * ec
         gg += (target - gg) * k
         out[t] += gg * sine * i
       } else if (!band) for (let t = 0; t < n; t++) {
@@ -384,7 +400,7 @@ class Noiscs {
         out[t] += gg * (sine * i + band * (i3 * r - q3 * i))
       }
       const m = 1 / Math.sqrt(r * r + i * i)
-      pr[j] = r * m; pi[j] = i * m; g[j] = gg
+      pr[j] = r * m; pi[j] = i * m; g[j] = gg; walk[j] = e
       state[o] = i0; state[o + 1] = i1; state[o + 2] = i2; state[o + 3] = i3
       state[o + 4] = q0; state[o + 5] = q1; state[o + 6] = q2; state[o + 7] = q3
     }
