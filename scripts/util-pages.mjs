@@ -1,7 +1,7 @@
 // Renders util/<slug>/index.html for every utility, util/index.html, sitemap.xml and robots.txt.
 // Run: node scripts/util-pages.mjs
 // Pages live inline below and as one module each in scripts/pages/ (export default { slug, … }, same shape).
-import { writeFileSync, readFileSync, mkdirSync, readdirSync } from 'fs'
+import { writeFileSync, readFileSync, mkdirSync, readdirSync, existsSync } from 'fs'
 import { ROOT, sha, hash, drop, pkg, esc, src, faq } from './page-helpers.mjs'
 
 const SITE = 'https://audiojs.dev'
@@ -837,11 +837,15 @@ const index = () => `${head({ slug: '', title: 'Free audio utilities that run in
 `
 
 const today = new Date().toISOString().slice(0, 10)
+// lab/: its front page and every article folder that has a page
+const lab = existsSync(`${ROOT}lab/index.html`) ? readdirSync(`${ROOT}lab`, { withFileTypes: true }).filter(d => d.isDirectory() && existsSync(`${ROOT}lab/${d.name}/index.html`)).map(d => d.name).sort() : null
 const sitemap = () => `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${SITE}/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>${SITE}/util/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>${pages.map(p => `
-  <url><loc>${SITE}/util/${p.slug}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>`).join('')}
+  <url><loc>${SITE}/util/${p.slug}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>`).join('')}${lab ? `
+  <url><loc>${SITE}/lab/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>${lab.map(slug => `
+  <url><loc>${SITE}/lab/${slug}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`).join('')}` : ''}
 </urlset>
 `
 const robots = () => `User-agent: *

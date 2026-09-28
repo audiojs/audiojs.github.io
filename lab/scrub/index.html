@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hearing a moment · audiojs lab</title>
+  <meta name="description" content="Press a waveform and hold still: what should one instant of sound sound like? Tape, loop, grains, noiscillators, random phase and phase vocoders, each live, timed and measured.">
+  <link rel="canonical" href="https://audiojs.dev/lab/scrub/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://audiojs.dev/lab/scrub/">
+  <meta property="og:title" content="Hearing a moment">
+  <meta property="og:site_name" content="audiojs">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/lab/lab.css">
+  <style>
+    #scrub .wave { cursor: ew-resize; touch-action: pan-y; }
+    #scrub figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
+    #scrub figcaption .readout { flex-basis: 100%; }
+    .legend { margin-right: 14px; white-space: nowrap; }
+    .key { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; }
+    .key.source { background: var(--panel-ink-3); }
+    .key.output { background: var(--panel-accent); }
+    .file input { max-width: 230px; font: inherit; font-size: 12px; }
+    .costs tr.current th { color: var(--accent); }
+    .listen { width: 28px; height: 28px; border: 0; border-radius: 50%; background: oklch(91% .004 80); color: var(--ink); font-size: 11px; cursor: pointer; }
+    .listen:disabled { opacity: .35; cursor: default; }
+    .methods b { min-width: 140px; }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="top"><span class="crumb"><a href="/">audiojs</a><span>/</span><a href="/lab/">Lab</a></span><a href="https://github.com/audiojs/audiojs.github.io/tree/main/lab/scrub">Source</a></nav>
+  <h1>Hearing a moment</h1>
+  <p class="lead">Press the waveform and hold still. What should one instant of a sound sound like? Eight answers, each live, timed and measured.</p>
+
+  <div class="sound controls">
+    <label>Sound <select id="sound"></select></label>
+    <label class="file">or open a file <input type="file" id="file" accept="audio/*"></label>
+  </div>
+
+  <figure id="scrub">
+    <canvas class="wave" tabindex="0" role="slider" aria-label="Caret, in seconds" aria-valuemin="0"></canvas>
+    <canvas class="spectrum" aria-hidden="true"></canvas>
+    <figcaption><span class="legend"><i class="key source"></i>the sound around the caret</span><span class="legend"><i class="key output"></i>what the method plays</span><span class="readout" id="at"></span></figcaption>
+    <div class="controls">
+      <span data-name="method" role="group" aria-label="Method"><button data-value="tape" aria-pressed="false">Tape</button><button data-value="loop" aria-pressed="false">Loop</button><button data-value="grains" aria-pressed="false">Grains</button><button data-value="bank" aria-pressed="false">Noisc bank</button><button data-value="lines" aria-pressed="false">Noisc lines</button><button data-value="random" aria-pressed="false">Random phase</button><button data-value="vocoder" aria-pressed="false">Vocoder</button><button data-value="hybrid" aria-pressed="true">Vocoder + noise</button></span>
+    </div>
+    <div class="controls">
+      <label><input type="checkbox" name="hold"> keep playing after release</label>
+      <span class="group">Frame <span data-name="frame" role="group" aria-label="Frame, samples"><button data-value="1024" aria-pressed="false">1024</button><button data-value="2048" aria-pressed="true">2048</button><button data-value="4096" aria-pressed="false">4096</button><button data-value="8192" aria-pressed="false">8192</button></span></span>
+      <span class="group">Overlap <span data-name="overlap" role="group" aria-label="Frames overlapping"><button data-value="4" aria-pressed="true">4</button><button data-value="8" aria-pressed="false">8</button><button data-value="16" aria-pressed="false">16</button></span></span>
+      <label>Spread <input type="range" name="spread" min="0" max="300" step="10" value="0"><output for="spread"></output> ms</label>
+    </div>
+    <div class="controls">
+      <span class="group">Bank <span data-name="bands" role="group" aria-label="Noiscillators in the bank"><button data-value="64" aria-pressed="false">64</button><button data-value="256" aria-pressed="true">256</button><button data-value="1024" aria-pressed="false">1024</button></span></span>
+      <span class="group">Read <span data-name="analysis" role="group" aria-label="The bank's analysis"><button data-value="bins" aria-pressed="false">bins</button><button data-value="reassigned" aria-pressed="true">reassigned</button></span></span>
+      <span class="group">Lines <span data-name="line" role="group" aria-label="Noiscillator kind"><button data-value="band" aria-pressed="false">noise band</button><button data-value="fm" aria-pressed="false">FM line</button><button data-value="rice" aria-pressed="true">sine and noise</button></span></span>
+    </div>
+  </figure>
+  <p class="hint">Drag across the waveform to scrub; hold still to hear the moment. The lighter band is what the method listens to. Frame, overlap and spread shape the spectral methods (random phase and the vocoders); bank, read and lines the noiscillators. With the waveform focused: ← → move the caret (Shift: ten times further), Space keeps playing, 1–8 pick a method. Drop a sound file anywhere on the page.</p>
+
+  <h2>Cost and fidelity</h2>
+  <p>Every method plays one gesture at the caret: a 1.5 s hold, a 1 s drag at half speed, a 0.5 s hold. Cost is the time to render a block of 128 samples, the fastest of four turns in a worker; the budget at 44.1 kHz is 2,902 µs. Fidelity compares the first hold with the sound around the caret.</p>
+  <div class="table">
+    <table class="costs">
+      <thead><tr><th scope="col">Method</th><th scope="col">µs per block</th><th scope="col">Real time</th><th scope="col">Level</th><th scope="col">Distance</th><th scope="col">Flutter</th><th scope="col">Repeats</th><th scope="col"><span class="hidden">Listen</span></th></tr></thead>
+      <tbody id="costs"></tbody>
+    </table>
+  </div>
+  <div class="controls"><button id="measure" class="action">Measure at the caret</button><span class="readout" id="status" role="status"></span></div>
+  <ul class="try">
+    <li><b>Level</b><span>the hold's power against the source's</span></li>
+    <li><b>Distance</b><span>the mean dB difference per 21.5 Hz bin, 50 Hz–16 kHz, levels aligned. A frozen noise differs from any one moment of noise, so noise never scores 0.</span></li>
+    <li><b>Flutter</b><span>how much the hold's loudness moves: the spread of its 10 ms RMS, dB</span></li>
+    <li><b>Repeats</b><span>how periodically it moves: the highest correlation of its loudness with itself 20 to 400 ms later. A frame played again and again scores near 1; so does a sound that beats, as the chime does.</span></li>
+  </ul>
+  <p id="bank" hidden>The noisc bank costs <span id="ns"></span> ns per noiscillator per sample: one core plays about <span id="voices"></span> of them in real time. Random phase is a bank too, a noise line on each of the frame's <span id="lines"></span> bins, and costs <span id="random-us"></span> µs a block against the bank's <span id="bank-us"></span>: an inverse FFT plays every line at once. A GPU could run the oscillators in parallel, but an AudioWorklet cannot reach WebGPU, and the FFT already makes a dense bank cheap.</p>
+
+  <h2>The methods</h2>
+  <ul class="try methods">
+    <li><b>Tape</b><span>The read head chases the caret, so pitch follows speed and a still caret is silence. Audacity's Scrub.<sup><a href="#r1">1</a></sup></span></li>
+    <li><b>Loop</b><span>The 80 ms around the caret, again and again, each pass from where the caret is. It buzzes at its own rate, and pitch holds only to the nearest of its harmonics, 13.9 Hz apart. Reaper's looped-segment scrub.<sup><a href="#r2">2</a></sup></span></li>
+    <li><b>Grains</b><span>80 ms grains, a new one every 20 ms, each from the caret ± 15 ms.<sup><a href="#r3">3</a></sup> Steady, chorused, a tone blurred to the grain's resolution.</span></li>
+    <li><b>Noisc bank</b><span>Noiscillators<sup><a href="#r4">4</a></sup> on a fixed log grid, one per band, set every hop to the power the caret's spectrum holds there. Nothing is fitted. Read from the bins, it is a noise vocoder:<sup><a href="#r5">5</a></sup> a partial's leakage becomes noise in every band it touches, and pitch survives only where bands are narrower than the harmonics' spacing. Reassigned,<sup><a href="#r13">13</a></sup> each bin's power moves to its instantaneous frequency first: a partial lands in one band, whose line sits at its frequency, a sine as far as it is one.</span></li>
+    <li><b>Noisc lines</b><span>Tonal peaks become lines, as wide as each peak is wider than a steady sine's;<sup><a href="#r8">8</a>,<a href="#r9">9</a></sup> third-octave noise bands carry the rest. Sines plus noise,<sup><a href="#r6">6</a>,<a href="#r7">7</a></sup> drawn with noiscillators. A line is a noise band (its envelope wanders), an FM line (its level steady, its frequency jittering) or a sine and noise in the measured share.</span></li>
+    <li><b>Random phase</b><span>The caret's spectrum with new random phases every hop: Paulstretch.<sup><a href="#r10">10</a></sup> Noise stays noise; a tone widens to a bin and snaps toward the bin grid: with 2,048-sample frames a 220 Hz sine plays 45 cents sharp.</span></li>
+    <li><b>Vocoder</b><span>Each peak's phase advances as it did between two frames a hop apart; the bins around it keep their offsets to it.<sup><a href="#r11">11</a></sup> Tones hold exactly; noise freezes into a metallic ring, and a held frame plays its own shape again every hop. More overlap only repeats it faster; a spread overlap-adds frames from around the caret instead, and the repeating goes.</span></li>
+    <li><b>Vocoder + noise</b><span>The vocoder for the bins a tonal peak's own leakage explains, random phase for the rest. Melodyne's engine has the same parts: frequencies from phase differences, a harmonic model, a residual.<sup><a href="#r12">12</a></sup></span></li>
+  </ul>
+
+  <ol class="refs">
+    <li id="r1">Audacity Manual, <a href="https://manual.audacityteam.org/man/scrubbing_and_seeking.html">Scrubbing and Seeking</a>: Scrub plays at the speed of the mouse.</li>
+    <li id="r2">REAPER, looped-segment scrub at the edit cursor (Preferences › Audio › Playback); <a href="https://reaper.blog/2017/12/scrub-and-jog/">Scrub and jog</a>, The REAPER Blog (2017).</li>
+    <li id="r3">C. Roads, <i>Microsound</i>, MIT Press (2001).</li>
+    <li id="r4">D. Iv, <a href="https://dy.github.io/formant/">noiscillators</a>: oscillation with uncertain frequency, a line of any width from a sine to noise, as a noise band (quadrature), a frequency walk (Wiener) or a sine and noise (rice).</li>
+    <li id="r5">R. V. Shannon, F.-G. Zeng, V. Kamath, J. Wygonski &amp; M. Ekelid, “Speech recognition with primarily temporal cues,” <i>Science</i> 270 (1995).</li>
+    <li id="r6">R. J. McAulay &amp; T. F. Quatieri, “Speech analysis/synthesis based on a sinusoidal representation,” <i>IEEE Trans. ASSP</i> 34 (1986).</li>
+    <li id="r7">X. Serra &amp; J. O. Smith, “Spectral modeling synthesis: a sound analysis/synthesis system based on a deterministic plus stochastic decomposition,” <i>Computer Music Journal</i> 14 (1990).</li>
+    <li id="r8">J. O. Smith &amp; X. Serra, “PARSHL: an analysis/synthesis program for non-harmonic sounds based on a sinusoidal representation,” ICMC (1987): a peak's frequency from the parabola through its log magnitudes.</li>
+    <li id="r9">F. J. Harris, “On the use of windows for harmonic analysis with the discrete Fourier transform,” <i>Proc. IEEE</i> 66 (1978): Hann's half-power width, 1.44 bins.</li>
+    <li id="r10">Nasca Octavian Paul, <a href="https://hypermammut.sourceforge.net/paulstretch/">Paulstretch</a> (2006).</li>
+    <li id="r11">J. Laroche &amp; M. Dolson, “Improved phase vocoder time-scale modification of audio,” <i>IEEE Trans. Speech and Audio Processing</i> 7 (1999).</li>
+    <li id="r12">P. Neubäcker (Celemony), <a href="https://patents.google.com/patent/US8022286B2/en">US 8,022,286 B2</a>, “Sound-object oriented analysis and note-object oriented processing of polyphonic sound recordings” (2011).</li>
+    <li id="r13">K. Kodera, R. Gendrin &amp; C. de Villedary, “Analysis of time-varying signals with small BT values,” <i>IEEE Trans. ASSP</i> 26 (1978): reassignment.</li>
+  </ol>
+  <footer><a href="/lab/">Audio Lab</a> · experiments from <a href="/">audiojs</a></footer>
+</main>
+<script type="module" src="demo.js"></script>
+</body>
+</html>

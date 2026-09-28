@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How do you set words under a waveform? · audiojs lab</title>
+  <meta name="description" content="A waveform keeps the sound's clock, a transcript the reader's. How to set words under their sound: speech clusters from pauses, justification by least squares, line breaks in pauses, one selection for text and bars.">
+  <meta name="theme-color" content="#f3f1ef">
+  <link rel="canonical" href="https://audiojs.dev/lab/words-under-the-waveform/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://audiojs.dev/lab/words-under-the-waveform/">
+  <meta property="og:title" content="How do you set words under a waveform?">
+  <meta property="og:description" content="A waveform keeps the sound's clock, a transcript the reader's. How to set words under their sound, with help from typesetting and music engraving.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "How do you set words under a waveform?",
+    "description": "A waveform keeps the sound's clock, a transcript the reader's. How to set words under their sound, with help from typesetting and music engraving.",
+    "datePublished": "2026-09-27",
+    "url": "https://audiojs.dev/lab/words-under-the-waveform/",
+    "author": { "@type": "Organization", "name": "audiojs", "url": "https://audiojs.dev/" }
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <link rel="preload" href="/lab/fonts/Wavefont.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/lab/lab.css">
+  <link rel="stylesheet" href="article.css">
+  <script type="module" src="figures.js"></script>
+</head>
+<body>
+  <main>
+    <nav class="top"><span class="crumb"><a href="/">audiojs</a><span>/</span><a href="/lab/">Lab</a></span><a href="https://github.com/audiojs" target="_blank" rel="noopener">Source</a></nav>
+    <article>
+      <p class="kicker">Lab 01 · Typesetting speech</p>
+      <h1>How do you set words under a waveform?</h1>
+      <p class="dek">A waveform is time drawn along a line. A transcript is text, and text keeps its own pace. To edit speech by its words the two have to agree. This is how we got them to, and what typesetting and music engraving already knew about it.</p>
+      <p class="meta"><span>September 2026</span><span>14 min read</span><span>From <a href="https://github.com/audio-lab/wavearea">wavearea</a></span><span>Figures run on a NASA podcast</span></p>
+
+      <h2 id="clocks"><span class="n">01</span>Two clocks</h2>
+      <p>Open a podcast in an audio editor and you get its waveform: bars running left to right, each one a few hundredths of a second of sound. Open its transcript and you get words. Both describe the same two minutes, and they disagree about how long two minutes is.</p>
+      <p>The waveform keeps the sound's clock. At 160 pixels a second, a word said in a third of a second gets 53 pixels, however many letters it has. The text keeps the reader's clock: at this size <em>the</em> is 20 pixels wide and <em>astronauts</em> 65, however fast they were said.</p>
+      <p>Set every word under the moment it starts and both clocks show at once. Where the speaker hurries, words pile onto each other. Where they slow down, words drift apart and hang in the air.</p>
+
+      <figure id="fig-1-1">
+        <div class="plate" data-fig="clocks"></div>
+        <figcaption><b>FIG. 1.1</b>Seven seconds of the podcast, each word set where its sound starts. Drag the scale: narrow, the words pile up; wide, they drift apart.</figcaption>
+      </figure>
+
+      <p>This matters for <a href="https://github.com/audio-lab/wavearea">wavearea</a>, the editor we are building for long speech: podcasts, lectures, interviews. It has to show both clocks at once. You read the words to find a place and cut where the waveform shows a pause. So the question here is small and stubborn: where should each word sit?</p>
+
+      <h2 id="fail"><span class="n">02</span>Three ways that fail</h2>
+      <p>We tried the obvious answers first, on two public-domain recordings that come with published transcripts: an episode of NASA's <em>Houston We Have a Podcast</em> and a LibriVox reading of O.&nbsp;Henry's <em>The Gift of the Magi</em>. Each answer gives one of the clocks away.</p>
+      <p><strong>Squeeze the words.</strong> Keep each word under its own sound and condense its letters until it fits. At our editor's default zoom, 97 words in 100 needed squeezing and 85 still ended up away from their sound. Text whose width changes from word to word stops being text.</p>
+      <p><strong>Make room in the waveform.</strong> HTML has a standard for small text attached to other text: ruby, used for pronunciation guides over Japanese and Chinese characters. Make each word's bars the base and the word its annotation, and the browser widens the base wherever the word is longer than its sound. The words read perfectly. The waveform breaks into islands, and a pixel no longer stands for the same span of time.</p>
+      <p><strong>Put the text first.</strong> Set the transcript as a document and hang each word's bars under it, drawn as wide as the word. It reads like a book, but the waveform under it keeps neither the sound's timing nor its shape: every word gets as much waveform as it has letters.</p>
+
+      <figure id="fig-2-1">
+        <div class="plate" data-fig="failures"></div>
+        <figcaption><b>FIG. 2.1</b>The same ten seconds three ways. Squeezed: the time is kept and the text is lost. Room made: the text is kept and the time breaks. Text first: the waveform becomes decoration.</figcaption>
+      </figure>
+
+      <p>The clock that must not give is the sound's. An editor cuts time, so time on the screen has to be true.</p>
+
+      <h2 id="pace"><span class="n">03</span>Time holds, text gives</h2>
+      <p>So the waveform stays linear: one pixel always stands for the same span of sound. Whatever bends has to bend in the text, and text has more give than it seems. It has the spaces between words.</p>
+      <p>Typesetters have bent those spaces for five centuries; it is how justified text gets a straight right edge. Our edge is the sound itself. Before bending anything, though, it pays to choose a scale at which little bending is needed.</p>
+      <p>Measure the transcript's width and divide it by the time its words take to say, leaving the pauses out. The result is the scale at which text and speech keep the same pace, on average: for this podcast, in this article's type, about 125 pixels a second. Much wider, and most spaces need more stretch than looks right, so the words gather in the middle of their sound. Much narrower, and they crowd.</p>
+
+      <figure id="fig-3-1">
+        <div class="plate" data-fig="fit"></div>
+        <figcaption><b>FIG. 3.1</b>The first minute, laid out as this article goes on to describe. The scale starts at the fit. Wider, spaces run out of stretch and words drift from their sound; narrower, they crowd and push.</figcaption>
+      </figure>
+
+      <p>The fit scale also says how zoom should work. Audio editors usually zoom by samples per bar: in ours, 1,024 samples to a bar 1.25 pixels wide. Then the same zoom shows speech recorded at 44.1&nbsp;kHz at 54 pixels a second and speech recorded at 24&nbsp;kHz at 29. Zooming by pixels per second, starting from the fit, keeps the words readable whatever the file.</p>
+
+      <h2 id="phrases"><span class="n">04</span>Where the phrases are</h2>
+      <h3>Every word has a time</h3>
+      <p>To put a word under its sound we need to know when it was said. A speech recognizer can guess both the words and their times. When the words are already known, as they are with a published transcript, forced alignment does better, because it only has to answer <em>when</em>.</p>
+      <p>We used wav2vec&nbsp;2.0, a speech model trained with connectionist temporal classification (CTC). For every 20 milliseconds of audio it gives the probability of each letter, and of a blank that means no letter. Aligning is finding the most probable path through those probabilities that spells the transcript in order, one column of dynamic programming per 20&nbsp;ms. Where the transcript leaves out something the speaker said, a catch-all state absorbs it, so it doesn't drag the words after it late.</p>
+      <p>CTC has one flaw worth knowing. It lets blanks sit between a word's letters, so a faint first letter can land seconds early, in the silence or music before the word. Where a word's letters fall more than half a second apart and the model hears no speech between them, we keep the part nearest the words around it.</p>
+
+      <figure id="fig-4-1">
+        <div class="plate" data-fig="align"></div>
+        <figcaption><b>FIG. 4.1</b>Forced alignment on the opening of the podcast. Each bracket is one word's sound as the aligner found it, to the nearest 20&nbsp;ms. Brackets touch where the speaker runs words together.</figcaption>
+      </figure>
+
+      <h3>Pauses make phrases</h3>
+      <p>People speak in runs, not words: stretches between breaths and hesitations. On a waveform they are clusters of bars with quiet between them. We call a stretch quiet when its peaks stay below a threshold set a quarter of the way from the recording's noise floor to its speech level, and a quiet stretch of 180&nbsp;ms or more a pause.</p>
+      <p>The pauses mark the phrases the recording itself contains. In the narration, 84% of them fall at punctuation: the reader breathes where the author put a comma. Conversation is looser; one cluster in the podcast runs 78 words without a pause. A cluster too long for a line splits where it pauses most.</p>
+
+      <figure id="fig-4-2">
+        <div class="plate" data-fig="pauses"></div>
+        <figcaption><b>FIG. 4.2</b>Fourteen seconds as peak levels in decibels, with the silence threshold drawn in blue. Shaded stretches stay under it long enough to count as pauses; the brackets are the clusters they leave. Drag the minimum pause to watch phrases merge and split.</figcaption>
+      </figure>
+
+      <h2 id="glue"><span class="n">05</span>Boxes and glue</h2>
+      <p>TeX, the typesetting system Donald Knuth wrote for his own books, sets a line from boxes and glue. Words are boxes of fixed width. The spaces between them are glue: each has a natural width and may stretch or shrink within limits, and a paragraph is set so that its glue bends as evenly as possible.</p>
+      <p>We keep the glue and change what pulls on it. In TeX the pull comes from the right margin. Here every word has its own target: the center of its sound. Words go where the sum of squared distances between word centers and sound centers is smallest, while every space stays within its limits: between ¾ and 2½ of a normal space inside a cluster, at least 2½ between clusters, with no upper limit there.</p>
+
+      <figure id="fig-5-1">
+        <div class="plate" data-fig="glue"></div>
+        <figcaption><b>FIG. 5.1</b>One line, as boxes and glue. Ticks mark the center of each word's sound; dashed lines show how far each word sits from its tick. Centering moves a cluster as one block. Least squares lets each space take up the tempo inside it.</figcaption>
+      </figure>
+
+      <p>Three behaviours fall out of that one rule, with no special cases. A cluster whose text is shorter than its sound spreads its spaces and centers on the sound. One whose text is longer overflows evenly on both sides. When two clusters collide, both move, the one with more words less. Words stay near their sound and phrases stay phrases.</p>
+
+      <aside class="note">
+        <b>How it's solved</b>
+        <p>On one line the limits form a chain: each space ties a word to the next. Sweep left to right, keeping for each word the lowest cost of every position it could take. That cost is a convex curve made of parabolas, and passing it through a space's limits only shifts it and flattens its bottom. Sweep back, and each word takes its curve's lowest point within reach of the word after it. The answer is exact, which we checked against brute force on 3,000 random lines, and a line takes microseconds.</p>
+      </aside>
+
+      <aside class="note">
+        <b>Music did it first</b>
+        <p>Engravers have set words under time for centuries: lyrics under notes. A syllable held across several notes is aligned with the first of them and followed by an extender line to the last; a word split over several notes is joined by centered hyphens. The difference is that an engraver may widen the music to fit the words. A waveform can't widen, so here all the give has to come from the text.</p>
+      </aside>
+
+      <h2 id="breaks"><span class="n">06</span>Where lines end</h2>
+      <p>Nothing inside a waveform says where a line should end, so audio editors wrap it every so many seconds. Text does say. A line should end between phrases, the way a subtitle or a line of verse does. Ending lines in pauses also means a word's sound is never cut in two, so hyphens are never needed. A fixed grid, which cuts wherever the seconds run out, would need them.</p>
+      <p>Choosing the breaks is Knuth and Plass again. Rather than filling each line as far as it will go, their algorithm chooses all of a paragraph's breaks together, minimizing a cost: each line's unfilled share squared, plus a penalty for each break. Ours are nothing between clusters, 8 after punctuation and 40 inside a cluster. The time between two lines is shared: the boundary falls inside the pause, and the next line starts just before its first word. A pause longer than two lines can hold gets lines of its own, and a sound longer than a line runs on into lines without words, like the extender under a held note.</p>
+
+      <figure id="fig-6-1">
+        <div class="plate" data-fig="breaks"></div>
+        <figcaption><b>FIG. 6.1</b>A paragraph three ways. Every few seconds: the grid cuts wherever the time runs out. Greedy: each line takes all it can and leaves the rest to chance. Chosen together: the breaks that cost least overall. Each line's end is labelled with its kind of break and its penalty.</figcaption>
+      </figure>
+
+      <h2 id="selection"><span class="n">07</span>One selection</h2>
+      <p>An editor like this gives you two surfaces to select on, the words and the bars, and it has to feel like one. We make the browser's own selection the only one. The view is editable, with typing blocked, so it has a real caret and a real selection. Wherever a selection lands, in words or in bars, it becomes a span of time, and that span is painted on both. A selection made in words snaps to whole words; a double click on bars selects the word spoken there.</p>
+      <p>The caret is a moment in time, so it shows twice: as the text caret where you clicked and as a thin mark on the bars. Playback moves the mark and underlines the word being said, so playing never looks like selecting.</p>
+
+      <figure id="fig-7-1">
+        <div class="plate" data-fig="select"></div>
+        <figcaption><b>FIG. 7.1</b>Two minutes of the podcast. Click to place the caret, drag across words or bars to select, double-click on bars to select a word, press Space or Play to hear the selection, or from the caret on.</figcaption>
+      </figure>
+
+      <h2 id="bars"><span class="n">08</span>Drawing the bars</h2>
+      <p>The bars are text too. <a href="https://github.com/dy/wavefont">Wavefont</a> is a font whose glyphs are bars: a character for each height, and accents that shift a bar up or down, one step or ten at a time. A block of samples becomes the character for the distance from its lowest level to its highest, shifted to their middle. Because they are text, the bars take a real caret and a native selection. Letter spacing makes the gap between them, and browsers space a character together with its accents, so every bar keeps the same pitch.</p>
+      <p>Bars here keep a fixed width and gap, as in a voice message. Zoom changes how many samples a bar covers, never the bar. One detail matters on high-density screens. A bar 1.25 CSS pixels wide is 2.5 device pixels, so every other edge between bars falls in the middle of a pixel. Each bar paints that pixel half dark, and two half-coverages blend to three quarters, not to one. A faint seam shows. Bars whose edges fall on whole device pixels stay solid.</p>
+
+      <figure id="fig-8-1">
+        <div class="plate" data-fig="seams"></div>
+        <figcaption><b>FIG. 8.1</b>Device pixels under touching bars, magnified. Numbers are the coverage of pixels that two bars share. Each bar covers half; blended, 1 − ½ × ½ = ¾, lighter than the bars around it.</figcaption>
+      </figure>
+
+      <p>Bars are one look. The other is a continuous outline, the minimum and maximum of every pixel column, which <a href="https://github.com/dy/gl-waveform">gl-waveform</a> draws on the GPU. Laid under the same bars made transparent, it looks different and behaves the same: the text and the selection don't change.</p>
+
+      <figure id="fig-8-2">
+        <div class="plate" data-fig="outline"></div>
+        <figcaption><b>FIG. 8.2</b>The same lines drawn with wavefont bars and as a gl-waveform outline, with the bars kept, invisible, above it for selection.</figcaption>
+      </figure>
+
+      <h2 id="fast"><span class="n">09</span>Fast enough</h2>
+      <p>Laying out eight minutes of the podcast, 1,316 words, takes 15 to 20 milliseconds in Chrome, and 21 to 26 with the page built, because the browser lays out only the lines in view. Paragraphs don't affect one another, so an edit relays out only its own. The work is a few small sequential passes whose results the page needs right away, so it stays on the CPU. The GPU earns its place where the same work repeats for every sample: drawing, and recomputing bars at a new zoom across hours of audio.</p>
+      <p>This is the layout wavearea is moving to. Some parts are still open: the scale to use on a phone, where a line holds four words; how to show two speakers talking over each other; and how the text should behave while a phrase is regenerated in the speaker's own voice. The workshop behind these figures lives in the <a href="https://github.com/audio-lab/wavearea">wavearea</a> repository.</p>
+
+      <section class="src" aria-label="Sources">
+        SOURCES
+        <ol>
+          <li>NASA, <a href="https://www.nasa.gov/podcasts/houston-we-have-a-podcast/artemis-iii-training/">Houston We Have a Podcast, episode 434: Artemis III Training</a>. Audio and transcript, public domain. The figures use its first two minutes.</li>
+          <li>LibriVox, <a href="https://archive.org/details/giftofmagi">The Gift of the Magi</a> by O. Henry, read by Betsie Bush. Public domain.</li>
+          <li>D. E. Knuth and M. F. Plass, <a href="https://onlinelibrary.wiley.com/doi/abs/10.1002/spe.4380111102">Breaking paragraphs into lines</a>, Software: Practice and Experience 11(11), 1981.</li>
+          <li>A. Graves, S. Fernández, F. Gomez and J. Schmidhuber, Connectionist temporal classification, ICML 2006.</li>
+          <li>A. Baevski, H. Zhou, A. Mohamed and M. Auli, wav2vec 2.0, NeurIPS 2020. Model: <a href="https://huggingface.co/facebook/wav2vec2-base-960h">facebook/wav2vec2-base-960h</a>.</li>
+          <li>LilyPond, <a href="https://lilypond.org/doc/v2.24/Documentation/notation/common-notation-for-vocal-music">Common notation for vocal music</a>: melismas, extenders, hyphens.</li>
+          <li>W3C, <a href="https://www.w3.org/TR/css-ruby-1/">CSS Ruby Annotation Layout Module Level 1</a>.</li>
+          <li><a href="https://github.com/dy/wavefont">Wavefont</a> 3.8.2, <a href="https://github.com/dy/gl-waveform">gl-waveform</a> 5.</li>
+          <li>Type: <a href="https://fonts.google.com/specimen/Manrope">Manrope</a> by Mikhail Sharanda; in the figures, <a href="https://fonts.google.com/specimen/Newsreader">Newsreader</a> by Production Type and <a href="https://departuremono.com/">Departure Mono</a> by Helena Zhang.</li>
+        </ol>
+      </section>
+    </article>
+  </main>
+</body>
+</html>

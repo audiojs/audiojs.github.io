@@ -1,0 +1,61 @@
+/* Figures of "How do you set words under a waveform?": live lines (wavefont bars over words) and SVG line
+ * art. Bars are 2 px wide with a 1 px gap at every zoom: wght 200 at 40 px (wght 100 ≙ 0.025 em). */
+
+.w-host { position: relative; }
+.w-scroll { max-height: 420px; overflow: auto; overscroll-behavior: contain; }
+
+/* a line: time and speaker in the gutter, bars over the words */
+.w-line { display: grid; grid-template-columns: 48px minmax(0, 1fr); content-visibility: auto; contain-intrinsic-size: auto 78px; }
+.w-gut { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; padding: 12px 10px 0 0; font: 10px/1.3 var(--mono); letter-spacing: .04em; color: var(--ink-3); user-select: none; }
+.w-gut b { font-weight: 400; color: var(--ink-2); text-transform: uppercase; }
+.w-body { position: relative; min-width: 0; }
+.w-bars, .w-ruby, .w-strip {
+  font-family: Wavefont;
+  font-variation-settings: 'wght' 200, 'ROND' 100, 'YELA' 0;
+  letter-spacing: 1px;
+  white-space: pre;
+}
+.w-bars { font-size: 40px; line-height: 48px; color: var(--ink); }
+.w-words { height: 22px; margin-bottom: 8px; font: 14px/22px var(--serif); white-space: nowrap; }
+.w-words span { display: inline-block; }
+
+/* line ends labelled with the kind of break (fig 6.1) */
+.w-breaks .w-line { grid-template-columns: 48px minmax(0, 1fr) 96px; }
+.w-brk { align-self: end; margin-bottom: 10px; font: 10px var(--mono); letter-spacing: .04em; color: var(--blue); text-transform: uppercase; white-space: nowrap; }
+.w-breaks.w-stack .w-line { grid-template-columns: 48px minmax(0, 1fr); }
+.w-breaks.w-stack .w-brk { grid-column: 2; justify-self: end; margin: -6px 0 8px; }
+
+/* fig 2.1: the words as ruby annotations of their bars, and text first */
+.w-ruby { margin: 0; font-size: 40px; line-height: 78px; white-space: normal; ruby-position: under; color: var(--ink); }
+.w-ruby ruby { ruby-align: center; }
+.w-ruby rt { padding-inline: 2px; font: 14px/1.2 var(--serif); font-variation-settings: normal; letter-spacing: 0; }
+.w-gap { word-break: break-all; }
+.w-script { margin: 0; font: 14px/1.35 var(--serif); }
+.w-unit { display: inline-flex; flex-direction: column; vertical-align: top; margin-bottom: 8px; }
+.w-strip { font-size: 24px; line-height: 24px; font-variation-settings: 'wght' 333, 'ROND' 100, 'YELA' 0; color: var(--ink-2); overflow: hidden; }
+
+/* line art: ink bars, blue annotations */
+.w-svg svg { display: block; width: 100%; height: auto; overflow: visible; }
+.w-svg .ink { fill: var(--ink); }
+.w-svg .line { fill: none; stroke: var(--blue); stroke-width: 1; }
+.w-svg .strong { stroke-width: 1.5; }
+.w-svg .dash { fill: none; stroke: var(--blue-line); stroke-width: 1; stroke-dasharray: 3 3; }
+.w-svg .quiet { fill: var(--blue-soft); }
+.w-svg .box { fill: var(--paper); stroke: var(--blue); stroke-width: 1; }
+.w-svg .word { font: 13px var(--serif); fill: var(--ink); }
+.w-svg .tick { font: 10px var(--mono); letter-spacing: .04em; fill: var(--ink-3); }
+.w-svg .px { fill: var(--ink); }
+
+/* fig 7.1: one selection, the browser's; its own paint hidden, time painted on bars and words */
+.w-edit { max-height: 440px; overflow: auto; overscroll-behavior: contain; outline: none; cursor: text; caret-color: var(--blue); }
+.w-edit ::selection { background: transparent; }
+.w-edit [contenteditable="false"] { cursor: default; }
+.w-mark { position: absolute; top: 0; left: 0; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--blue); pointer-events: none; }
+::highlight(lab-sel) { background-color: var(--blue-soft); }
+::highlight(lab-now) { text-decoration: underline 2px var(--blue); text-underline-offset: 4px; }
+
+/* fig 8.2: a gl-waveform outline under transparent, still selectable, bars */
+.w-glwrap { position: relative; }
+.w-gl { position: absolute; inset: 0; display: none; pointer-events: none; }
+.w-glwrap.outline .w-gl { display: block; }
+.w-glwrap.outline .w-bars { color: transparent; }

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seeing sound · audiojs lab</title>
+  <meta name="description" content="A spectrogram is many spectra side by side. Frames, windows, frequency axes, colour maps, reassignment, many resolutions, multitapers and Wigner–Ville, each live.">
+  <link rel="canonical" href="https://audiojs.dev/lab/spectrogram/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://audiojs.dev/lab/spectrogram/">
+  <meta property="og:title" content="Seeing sound">
+  <meta property="og:site_name" content="audiojs">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/lab/lab.css">
+</head>
+<body>
+<main>
+  <nav class="top"><span class="crumb"><a href="/">audiojs</a><span>/</span><a href="/lab/">Lab</a></span><a href="https://github.com/audiojs/audiojs.github.io/tree/main/lab/spectrogram">Source</a></nav>
+  <h1>Seeing sound</h1>
+  <p class="lead">A spectrogram is many spectra side by side: time across, frequency up, loudness as light.<sup><a href="#r18">18</a></sup> Each choice below changes what you can see.</p>
+
+  <div class="sound controls">
+    <label>Sound <select id="sound"></select></label>
+  </div>
+
+  <h2><small>1</small>Frames</h2>
+  <p>Cut the sound into overlapping frames, taper each, take its spectrum: one column a frame.<sup><a href="#r2">2</a></sup> Long frames resolve pitch and smear time; short frames the reverse. No frame is sharp in both.<sup><a href="#r1">1</a></sup> Try the tones and clicks.</p>
+  <figure id="frames">
+    <canvas></canvas>
+    <div class="controls"><label>Frame <input type="range" name="size" min="8" max="14" step="1" value="11"><output id="size"></output></label></div>
+  </figure>
+
+  <h2><small>2</small>Windows</h2>
+  <p>A frame's edges are cuts, and a cut rings: through a rectangular window one tone leaks into every frequency. Tapered windows keep it close.<sup><a href="#r3">3</a></sup> Padding the frame with zeros draws the same spectrum finer: smoother, not sharper.</p>
+  <figure id="windows">
+    <canvas></canvas>
+    <div class="controls">
+      <span data-name="window"><button data-value="rect" aria-pressed="false">rectangular</button><button data-value="hann" aria-pressed="true">Hann</button><button data-value="bh" aria-pressed="false">Blackman–Harris</button></span>
+      <span data-name="pad"><button data-value="1" aria-pressed="true">no padding</button><button data-value="4" aria-pressed="false">×4</button><button data-value="16" aria-pressed="false">×16</button></span>
+    </div>
+  </figure>
+
+  <h2><small>3</small>Frequency axis</h2>
+  <p>A linear axis gives every hertz the same room; hearing doesn't. Octaves, mel<sup><a href="#r4">4</a>,<a href="#r5">5</a></sup> and ERB<sup><a href="#r6">6</a></sup> give the low end the space it has in the ear. The voice's harmonics, evenly spaced in hertz, crowd together up an octave axis.</p>
+  <figure id="axis">
+    <canvas></canvas>
+    <div class="controls"><span data-name="scale"><button data-value="lin" aria-pressed="false">linear</button><button data-value="log" aria-pressed="true">octaves</button><button data-value="mel" aria-pressed="false">mel</button><button data-value="erb" aria-pressed="false">ERB</button></span></div>
+  </figure>
+
+  <h2><small>4</small>Light</h2>
+  <p>Decibels become light. Grey, viridis and magma change evenly to the eye;<sup><a href="#r7">7</a></sup> jet's rainbow draws edges that aren't there.<sup><a href="#r8">8</a></sup> The range is how deep into the quiet it looks.</p>
+  <figure id="light">
+    <canvas></canvas>
+    <div class="controls">
+      <span data-name="map"><button data-value="grey" aria-pressed="true">grey</button><button data-value="viridis" aria-pressed="false">viridis</button><button data-value="magma" aria-pressed="false">magma</button><button data-value="jet" aria-pressed="false">jet</button></span>
+      <label>Range <input type="range" name="range" min="30" max="120" step="6" value="84"><output for="range"></output> dB</label>
+    </div>
+  </figure>
+
+  <h2><small>5</small>Reassignment</h2>
+  <p>Each cell's energy moves to where its phase says it came from: its instantaneous frequency and its moment.<sup><a href="#r9">9</a>,<a href="#r10">10</a></sup> Tones become lines, clicks become edges, from the same frames. Synchrosqueezing moves in frequency only and can be undone.<sup><a href="#r11">11</a></sup></p>
+  <figure id="reassign">
+    <canvas></canvas>
+    <div class="controls"><span data-name="method"><button data-value="stft" aria-pressed="false">frames as they are</button><button data-value="reassigned" aria-pressed="true">reassigned</button></span></div>
+  </figure>
+
+  <h2><small>6</small>Many resolutions</h2>
+  <p>Low notes need long frames, attacks short ones. Constant-Q gives each frequency a frame of so many of its own periods;<sup><a href="#r12">12</a></sup> editors blend several frame lengths by band.<sup><a href="#r13">13</a></sup> Here, 8,192 samples under 200 Hz down to 512 above 3 kHz.</p>
+  <figure id="multi">
+    <canvas></canvas>
+    <div class="controls"><span data-name="frames"><button data-value="one" aria-pressed="false">one frame length</button><button data-value="many" aria-pressed="true">by band</button></span></div>
+  </figure>
+
+  <h2><small>7</small>Noise</h2>
+  <p>The spectrum of noise from one frame is itself noise. Several orthogonal tapers over the same frame, averaged, steady it and keep the tone.<sup><a href="#r14">14</a>,<a href="#r15">15</a></sup></p>
+  <figure id="tapers">
+    <canvas></canvas>
+    <div class="controls"><label>Tapers <input type="range" name="k" min="1" max="8" step="1" value="1"><output for="k"></output></label></div>
+  </figure>
+
+  <h2><small>8</small>No frames at all</h2>
+  <p>The Wigner–Ville distribution compares the signal with itself, reversed, at every moment: a chirp becomes a perfect line.<sup><a href="#r16">16</a></sup> But between any two components it draws a third that isn't there.<sup><a href="#r17">17</a></sup> A tone and a chirp:</p>
+  <figure id="wigner">
+    <canvas></canvas>
+    <div class="controls"><span data-name="method"><button data-value="stft" aria-pressed="false">frames</button><button data-value="wvd" aria-pressed="true">Wigner–Ville</button></span></div>
+  </figure>
+
+  <h2><small>9</small>All at once</h2>
+  <p>Every choice above, as controls that combine, with ink, a map from the panel through its accent, even in lightness like grey.<sup><a href="#r19">19</a></sup> Below, the frame under the pointer as one spectrum.</p>
+  <figure id="bench">
+    <canvas></canvas>
+    <canvas></canvas>
+    <div class="controls">
+      <span class="group">Method <span data-name="method"><button data-value="frames" aria-pressed="true">frames</button><button data-value="reassigned" aria-pressed="false">reassigned</button><button data-value="byBand" aria-pressed="false">by band</button><button data-value="tapered" aria-pressed="false">tapers</button><button data-value="wigner" aria-pressed="false">Wigner–Ville</button></span></span>
+      <label>Frame <input type="range" name="size" min="8" max="14" step="1" value="11"><output id="frame"></output></label>
+      <span class="group">Window <span data-name="kind"><button data-value="rect" aria-pressed="false">rectangular</button><button data-value="hann" aria-pressed="true">Hann</button><button data-value="bh" aria-pressed="false">Blackman–Harris</button></span></span>
+      <label>Tapers <input type="range" name="k" min="1" max="8" step="1" value="4"><output for="k"></output></label>
+      <span class="group">Axis <span data-name="scale"><button data-value="lin" aria-pressed="false">linear</button><button data-value="log" aria-pressed="true">octaves</button><button data-value="mel" aria-pressed="false">mel</button><button data-value="erb" aria-pressed="false">ERB</button></span></span>
+      <label>Top <input type="range" name="top" min="1" max="22" step="1" value="8"><output for="top"></output> kHz</label>
+      <span class="group">Map <span data-name="map"><button data-value="grey" aria-pressed="true">grey</button><button data-value="ink" aria-pressed="false">ink</button><button data-value="viridis" aria-pressed="false">viridis</button><button data-value="magma" aria-pressed="false">magma</button><button data-value="jet" aria-pressed="false">jet</button></span></span>
+      <label>Range <input type="range" name="range" min="30" max="120" step="6" value="84"><output for="range"></output> dB</label>
+      <span class="group">Padding <span data-name="pad"><button data-value="1" aria-pressed="true">none</button><button data-value="4" aria-pressed="false">×4</button><button data-value="16" aria-pressed="false">×16</button></span></span>
+    </div>
+  </figure>
+
+  <h2><small>10</small>Where they live</h2>
+  <ul class="try">
+    <li><b><a href="https://github.com/audiojs/audio">audio</a></b><span>the REPL's spectrogram: reassigned, octaves, mel or linear, zoomed in time and frequency</span></li>
+    <li><b><a href="https://audiojs.dev/util/spectrogram/">spectrogram</a></b><span>any recording's spectrogram, in the browser</span></li>
+    <li><b><a href="https://www.npmjs.com/package/@audio/stft">@audio/stft</a></b><span>the frames, windows and FFT underneath</span></li>
+    <li><b><a href="https://www.sonicvisualiser.org/">Sonic Visualiser</a></b><span>phase-refined spectrograms, for study</span></li>
+  </ul>
+
+  <ol class="refs">
+    <li id="r1">D. Gabor, “Theory of communication,” <i>J. IEE</i> 93 (1946): a signal's duration and bandwidth can't both be small.</li>
+    <li id="r2">J. B. Allen, “Short term spectral analysis, synthesis, and modification by discrete Fourier transform,” <i>IEEE Trans. ASSP</i> 25 (1977).</li>
+    <li id="r3">F. J. Harris, “On the use of windows for harmonic analysis with the discrete Fourier transform,” <i>Proc. IEEE</i> 66 (1978).</li>
+    <li id="r4">S. S. Stevens, J. Volkmann &amp; E. B. Newman, “A scale for the measurement of the psychological magnitude pitch,” <i>JASA</i> 8 (1937).</li>
+    <li id="r5">D. O'Shaughnessy, <i>Speech Communication: Human and Machine</i> (1987): mel = 2595 log<sub>10</sub>(1 + f / 700).</li>
+    <li id="r6">B. R. Glasberg &amp; B. C. J. Moore, “Derivation of auditory filter shapes from notched-noise data,” <i>Hearing Research</i> 47 (1990).</li>
+    <li id="r7">N. Smith &amp; S. van der Walt, “A better default colormap for Matplotlib,” SciPy 2015: viridis; magma from the same work.</li>
+    <li id="r8">D. Borland &amp; R. M. Taylor II, “Rainbow color map (still) considered harmful,” <i>IEEE Computer Graphics and Applications</i> 27 (2007).</li>
+    <li id="r9">K. Kodera, R. Gendrin &amp; C. de Villedary, “Analysis of time-varying signals with small BT values,” <i>IEEE Trans. ASSP</i> 26 (1978).</li>
+    <li id="r10">F. Auger &amp; P. Flandrin, “Improving the readability of time-frequency and time-scale representations by the reassignment method,” <i>IEEE Trans. Signal Processing</i> 43 (1995).</li>
+    <li id="r11">I. Daubechies, J. Lu &amp; H.-T. Wu, “Synchrosqueezed wavelet transforms,” <i>Applied and Computational Harmonic Analysis</i> 30 (2011).</li>
+    <li id="r12">J. C. Brown, “Calculation of a constant Q spectral transform,” <i>JASA</i> 89 (1991).</li>
+    <li id="r13">iZotope RX, spectrogram settings: multi-resolution.</li>
+    <li id="r14">D. J. Thomson, “Spectrum estimation and harmonic analysis,” <i>Proc. IEEE</i> 70 (1982).</li>
+    <li id="r15">K. S. Riedel &amp; A. Sidorenko, “Minimum bias multiple taper spectral estimation,” <i>IEEE Trans. Signal Processing</i> 43 (1995): sine tapers.</li>
+    <li id="r16">J. Ville, “Théorie et applications de la notion de signal analytique,” <i>Câbles et Transmission</i> 2 (1948).</li>
+    <li id="r17">L. Cohen, “Time-frequency distributions: a review,” <i>Proc. IEEE</i> 77 (1989).</li>
+    <li id="r18">W. Koenig, H. K. Dunn &amp; L. Y. Lacy, “The sound spectrograph,” <i>JASA</i> 18 (1946): darker where louder, on paper.</li>
+    <li id="r19">B. Ottosson, <a href="https://bottosson.github.io/posts/oklab/">A perceptual color space for image processing</a> (2020): grey and ink, even in OKLab lightness.</li>
+  </ol>
+  <footer><a href="/lab/">Audio Lab</a> · experiments from <a href="/">audiojs</a></footer>
+</main>
+<script type="module" src="demo.js"></script>
+</body>
+</html>
