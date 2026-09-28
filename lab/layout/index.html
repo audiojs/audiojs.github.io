@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Where the panels go · audiojs lab</title>
+  <meta name="description" content="A script, a rack, a console, a history and an agent around one sound: how ten editors arrange such panels, seven layouts of the audio REPL to try, measured, and the one to keep.">
+  <link rel="canonical" href="https://audiojs.dev/lab/layout/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://audiojs.dev/lab/layout/">
+  <meta property="og:title" content="Where the panels go">
+  <meta property="og:description" content="Seven layouts of one audio editor, each working and measured, and the one to keep.">
+  <meta property="og:site_name" content="audiojs">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&family=Geist:wght@300..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/lab/lab.css">
+  <link rel="stylesheet" href="layout.css">
+</head>
+<body>
+<main>
+  <nav class="top"><span class="crumb"><a href="/">audiojs</a><span>/</span><a href="/lab/">Lab</a></span><a href="https://github.com/audiojs/audiojs.github.io/tree/main/lab/layout">Source</a></nav>
+  <h1>Where the panels go</h1>
+  <p class="lead">A script, a rack, a console, a history and an agent, all around one sound. Seven ways to arrange them, each working, and the one to keep.</p>
+
+  <h2><span class="n">01</span>The field</h2>
+  <p>How ten editors arrange the same parts, drawn from their manuals. The part that holds the work is outlined.</p>
+  <figure id="field-figure" class="wide">
+    <ul class="field" id="field"></ul>
+    <figcaption class="legend"><span><i class="k-stage"></i>the work: the sound, the canvas, the preview</span><span><i class="k-panel"></i>a panel</span><span><i class="k-bar"></i>a bar</span><span><i class="k-float"></i>floats</span></figcaption>
+  </figure>
+
+  <h2><span class="n">02</span>Seven layouts</h2>
+  <p>The same mock of the audio REPL in each: the chime in stereo, its script and its rack, and the parts planned for it, a console with a command line, the history, an agent, a meter and a spectrum outline at the sound’s right edge. Nothing plays and nothing is kept. Click into the frame to use its keys.</p>
+  <p>Five panels is the plan. Three is the REPL as it is now: the history opens from the undo button, and the agent would answer in the console.</p>
+  <figure id="bench" class="bench wide">
+    <div class="controls">
+      <span class="group">Layout <span data-name="variant" role="group" aria-label="Layout"><button data-value="splits" aria-pressed="true">Splits</button><button data-value="dock" aria-pressed="false">Dock</button><button data-value="fold" aria-pressed="false">Activity bar</button><button data-value="context" aria-pressed="false">Contextual</button><button data-value="tabs" aria-pressed="false">Tabs</button><button data-value="float" aria-pressed="false">Floating</button><button data-value="modules" aria-pressed="false">Modules</button></span></span>
+      <span class="group">Width <span data-name="size" role="group" aria-label="Width"><button data-value="desktop" aria-pressed="true">Desktop</button><button data-value="phone" aria-pressed="false">Phone</button></span></span>
+      <span class="group">Panels <span data-name="panels" role="group" aria-label="Panels"><button data-value="5" aria-pressed="true">5, as planned</button><button data-value="3" aria-pressed="false">3</button></span></span>
+    </div>
+    <div class="stage"></div>
+    <figcaption><p class="name"></p><p class="line"></p><ul class="keys"></ul></figcaption>
+  </figure>
+
+  <h2><span class="n">03</span>The verdict</h2>
+  <p>The five tests the question set:</p>
+  <ol class="criteria">
+    <li><b>Room for the sound:</b> the share of the frame it gets, measured below on each layout as it opens.</li>
+    <li><b>Mode errors:</b> a state the user must remember to leave. A mode held by the body, a key kept down, prevents them better than one the system keeps<sup><a href="#r1">1</a></sup>; Raskin calls it a quasimode<sup><a href="#r2">2</a></sup>.</li>
+    <li><b>Findable:</b> what shows without being looked for. All seven list every panel and its key in the View menu, so the menu does not tell them apart; the screen does.</li>
+    <li><b>On a phone:</b> 390 px wide.</li>
+    <li><b>Cost:</b> each layout’s lines in this page. A product adds saving an arrangement, resetting it, and a key for every gesture.</li>
+  </ol>
+  <div class="table wide">
+    <table id="verdict" class="verdict measuring">
+      <thead><tr><th scope="col">Layout</th><th scope="col" class="n">Room, desktop</th><th scope="col" class="n">Room, phone</th><th scope="col" class="n">All five open</th><th scope="col">Mode errors</th><th scope="col">Findable</th><th scope="col">On a phone</th><th scope="col" class="n">Lines</th></tr></thead>
+      <tbody>
+        <tr data-variant="splits" class="pick"><th scope="row">Splits</th><td class="n" data-measure="desktop">…</td><td class="n" data-measure="phone">…</td><td class="n" data-measure="all">…</td><td>● none: nothing moves by itself</td><td>● all in view, or a title away</td><td>◐ one column, cramped past two panels</td><td class="n">● <span data-measure="lines">…</span></td></tr>
+        <tr data-variant="dock"><th scope="row">Dock</th><td class="n" data-measure="desktop">…</td><td class="n" data-measure="phone">…</td><td class="n" data-measure="all">…</td><td>◐ the arrangement is yours to remember</td><td>◐ docking is a hidden drag</td><td>○ nothing docks: one set of tabs</td><td class="n">○ <span data-measure="lines">…</span></td></tr>
+        <tr data-variant="fold"><th scope="row">Activity bar</th><td class="n" data-measure="desktop">…</td><td class="n" data-measure="phone">…</td><td class="n" data-measure="all">…</td><td>◐ the script or the rack, not both</td><td>● the icons stay in view</td><td>● a tab bar raises one sheet</td><td class="n">● <span data-measure="lines">…</span></td></tr>
+        <tr data-variant="context"><th scope="row">Contextual</th><td class="n" data-measure="desktop">…</td><td class="n" data-measure="phone">…</td><td class="n" data-measure="all">…</td><td>○ panels come and go with the selection</td><td>○ nothing shows until chosen</td><td>◐ sheets cover the sound</td><td class="n">◐ <span data-measure="lines">…</span></td></tr>
+        <tr data-variant="tabs"><th scope="row">Tabs</th><td class="n" data-measure="desktop">…</td><td class="n" data-measure="phone">…</td><td class="n" data-measure="all">…</td><td>○ a tab hides its neighbours</td><td>● the strips show what is open</td><td>○ opening the rack hides the sound</td><td class="n">◐ <span data-measure="lines">…</span></td></tr>
+        <tr data-variant="float"><th scope="row">Floating</th><td class="n" data-measure="desktop">…</td><td class="n" data-measure="phone">…</td><td class="n" data-measure="all">…</td><td>○ windows cover what moves under them</td><td>◐ windows show; docking is hidden</td><td>○ nothing can float: sheets</td><td class="n">○ <span data-measure="lines">…</span></td></tr>
+        <tr data-variant="modules"><th scope="row">Modules</th><td class="n" data-measure="desktop">…</td><td class="n" data-measure="phone">…</td><td class="n" data-measure="all">…</td><td>○ each module is a mode</td><td>◐ the picker shows, not what is in it</td><td>◐ a picker over the sound</td><td class="n">◐ <span data-measure="lines">…</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">Room: the share of the frame the sound gets with three panels and the script and the rack shown; in the third column, on a desktop, with all five panels asked for. With every panel away it gets <span data-measure="alone">…</span>. * The script, the rack (or all five) and the sound cannot show at once. ● good, ◐ fair, ○ poor. Dock and Tabs also share a layout tree of <span data-measure="tree">…</span> lines.</p>
+
+  <p><b>Keep Splits,</b> the layout the REPL has. It is the only one that shows the script, the rack and the sound together at both widths, and it still does with all five panels open: the history and the agent fold under the rack, as Lightroom folds its panels<sup><a href="#r3">3</a></sup>. Nothing moves unless you move it, and it is among the smallest. From the others it takes:</p>
+  <ul class="try takes">
+    <li><b>Fewer panels</b><span>Count the panels before choosing a layout. The history is a list under the undo button, as the REPL has it now; the command line and the agent share the console’s prompt; the meter and the spectrum outline belong to the sound’s right edge; the check stays a popover. Three panels need no layout engine.</span></li>
+    <li><b>Activity bar</b><span>The phone: a tab bar along the foot that raises one panel as a sheet, as Logic for iPad keeps a bar of views along its foot<sup><a href="#r4">4</a></sup>. Splits’ own phone column cramps once two panels are open.</span></li>
+    <li><b>Contextual</b><span>Its content, never its coming and going. The rack opens the step at the caret and the edits hang under the selection, while the slot stays put. Figma dropped sidebars that “would appear and disappear”: they made the work “too unstable”<sup><a href="#r5">5</a></sup>.</span></li>
+    <li><b>Tabs</b><span>Nothing for the views. Waveform and spectrogram stay lanes on one time axis, switched in the View menu, as Audition<sup><a href="#r6">6</a></sup>, Audacity 4<sup><a href="#r7">7</a></sup>, SpectraLayers<sup><a href="#r8">8</a></sup> and Ocenaudio<sup><a href="#r9">9</a></sup> stack them and RX overlays them<sup><a href="#r10">10</a></sup>. As tabs one hides the other; side by side each gets half the time. Tabs are for documents: several sounds or scripts, like RX’s file tabs.</span></li>
+    <li><b>Floating</b><span>A second window for a second screen, through the Document Picture-in-Picture API (Chrome, Edge, Firefox; not Safari)<sup><a href="#r11">11</a></sup>, never a window over the sound. Figma floated its panels in 2024 and fixed them again: they “cramped the canvas” and “slowed people down”<sup><a href="#r12">12</a></sup>.</span></li>
+    <li><b>Dock, modules</b><span>Nothing. A dock is a layout engine to build, save, reset and drive from keys, for arrangements few people change: fewer than 5% of the users Spool surveyed had changed any setting<sup><a href="#r13">13</a></sup>, fewer than 2% of Office sessions ran customized toolbars<sup><a href="#r14">14</a></sup>, and people who customize rarely touch the interface’s look<sup><a href="#r15">15</a></sup>. A module is a mode.</span></li>
+    <li><b>The key `</b><span>The sound alone: tapped, it stays; held, it lasts while the key is down, a quasimode. Audition gives the same key to maximising the panel under the pointer<sup><a href="#r16">16</a></sup>.</span></li>
+  </ul>
+
+  <p><b>Where the field converges.</b> One window, the work in the middle and largest. Panels keep fixed edges and each shows or hides with a key and a menu item: one key per area in Logic<sup><a href="#r17">17</a></sup>; the browser left and the detail view below in Live<sup><a href="#r18">18</a></sup>; modules and history at the right in RX and SpectraLayers. Dividers drag; tabs live inside a region; floating is kept for plug-in and module windows and for second screens. The pro tools add saved layouts, Audition’s workspaces and Logic’s and REAPER’s screensets<sup><a href="#r19">19</a></sup>, over a default most people keep. Recent redesigns went the same way: Figma back to fixed panels, Audacity 4 without tool modes<sup><a href="#r20">20</a></sup>, CodePen 2.0 with one panel at a time from an icon bar<sup><a href="#r21">21</a></sup>.</p>
+  <p><b>The other options.</b> A dropdown suits what is opened, used and closed: the history, the check, the export format. An agent needs a prompt, not a panel. A notebook, Observable’s cells with the code under each output<sup><a href="#r22">22</a></sup>, is where the script could go if each call grows its own controls and preview: the rack would then be the script’s margin, one panel where there are two.</p>
+
+  <ol class="refs">
+    <li id="r1">A. J. Sellen, G. P. Kurtenbach &amp; W. A. S. Buxton, “The prevention of mode errors through sensory feedback,” <i>Human–Computer Interaction</i> 7(2), 141–164 (1992), <a href="https://doi.org/10.1207/s15327051hci0702_1">doi:10.1207/s15327051hci0702_1</a>: “user-maintained mode states prevent mode errors more effectively than system-maintained mode states.”</li>
+    <li id="r2">J. Raskin, <i>The Humane Interface</i>, Addison-Wesley (2000), §3-2-3: “modes that are maintained kinesthetically.”</li>
+    <li id="r3">Adobe, <a href="https://helpx.adobe.com/lightroom-classic/help/workspace-basics.html">Lightroom Classic workspace basics</a>: solo mode, panels that hide and show.</li>
+    <li id="r4">Apple, <a href="https://support.apple.com/guide/logicpro-ipad/logic-pro-interface-lpip33be754d/ipados">Logic Pro for iPad interface</a>: the view control bar “located along the bottom.”</li>
+    <li id="r5">Figma, <a href="https://www.figma.com/blog/behind-our-redesign-ui3/">Behind our redesign: UI3</a> (26 June 2024).</li>
+    <li id="r6">Adobe, <a href="https://helpx.adobe.com/audition/desktop/editing-audio-files/displaying-audio-waveform-editor.html">Displaying audio in the Waveform Editor</a>: the spectral display below the waveform, a divider between them.</li>
+    <li id="r7">Audacity, <a href="https://www.audacityteam.org/manual/track-control-panel/audio-track-item/">Audio track</a>: Multi-view, “waveform and spectrogram together, stacked in the one track.”</li>
+    <li id="r8">Steinberg, <a href="https://download.steinberg.net/downloads_software/SpectraLayers_12/help/Pro/_user_interface.html">SpectraLayers Pro 12, user interface</a>.</li>
+    <li id="r9">Ocenaudio, <a href="https://github.com/ocenaudio/ocenaudio-translations/blob/master/base/ocenaudio.ts">interface strings</a>: “Waveform &amp;&amp; Spectral View.”</li>
+    <li id="r10">iZotope, <a href="https://docs.izotope.com/rx12/en/rx-overview.html">RX 12 overview</a>: “a waveform transparency overlay.”</li>
+    <li id="r11">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document_Picture-in-Picture_API">Document Picture-in-Picture API</a>; Firefox 151 added it on desktop.</li>
+    <li id="r12">J. Xie, <a href="https://www.figma.com/blog/our-approach-to-designing-ui3/">Our approach to designing UI3</a>, Figma (1 October 2024): “panels are fixed, but still resizable.”</li>
+    <li id="r13">J. Spool, <a href="https://archive.uie.com/brainsparks/2011/09/14/do-users-change-their-settings/">Do users change their settings?</a>, UIE (2011).</li>
+    <li id="r14">J. Harris, <a href="https://learn.microsoft.com/en-us/archive/blogs/jensenh/lets-talk-about-customization">Let’s talk about customization</a>, Microsoft (2006).</li>
+    <li id="r15">S. R. Page, T. J. Johnsgard, U. Albert &amp; C. D. Allen, “User customization of a word processor,” CHI ’96, <a href="https://doi.org/10.1145/238386.238541">doi:10.1145/238386.238541</a>: 92% customized something; “few participants customized the visual appearance of the interface.”</li>
+    <li id="r16">Adobe, <a href="https://helpx.adobe.com/audition/desktop/workspace-and-setup/customizing-workspaces.html">Customizing workspaces in Audition</a>: “press the accent key.”</li>
+    <li id="r17">Apple, <a href="https://support.apple.com/guide/logicpro/global-commands-lgcp02bf31b6/mac">Logic Pro global key commands</a>.</li>
+    <li id="r18">Ableton, <a href="https://www.ableton.com/en/live-manual/12/live-concepts/">Live 12 concepts</a>.</li>
+    <li id="r19"><a href="https://www.reaper.fm/userguide.php">REAPER User Guide</a> 7.81, §12.9: screensets on F7 to F9; up to 16 dockers.</li>
+    <li id="r20">Audacity <a href="https://github.com/audacity/audacity/releases/tag/Audacity-4.0.0">4.0.0 release notes</a> (3 September 2026): “The separate Select, Envelope, Draw and Multi-tool modes have been removed.”</li>
+    <li id="r21">CodePen, <a href="https://blog.codepen.io/2026/07/23/two-point-oh/">CodePen 2.0 launch</a> (23 July 2026).</li>
+    <li id="r22">Observable, <a href="https://observablehq.com/notebook-kit/desktop-guide">Observable Desktop guide</a>: “A cell’s source code is visible below the cell’s output if the cell is pinned or focused.”</li>
+  </ol>
+  <footer><a href="/lab/">Audio Lab</a> · experiments from <a href="/">audiojs</a></footer>
+</main>
+<script type="module" src="field.js"></script>
+<script type="module" src="bench.js"></script>
+</body>
+</html>
