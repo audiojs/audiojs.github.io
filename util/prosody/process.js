@@ -2,7 +2,9 @@ import { stretch, wav } from './dsp.js'
 import { speechRun, speechTrack } from './world.js'
 import { cycles } from './cycles.js'
 import { waveformRun } from './waveform.js'
-import { validatePitch, mapTime, clamp } from './model.js'
+import { validatePitch, mapTime, clamp, hzToNote, runs, reference } from './model.js'
+import { bandpass } from './noise.js'
+export { runs }
 
 export function analyze(samples, sampleRate) {
   if (!(samples instanceof Float32Array) || !samples.length || !Number.isInteger(sampleRate) || sampleRate < 8000)
@@ -44,7 +46,69 @@ export function analyze(samples, sampleRate) {
   track.onsets = bursts(samples, sampleRate, track)
   // Cycle marks refine the frame contour, exact through fast inflections.
   track.marks = cycles(samples, sampleRate, track, runs(track.f0))
+  track.level = level(samples, sampleRate, track.times, .015)
+  track.reliable = reliability(track)
+  track.notes = syllables(samples, sampleRate, track)
   return track
+}
+
+// RMS over ±half seconds around each time.
+function level(x, sampleRate, times, half) {
+  const h = Math.round(half * sampleRate)
+  return Float32Array.from(times, t => {
+    const center = Math.round(t * sampleRate), a = Math.max(0, center - h), b = Math.min(x.length, center + h)
+    let power = 0
+    for (let j = a; j < b; j++) power += x[j] * x[j]
+    return Math.sqrt(power / Math.max(1, b - a))
+  })
+}
+
+// Frames whose pitch edits are computed from. A run is kept whole, so a
+// fricative inside a phrase or a stray octave carries a pitch the voice does
+// not have: in recorded speech, jumps of 7 to 21 semitones for 10 to 100 ms at
+// periodicity 0.1 to 0.35. Trusted are the frames periodic at the tracked pitch
+// (at least 0.5) and within 4 semitones of the median of the 45 ms around
+// them, then the weaker frames within 3 semitones of the line through those:
+// a breathy voice continues the pitch around it, a tracking error leaves it.
+// A run with no periodic frame is trusted whole.
+function reliability(track) {
+  const out = new Uint8Array(track.f0.length)
+  for (const [first, last] of runs(track.f0)) {
+    let any = 0
+    for (let i = first; i <= last; i++) {
+      const near = []
+      for (let j = Math.max(first, i - 4); j <= Math.min(last, i + 4); j++) near.push(hzToNote(track.f0[j]))
+      near.sort((a, b) => a - b)
+      any |= out[i] = +(track.periodicity[i] >= .5 && Math.abs(hzToNote(track.f0[i]) - near[near.length >> 1]) <= 4)
+    }
+    if (!any) out.fill(1, first, last + 1)
+  }
+  const line = reference({ times: track.times, f0: track.f0, reliable: out }, track.f0)
+  for (let i = 0; i < out.length; i++) if (track.f0[i] && Math.abs(hzToNote(track.f0[i]) - line[i]) <= 3) out[i] = 1
+  return out
+}
+
+// Notes: voiced runs split into syllables at loudness dips, after Mermelstein's
+// convex-hull method (JASA 58, 1975). The 500–4000 Hz band level is compared
+// with its hull, which rises to the loudest frame and falls after it; the
+// deepest dip below the hull splits the run when it reaches 4 dB and leaves at
+// least 60 ms on each side, and each part is split again.
+function syllables(samples, sampleRate, track) {
+  const loud = level(bandpass(samples, sampleRate, 500, 4000), sampleRate, track.times, .01).map(v => 20 * Math.log10(v + 1e-9))
+  const out = [], long = (a, b) => track.times[b] - track.times[a] >= .06
+  const split = (first, last) => {
+    let peak = first, cut = -1, depth = 4
+    for (let i = first; i <= last; i++) if (loud[i] > loud[peak]) peak = i
+    for (const [from, to, step] of [[first, peak, 1], [last, peak, -1]])
+      for (let i = from, hull = -Infinity; i !== to + step; i += step) {
+        hull = Math.max(hull, loud[i])
+        if (hull - loud[i] >= depth && long(first, i - 1) && long(i, last)) { depth = hull - loud[i]; cut = i }
+      }
+    if (cut < 0) out.push([first, last])
+    else { split(first, cut - 1); split(cut, last) }
+  }
+  for (const [first, last] of runs(track.f0)) split(first, last)
+  return out
 }
 
 // Times of abrupt broadband energy rises in unvoiced audio: consonant bursts,
@@ -78,13 +142,6 @@ function periodicity(x, sampleRate, time, hz) {
     xy += x[i] * y; xx += x[i] * x[i]; yy += y * y
   }
   return xy / Math.sqrt(xx * yy || 1)
-}
-
-// Maximal voiced frame ranges [first, last].
-export function runs(f0) {
-  const out = []
-  for (let i = 0; i < f0.length; i++) if (f0[i]) { if (!out.length || out.at(-1)[1] !== i - 1) out.push([i, i]); else out.at(-1)[1] = i }
-  return out
 }
 
 // Dry output timeline: untouched audio is copied exactly; retimed audio is

@@ -4,20 +4,20 @@
 .prosody > .status { margin: 16px 0; min-height: 1.5em; }
 .prosody fieldset { padding: 0; margin: 0; min-width: 0; border: 0; }
 .prosody fieldset:disabled { opacity: .65; }
-.prosody .plot { position: relative; background: var(--c-panel-bg); color: var(--c-panel-fg); }
-.prosody .legend { position: absolute; z-index: 2; top: 14px; left: 14px; display: flex; flex-wrap: wrap; gap: 8px 10px; max-width: calc(100% - 64px); font-size: 12px; pointer-events: none; }
+.prosody .plot { background: var(--c-panel-bg); color: var(--c-panel-fg); }
+.prosody .plot-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; min-height: 44px; padding-left: 14px; font-size: 12px; }
+.prosody .legend { display: flex; gap: 10px; }
 .prosody .legend span { display: inline-flex; align-items: center; gap: 5px; }
-.prosody .legend span::before { content: ''; width: 10px; border-top: 2px solid currentColor; }
-.prosody .wave-key { color: var(--c-panel-label); }
-.prosody .wave-key::before { opacity: .5; }
+.prosody .legend span::before { content: ''; width: 12px; border-top: 1.5px solid currentColor; }
+.prosody .legend .detected-key { color: var(--c-panel-label); }
 .prosody .legend .detected-key::before { border-top-style: dashed; }
-.prosody .target-key { color: var(--c-accent); }
-.prosody .plot-help { position: absolute; top: 4px; right: 4px; z-index: 5; }
+.prosody .plot-canvas { position: relative; }
+.prosody .plot-help { position: relative; z-index: 5; }
 .prosody .plot-help summary { display: grid; place-items: center; width: 44px; height: 44px; cursor: pointer; list-style: none; }
 .prosody .plot-help summary::-webkit-details-marker { display: none; }
-.prosody #curve-help { position: absolute; top: 46px; right: 4px; width: min(300px, calc(100vw - 64px)); padding: 16px; background: var(--c-panel-bg); border: 1px solid var(--c-panel-grid); font-size: 13px; line-height: 1.6; }
-.prosody .plot-tools { position: absolute; z-index: 3; right: 8px; bottom: 34px; display: flex; }
-.prosody .plot-tools button { display: grid; place-items: center; width: 44px; padding: 0; border: 0; border-radius: 0; color: var(--c-panel-fg); background: transparent; font: inherit; font-size: 22px; cursor: pointer; }
+.prosody #curve-help { position: absolute; top: 44px; right: 0; width: min(300px, calc(100vw - 64px)); padding: 16px; background: var(--c-panel-bg); border: 1px solid var(--c-panel-grid); font-size: 13px; line-height: 1.6; }
+.prosody .plot-tools { display: flex; margin-left: auto; }
+.prosody .plot-tools button { display: grid; place-items: center; width: 36px; padding: 0; border: 0; border-radius: 0; color: var(--c-panel-fg); background: transparent; font: inherit; font-size: 22px; cursor: pointer; }
 .prosody .plot-tools button:hover, .prosody .plot-help summary:hover { background: color-mix(in srgb, var(--c-panel-fg) 12%, transparent); }
 .prosody .plot-tools button:active { color: var(--c-accent); }
 .prosody .plot-tools button:disabled { opacity: .25; cursor: default; }
@@ -27,21 +27,29 @@
 .prosody .plot-scroll::-webkit-scrollbar { height: 6px; }
 .prosody .plot-scroll::-webkit-scrollbar-track { background: transparent; }
 .prosody .plot-scroll::-webkit-scrollbar-thumb { background: var(--c-panel-grid); border-radius: 3px; }
-.prosody .selection-handle { position: absolute; z-index: 2; top: 58px; bottom: 42px; width: 44px; transform: translateX(-50%); padding: 0; border: 0; background: transparent; cursor: ew-resize; touch-action: none; }
-.prosody .selection-handle::before { content: ''; position: absolute; top: 0; bottom: 0; left: 21px; width: 2px; background: var(--c-accent); opacity: .6; }
-.prosody .selection-handle::after { content: ''; position: absolute; left: 18px; top: 45%; width: 8px; height: 26px; border-radius: 3px; background: var(--c-accent); }
-.prosody .selection-handle:hover::before, .prosody .selection-handle:active::before { opacity: 1; }
-.prosody .point-info { position: absolute; top: 36px; left: 60px; font-size: 12px; pointer-events: none; }
-.prosody .point-info:empty { display: none; }
-.prosody #curve { display: block; width: 100%; height: 320px; background: var(--c-panel-bg); touch-action: none; cursor: crosshair; }
-.prosody #curve > * { pointer-events: none; } /* Keep capture on the SVG while traces redraw. */
-.prosody #curve text { fill: var(--c-panel-label); font: 12px system-ui; }
-.prosody #curve .wave { fill: var(--c-panel-label); opacity: .24; }
+/* Grips sit in the waveform lane, leaving the pitch area to the notes; the SVG draws the edges. */
+.prosody .selection-handle { position: absolute; z-index: 2; top: 220px; height: 44px; width: 28px; transform: translateX(-50%); padding: 0; border: 0; background: transparent; cursor: ew-resize; touch-action: none; }
+.prosody .selection-handle::after { content: ''; position: absolute; left: 10px; top: 9px; width: 8px; height: 26px; border-radius: 3px; background: var(--c-accent); }
+.prosody .selection-handle:hover::after, .prosody .selection-handle:active::after { background: var(--c-panel-fg); }
+.prosody .point-info { flex: 1 1 10em; min-width: 0; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prosody #curve { display: block; width: 100%; height: 300px; background: var(--c-panel-bg); touch-action: none; cursor: crosshair; }
+.prosody #curve * { pointer-events: none; } /* Keep capture on the SVG while traces redraw. */
+.prosody #curve text { fill: var(--c-panel-label); font: 11px system-ui; }
+.prosody #curve text.octave { fill: var(--c-panel-fg); }
+.prosody #curve .key { fill: var(--c-panel-fg); opacity: .05; }
 .prosody #curve .grid { stroke: var(--c-panel-grid); }
-.prosody #curve .detected { stroke: var(--c-panel-label); stroke-dasharray: 4 4; }
-.prosody #curve .target { stroke: var(--c-accent); stroke-width: 2.5; }
-.prosody #curve .selection { fill: var(--c-accent); opacity: .12; }
-.prosody #curve .point { fill: var(--c-panel-fg); stroke: var(--c-accent); stroke-width: 2; }
+.prosody #curve .wave { fill: var(--c-panel-label); opacity: .3; }
+.prosody #curve .note { fill: var(--c-accent); fill-opacity: .5; }
+.prosody #curve .note.dim { fill-opacity: .2; }
+.prosody #curve .note.on { fill-opacity: .8; }
+.prosody #curve .note.hover { fill-opacity: .6; }
+.prosody #curve .note.on.hover { fill-opacity: .95; }
+.prosody #curve .note.noise { fill: var(--c-panel-fg); fill-opacity: .1; }
+.prosody #curve .center { stroke: var(--c-panel-fg); stroke-opacity: .5; }
+.prosody #curve .detected { stroke: var(--c-panel-label); stroke-dasharray: 3 3; }
+.prosody #curve .target { stroke: var(--c-panel-fg); stroke-opacity: .85; stroke-width: 1.25; }
+.prosody #curve .selection { fill: var(--c-accent); opacity: .1; }
+.prosody #curve .selection-edge { stroke: var(--c-accent); stroke-opacity: .7; }
 .prosody #curve .playhead { stroke: var(--c-panel-fg); stroke-width: 1; }
 .prosody :is(button, input, a.btn, summary, [tabindex]):focus-visible { outline: 3px solid var(--c-focus); outline-offset: -3px; }
 .prosody .hint { font-size: 13px; line-height: 1.6; color: var(--c-ink-2); }
@@ -52,10 +60,11 @@
 .prosody .edit-grid section { padding: 20px; min-width: 0; }
 .prosody h2 { font-size: 16px; margin: 0 0 12px; }
 .prosody .parameter { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.prosody .parameter > label { min-width: 72px; }
+.prosody .parameter > label { min-width: 104px; }
 .prosody .parameter input[type=range] { min-width: 60px; flex: 1; width: 100%; padding: 0; accent-color: var(--c-accent); border: 0; background: transparent; }
 .prosody .parameter input[type=number] { width: 72px; }
-.prosody .parameter output { min-width: 40px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.prosody .parameter output { min-width: 52px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+.prosody h2 .hint { font-weight: 400; }
 .prosody .parameter .btn { margin: 0; }
 .prosody .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .prosody [hidden] { display: none !important; }
@@ -66,7 +75,7 @@
 .prosody audio { min-width: 0; }
 .prosody [aria-disabled=true] { opacity: .4; pointer-events: none; }
 .prosody #filename { overflow-wrap: anywhere; }
-@media (max-width: 620px) { .prosody .edit-grid, .prosody .players { grid-template-columns: 1fr; } .prosody .row { gap: 10px; padding: 14px; } .prosody .parameter { gap: 6px; } .prosody .parameter .btn { padding-inline: 10px; } .prosody .parameter > label { min-width: 66px; } .prosody .edit-grid section { padding: 14px; } .prosody #filename { flex-basis: 100%; } }
+@media (max-width: 620px) { .prosody .edit-grid, .prosody .players { grid-template-columns: 1fr; } .prosody .row { gap: 10px; padding: 14px; } .prosody .parameter { gap: 6px; } .prosody .parameter .btn { padding-inline: 10px; } .prosody .parameter > label { min-width: 92px; } .prosody .edit-grid section { padding: 14px; } .prosody #filename { flex-basis: 100%; } }
 
 .prosody .engine { display: inline-flex; align-items: center; gap: .4em; }
 .prosody .engine select { font: inherit; }

@@ -91,3 +91,22 @@ Regression evidence:
 - `pitch range follows synthesis bounds, and output reaches shifts beyond one octave`: validates lower/upper boundaries at 8/16/22.05/48/96 kHz; renders the harmonic vowel at −18/+18/−18 semitones, checks independent output F0 near its stationary pitch maximum (<0.1 semitone), clarity >0.98, finite PCM, exact sample count and repeatability. A pure sine is unsuitable for measuring large upward formant-preserving shifts because its spectral envelope has little energy at the new harmonics.
 - The actual-speech regression now uses the UI's default 60 ms smoothing. It checks the 1.335 s target jump as well as the existing independent output probes at 1.72–1.81 s, dry consonants/silence and exact reset.
 - Browser coverage adds smoothing-only Apply/Undo, disabled smoothing identity, invalid-window rollback, +18-semitone edits, visible expanded pitch bounds, invalid extreme-shift rollback and axis restoration on Undo.
+
+## Notes, snapping and trusted frames, 2026-09-23
+
+The user found the pitch controls unusable for two jobs: smoothing tone variation in places, and making delivery straight and aligned to notes, as Auto-Tune or Melodyne do. The editor now segments each voiced run into syllable notes at loudness dips (Mermelstein's convex hull on the 500–4000 Hz band, 4 dB, 60 ms), draws them as blobs on a piano roll, and corrects them with one model function: smooth, intonation, straighten, snap (12-TET, A4 = 440 Hz), rise and shift. Dragging a note snaps its centre to a semitone; Alt moves it freely. The old per-frame point drag, Transpose field and Rise/Fall buttons are gone.
+
+On the user's lecture recording (male, MP3), Harvest voiced fricatives inside runs and gave 7–21 semitone jumps for 10–100 ms at periodicity 0.1–0.35. Straightening those frames to the note would have resampled real cycles by up to an octave. Trusted frames are those with periodicity of at least 0.5 within 4 semitones of their 45 ms median, plus weaker frames within 3 semitones of the line through them; a run with no periodic frame is trusted whole. Corrections are computed on trusted frames, and untrusted ones take their neighbours' change. A fixed 0.5 bar alone trusted 3 of 201 frames of a breathy synthetic voice; a bar relative to the run's median periodicity trusted the lecture's spikes. The consistency pass trusts all 201 and excludes every spike frame at 0.995–1.095 s. On the sample, 987 of 996 voiced frames are trusted.
+
+Measured with YIN at the middle of every note of 80 ms or more, after snap and straighten at 100%:
+
+| Input | Engine | Median error | 90th percentile |
+| --- | --- | ---: | ---: |
+| Built-in sample (24 notes) | waveform | 0.038 st | 0.227 st |
+| Built-in sample | vocoder | 0.056 st | 0.099 st |
+| User lecture, first 8 s (30 notes) | waveform | 0.065 st | 0.338 st |
+| User lecture | vocoder | 0.039 st | 0.364 st |
+
+For comparison, YIN agrees with the tracker on the untouched sources by 0.081/0.284 st (sample) and 0.109/0.605 st (lecture). The regression requires a median below 0.1 st and a 90th percentile below 0.3 st on the sample with both engines, and a flat D♯3 (155.5635 Hz) within 0.05 st from the gliding vowel fixture. These are pitch measurements. Whether tuned speech sounds natural has not been judged by listening.
+
+Open: glides between straightened joined notes last up to 80 ms, faster than the fastest speech pitch changes for steps of a semitone or more (Xu & Sun 2002); manual note split/join; a key or tuning reference other than A4 = 440 Hz.

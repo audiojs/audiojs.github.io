@@ -5,9 +5,10 @@ Static tool at `/util/prosody/`. The maintained page definition is
 links it from the tools index/homepage and adds it to the sitemap.
 
 `model.js` stores non-destructive pitch targets and monotonic source→output timing
-anchors. `process.js` analyzes and renders mono PCM; `worker.js` keeps that work off
-the UI thread. `editor.js` handles selection, pitch gestures, keyboard/numeric
-alternatives, undo, playback and export. Audio is not uploaded.
+anchors, and computes every pitch correction. `process.js` analyzes and renders mono
+PCM; `worker.js` keeps that work off the UI thread. `editor.js` draws the notes and
+handles selection, note dragging, the correction sliders, keyboard alternatives,
+undo, playback and export. Audio is not uploaded.
 
 DSP is bundled locally in `dsp.js`. Rebuild with `node scripts/prosody-vendor.mjs`
 using checkouts under `~/projects/@audio`, then `npm run build`. Dependency versions
@@ -144,6 +145,49 @@ rises in unvoiced audio, keep their length: the change is shared by the rest of
 the selection, or by the whole selection uniformly when bursts leave no room.
 Phoneme alignment is not implemented.
 
+## Notes and corrections
+
+Each voiced run is split into syllable notes at loudness dips, after Mermelstein's
+convex-hull method (JASA 58, 1975): the run's 500–4000 Hz band level is compared
+with its hull, which rises to the loudest frame and falls after it, and the run
+splits at the deepest dip once it reaches 4 dB with 60 ms left on each side, then
+each part again. The sample's 24 syllables give 25 notes. A note's centre is the
+loudness-weighted median of its trusted frames.
+
+Harvest keeps a run whole, so a fricative inside a phrase or a stray octave
+carries a pitch the voice does not have: on a recorded lecture, jumps of 7–21
+semitones for 10–100 ms at periodicity 0.1–0.35. A frame is trusted when it is
+periodic at the tracked pitch (at least 0.5) and within 4 semitones of the median
+of the 45 ms around it, and so is a weaker frame within 3 semitones of the line
+through those: a breathy voice continues the pitch around it, a tracking error
+leaves it. A run with no periodic frame is trusted whole. Corrections are computed
+on trusted frames, and the others take the change of the voice around them.
+Pulling a tracking error to its note's target instead would resample those cycles
+by up to an octave. The plot draws the trusted contour.
+
+Every pitch correction is one function, `correct`, over the selection, in this
+order: smooth (a 0–200 ms cosine window), intonation (0–200%), straighten (0–100%
+of the way from each note's contour to its centre), snap (0–100% of the way from
+each centre to the nearest semitone of equal temperament, A4 = 440 Hz), rise (a
+linear ramp) and shift. Notes that voice continues across crossfade over up to
+80 ms centred on their boundary; the selection's edges ease into continuing voice
+over up to 80 ms or a quarter of the selection. Those glides pull a note's centre
+off its goal, so each note is moved again by what it still misses, up to four
+times; centres land within 0.01 cent in the tests. A dragged note lands on its
+semitone the same way (`shiftTo`).
+
+On the sample, snap and straighten at 100% render every note of 80 ms or more
+within a median 4 cents of its semitone (90th percentile 23 cents) with the
+waveform engine, and 6 (10) cents with the vocoder, measured by YIN at each note's
+middle. On a male MP3 lecture recording, medians were 4–7 cents and the 90th
+percentile 34–36 cents. These measure pitch accuracy, not how natural the result
+sounds.
+
+The sliders act live on the selection and recompute from the curve their
+correction started on, so they combine and return to it at neutral. One Undo
+removes the whole correction; selecting anything else, or any other edit, starts
+the next one from neutral.
+
 Rebuild the pinned WASM engine with `node scripts/prosody-world.mjs <WORLD checkout>`
 (requires Emscripten), then `npm run build`.
 
@@ -153,18 +197,21 @@ One voice, mono output. Intonation below 100% scales semitone deviations toward
 the selection median; above 100% it scales the intervals above the selection's
 pitch floor (10th percentile) and leaves the valleys, as expressive speech does.
 Symmetric exaggeration drove a low voice below 80 Hz, where every engine and the
-voice itself turn creaky. Its Smoothing disclosure adjusts a 0–200 ms cosine
-window, default 60 ms, within voiced regions. At 100%, Apply smooths without
-scaling; set smoothing to 0 for an exact no-op. Transposition and point dragging
-have no source-relative octave cap; frequency limits reflect the synthesis floor
-and the recording's Nyquist limit. Invalid edits are rejected, not clipped.
-Extreme shifts can still sound poor. Selected edits ease into surrounding voiced
-pitch over up to 80 ms per edge; Restore pitch and Reset return the selected/full
-original contour exactly.
+voice itself turn creaky. Smoothing never crosses unvoiced audio or the selection
+edge. Note dragging and arrow-key moves have no source-relative octave cap;
+frequency limits reflect the synthesis floor and the recording's Nyquist limit.
+Invalid edits are rejected, not clipped. Extreme shifts can still sound poor.
+Restore pitch and Reset return the selected/full original contour exactly.
+
+Notes are found automatically and cannot be split or joined by hand; select part
+of a note to correct only that part. Snapping is chromatic at A4 = 440 Hz, with no
+key or other tuning reference. Glides between straightened notes take up to 80 ms,
+faster than speech changes pitch at its fastest for steps of a semitone or more
+(Xu & Sun, JASA 111, 2002), so large steps between joined notes can sound tuned.
 
 Local stretch factors remain 0.5–2. The timeline stays in source seconds after
-timing edits. Rising/falling presets are ±2-semitone ramps, not semantic question
-detection. Edits are held in memory; reloading/changing the file discards them.
+timing edits. Rise is a linear ramp of up to ±6 semitones over the selection, not
+semantic question detection. Edits are held in memory; reloading/changing the file discards them.
 Exports are mono 32-bit float WAV at the decoded input rate, without source metadata.
 
 Validation: `npm run test:prosody` for numerical and model regressions, including

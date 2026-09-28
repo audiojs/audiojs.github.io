@@ -2,6 +2,9 @@
 export const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x))
 export const hzToNote = hz => 69 + 12 * Math.log2(hz / 440)
 export const noteToHz = n => 440 * 2 ** ((n - 69) / 12)
+const NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B']
+// Scientific pitch notation of the nearest semitone: MIDI 60 is C4.
+export const noteName = n => { const k = Math.round(n); return NAMES[(k % 12 + 12) % 12] + (Math.floor(k / 12) - 1) }
 
 export function validatePitch(track, target, sampleRate) {
   // Match CheapTrick's 50 Hz analysis floor in prosody-world.cpp and WORLD's
@@ -75,65 +78,173 @@ export function retime(anchors, start, end, seconds, protect = []) {
   try { return build(kept) } catch (error) { if (!kept.length) throw error; return build([]) }
 }
 
-export function transform(track, target, start, end, kind, amount, smoothing = 0) {
-  if (!Number.isFinite(smoothing) || smoothing < 0 || smoothing > .2) throw Error('Use smoothing between 0 and 200 ms.')
-  if (kind === 'variation' && (!Number.isFinite(amount) || amount < 0 || amount > 2)) throw Error('Use intonation between 0% and 200%.')
-  if (!Number.isFinite(amount)) throw Error('Use a finite pitch change.')
-  const ids = []
-  for (let i = 0; i < target.length; i++) if (track.f0[i] && track.times[i] >= start && track.times[i] <= end) ids.push(i)
-  if (!ids.length) throw Error('No voiced pitch in this selection. Select a vowel or a longer phrase.')
-  // Flattening pulls toward the median. Exaggeration raises the peaks above the
-  // pitch floor (the 10th percentile) and leaves the valleys, as expressive
-  // speech does: a larynx has a floor, and symmetric scaling drives a low voice
-  // into creak.
-  const notes = ids.map(i => hzToNote(target[i])).sort((a, b) => a - b)
-  const median = notes[notes.length >> 1], floor = notes[Math.floor(notes.length * .1)], out = target.slice()
-  const scale = note => kind === 'variation' && amount > 1 ? (note > floor ? floor + (note - floor) * amount : note) : median + (note - median) * amount
-  const first = ids[0], last = ids.at(-1), fade = Math.min(.08, (end - start) / 2)
-  const ease = x => .5 - .5 * Math.cos(Math.PI * clamp(x, 0, 1))
-  for (const i of ids) {
-    let note = hzToNote(target[i])
-    if (kind === 'shift') note += amount
-    else if (kind === 'variation') {
-      // Smooth the requested contour in semitones, never across a consonant or
-      // outside the selection. A cosine window removes frame-scale jitter.
-      let sum = note, weight = 1
-      if (smoothing) for (const direction of [-1, 1]) {
-        for (let j = i + direction; j >= first && j <= last && track.f0[j]; j += direction) {
-          const distance = Math.abs(track.times[j] - track.times[i])
-          if (distance >= smoothing / 2) break
-          const w = .5 + .5 * Math.cos(2 * Math.PI * distance / smoothing)
-          sum += hzToNote(target[j]) * w; weight += w
-        }
-      }
-      note = scale(sum / weight)
-    }
-    else if (kind === 'ramp') note += amount * (track.times[i] - start) / (end - start)
-    else if (kind === 'reset') { out[i] = track.f0[i]; continue }
-    else throw Error('Unknown pitch edit')
-    // Ease edits into existing voicing at selection edges. Natural voiced
-    // onsets/ends need no artificial return to the original pitch.
-    let weight = 1
-    if (fade > 0 && track.f0[first - 1]) weight *= ease((track.times[i] - start) / fade)
-    if (fade > 0 && track.f0[last + 1]) weight *= ease((end - track.times[i]) / fade)
-    const original = hzToNote(target[i])
-    const hz = noteToHz(original + (note - original) * weight)
-    out[i] = hz
-    if (!Number.isFinite(out[i]) || out[i] <= 0) throw Error('Pitch change is too large.')
+// Maximal voiced frame ranges [first, last].
+export function runs(f0) {
+  const out = []
+  for (let i = 0; i < f0.length; i++) if (f0[i]) { if (!out.length || out.at(-1)[1] !== i - 1) out.push([i, i]); else out.at(-1)[1] = i }
+  return out
+}
+
+// Frames the analysis trusts for pitch (all voiced frames of a synthetic track).
+const reliable = (track, i) => !track.reliable || !!track.reliable[i]
+
+// Replace the frames of [first, last] that `known` rejects by the line between
+// the nearest accepted frames, held flat beyond the outermost ones. Unchanged
+// when no frame is accepted.
+function bridge(track, x, first, last, known) {
+  let previous = -1
+  for (let i = first; i <= last + 1; i++) {
+    if (i <= last && !known(i)) continue
+    if (previous < 0 && i > last) return
+    for (let j = previous < 0 ? first : previous + 1; j < i && j <= last; j++)
+      x[j] = previous < 0 ? x[i] : i > last ? x[previous] : x[previous] + (x[i] - x[previous]) * (track.times[j] - track.times[previous]) / (track.times[i] - track.times[previous])
+    previous = i
+  }
+}
+
+// Pitch in semitones that edits are computed from, NaN where unvoiced. Frames
+// the analysis does not trust (noise tracked as voice, a stray octave) take the
+// line between their trusted neighbours in the run, so an edit moves them with
+// the voice around them instead of pulling a tracking error to its own target.
+export function reference(track, values) {
+  const out = Float64Array.from(values, (v, i) => track.f0[i] ? hzToNote(v) : NaN)
+  for (const [first, last] of runs(track.f0)) bridge(track, out, first, last, i => reliable(track, i))
+  return out
+}
+
+// Notes (the analysis syllables, or whole voiced runs) clipped to [start, end].
+export function notesIn(track, start, end) {
+  const out = []
+  for (const [first, last] of track.notes ?? runs(track.f0)) {
+    let a = first, b = last
+    while (a <= b && track.times[a] < start) a++
+    while (b >= a && track.times[b] > end) b--
+    if (a <= b) out.push([a, b])
   }
   return out
 }
 
-export function movePoint(track, target, index, hz) {
-  if (!track.f0[index] || !Number.isFinite(hz) || hz <= 0) throw Error('Choose a voiced point and a positive frequency.')
-  const out = target.slice(), delta = hzToNote(hz) - hzToNote(target[index])
-  // Local gesture tapers over 100 ms; stop at unvoiced boundaries.
-  for (const direction of [-1, 1]) {
-    for (let i = index + (direction === 1 ? 1 : 0); i >= 0 && i < out.length; i += direction) {
-      const distance = Math.abs(track.times[i] - track.times[index])
-      if (!track.f0[i] || distance >= 0.1) break
-      out[i] = noteToHz(hzToNote(target[i]) + delta * (.5 + .5 * Math.cos(Math.PI * distance / .1)))
-    }
+// Pitch centre of each note in `contour` (semitones): the loudness-weighted
+// median of its trusted frames, so a quiet gliding tail or a tracking error
+// does not move it. null for a note of untrusted frames only.
+export function centers(track, notes, contour) {
+  return notes.map(([first, last]) => {
+    const frames = []
+    for (let i = first; i <= last; i++) if (reliable(track, i)) frames.push([contour[i], (track.level?.[i] ?? 1) + 1e-9])
+    if (!frames.length) return null
+    frames.sort((p, q) => p[0] - q[0])
+    let half = frames.reduce((sum, f) => sum + f[1], 0) / 2
+    for (const [value, weight] of frames) if ((half -= weight) <= 0) return value
+    return frames.at(-1)[0]
+  })
+}
+
+// Selection edges ease into continuing voice, and adjacent notes crossfade,
+// over at most this long (s).
+export const GLIDE = .08
+const ease = x => .5 - .5 * Math.cos(Math.PI * clamp(x, 0, 1))
+
+// A value per note, held across it and crossfaded over up to GLIDE centred on
+// each boundary that voice continues across. NaN outside notes with a value.
+function steps(track, notes, values) {
+  const out = new Float64Array(track.f0.length).fill(NaN)
+  notes.forEach(([a, b], k) => { if (values[k] != null) out.fill(values[k], a, b + 1) })
+  for (let k = 1; k < notes.length; k++) {
+    const [a0, b0] = notes[k - 1], [a1, b1] = notes[k], v0 = values[k - 1], v1 = values[k]
+    if (a1 !== b0 + 1 || v0 == null || v1 == null) continue
+    const at = (track.times[b0] + track.times[a1]) / 2, h = Math.min(GLIDE / 2, (at - track.times[a0]) / 2, (track.times[b1] - at) / 2)
+    for (let i = a0; i <= b1; i++) if (Math.abs(track.times[i] - at) < h) out[i] = v0 + (v1 - v0) * ease((track.times[i] - at + h) / (2 * h))
   }
+  return out
+}
+
+// Correct the voiced pitch of [start, end] in `base`, in this order:
+// smooth: cosine window (s, ≤ 0.2) in semitones, within voice and selection;
+// intonation: 0–2, below 1 toward the selection's median, above 1 raising the
+//   intervals over its pitch floor (10th percentile) and leaving the valleys,
+//   as expressive speech does: symmetric scaling drives a low voice into creak;
+// straighten: 0–1 of the way from each note's contour to its centre;
+// snap: 0–1 of the way from each note's centre to the nearest semitone of
+//   twelve-tone equal temperament, A4 = 440 Hz;
+// rise: semitones gained linearly from start to end; shift: semitones.
+// The change is measured on trusted frames and carried to the others, and eases
+// into voice that continues outside the selection.
+export function correct(track, base, start, end, { smooth = 0, intonation = 1, straighten = 0, snap = 0, rise = 0, shift = 0 } = {}) {
+  if (!(smooth >= 0 && smooth <= .2)) throw Error('Use smoothing between 0 and 200 ms.')
+  if (!(intonation >= 0 && intonation <= 2)) throw Error('Use intonation between 0% and 200%.')
+  if (!(straighten >= 0 && straighten <= 1 && snap >= 0 && snap <= 1)) throw Error('Use straightening and snapping between 0% and 100%.')
+  if (!Number.isFinite(rise) || !Number.isFinite(shift)) throw Error('Use a finite pitch change.')
+  const ids = []
+  for (let i = 0; i < base.length; i++) if (track.f0[i] && track.times[i] >= start && track.times[i] <= end) ids.push(i)
+  if (!ids.length) throw Error('No voiced pitch in this selection. Select a vowel or a longer phrase.')
+  const first = ids[0], last = ids.at(-1), q = reference(track, base), n = q.slice()
+  if (smooth) for (const i of ids) {
+    let sum = q[i], weight = 1
+    for (const direction of [-1, 1]) for (let j = i + direction; j >= first && j <= last && track.f0[j]; j += direction) {
+      const distance = Math.abs(track.times[j] - track.times[i])
+      if (distance >= smooth / 2) break
+      const w = .5 + .5 * Math.cos(2 * Math.PI * distance / smooth)
+      sum += q[j] * w; weight += w
+    }
+    n[i] = sum / weight
+  }
+  if (intonation !== 1) {
+    const trusted = ids.filter(i => reliable(track, i)), sorted = (trusted.length ? trusted : ids).map(i => n[i]).sort((a, b) => a - b)
+    const median = sorted[sorted.length >> 1], floor = sorted[Math.floor(sorted.length * .1)]
+    for (const i of ids) n[i] = intonation < 1 ? median + (n[i] - median) * intonation : n[i] > floor ? floor + (n[i] - floor) * intonation : n[i]
+  }
+  const notes = straighten || snap ? notesIn(track, start, end) : [], c = centers(track, notes, n), flat = steps(track, notes, c)
+  const goal = c.map(v => v == null ? null : v + snap * (Math.round(v) - v)), offset = goal.map((v, k) => v == null ? null : v - c[k])
+  const fade = Math.min(GLIDE, (end - start) / 4), change = new Float64Array(base.length)
+  const build = () => {
+    const moved = steps(track, notes, offset)
+    for (const i of ids) change[i] = n[i] - q[i] + rise * (track.times[i] - start) / (end - start || 1) + shift
+    for (const [k, [a, b]] of notes.entries()) if (c[k] != null) for (let i = a; i <= b; i++) change[i] += straighten * (flat[i] - n[i]) + moved[i]
+    for (const [a, b] of runs(track.f0)) if (b >= first && a <= last) bridge(track, change, Math.max(a, first), Math.min(b, last), i => reliable(track, i))
+    // Natural voiced onsets and ends need no return to the original pitch.
+    const out = base.slice()
+    for (const i of ids) {
+      let weight = 1
+      if (fade > 0 && track.f0[first - 1]) weight *= ease((track.times[i] - start) / fade)
+      if (fade > 0 && track.f0[last + 1]) weight *= ease((end - track.times[i]) / fade)
+      if (change[i] * weight) out[i] = noteToHz(hzToNote(base[i]) + change[i] * weight)
+      if (!Number.isFinite(out[i]) || out[i] <= 0) throw Error('Pitch change is too large.')
+    }
+    return out
+  }
+  // Crossfades into neighbours and the selection edges pull a note's centre off
+  // its goal; move each note by what it still misses until it lands.
+  let out = build()
+  for (let pass = 0; pass < 4 && notes.length; pass++) {
+    let miss = 0
+    centers(track, notes, reference(track, out)).forEach((v, k) => { if (goal[k] != null) { offset[k] += goal[k] - v; miss = Math.max(miss, Math.abs(goal[k] - v)) } })
+    if (miss < 1e-4) break
+    out = build()
+  }
+  return out
+}
+
+// Shift [start, end] so that its note around `time` centres on `goal`
+// (semitones): the selection's eased edges would otherwise leave it short.
+export function shiftTo(track, base, start, end, time, goal) {
+  const notes = notesIn(track, start, end), k = notes.findIndex(([a, b]) => track.times[a] - track.hop <= time && track.times[b] + track.hop >= time)
+  const center = values => k < 0 ? null : centers(track, [notes[k]], reference(track, values))[0]
+  const from = center(base)
+  if (from == null) throw Error('This note has no clear pitch to move.')
+  let shift = goal - from, out = correct(track, base, start, end, { shift })
+  for (let pass = 0; pass < 4; pass++) {
+    const miss = goal - center(out)
+    if (Math.abs(miss) < 1e-4) break
+    out = correct(track, base, start, end, { shift: shift += miss })
+  }
+  return out
+}
+
+// The detected pitch of [start, end], exactly.
+export function restore(track, target, start, end) {
+  const out = target.slice()
+  let voiced = false
+  for (let i = 0; i < out.length; i++) if (track.f0[i] && track.times[i] >= start && track.times[i] <= end) { out[i] = track.f0[i]; voiced = true }
+  if (!voiced) throw Error('No voiced pitch in this selection. Select a vowel or a longer phrase.')
   return out
 }

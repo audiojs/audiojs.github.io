@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Speech prosody editor: edit pitch curves and phrase timing · audiojs</title>
-  <meta name="description" content="Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce or amplify pitch variation, compare with the original and save a WAV. Nothing is uploaded.">
+  <meta name="description" content="Edit speech intonation and phrase duration in your browser. Drag syllables to notes, snap them to semitones, straighten or smooth pitch, compare with the original and save a WAV. Nothing is uploaded.">
   <meta name="theme-color" content="#0d1014">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://audiojs.dev/util/prosody/">
@@ -14,7 +14,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://audiojs.dev/util/prosody/">
   <meta property="og:title" content="Speech prosody editor: edit pitch curves and phrase timing">
-  <meta property="og:description" content="Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce or amplify pitch variation, compare with the original and save a WAV. Nothing is uploaded.">
+  <meta property="og:description" content="Edit speech intonation and phrase duration in your browser. Drag syllables to notes, snap them to semitones, straighten or smooth pitch, compare with the original and save a WAV. Nothing is uploaded.">
   <meta property="og:site_name" content="audiojs">
   <meta property="og:image" content="https://audiojs.dev/icon-512.png">
   <meta property="og:image:width" content="512">
@@ -40,7 +40,7 @@
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "Edit speech intonation and phrase duration in your browser. Drag a pitch curve, reduce or amplify pitch variation, compare with the original and save a WAV. Nothing is uploaded.",
+        "description": "Edit speech intonation and phrase duration in your browser. Drag syllables to notes, snap them to semitones, straighten or smooth pitch, compare with the original and save a WAV. Nothing is uploaded.",
         "author": {
           "@type": "Organization",
           "name": "audiojs",
@@ -83,7 +83,15 @@
             "name": "Can this automatically fix the tone of a question?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The rising and falling controls apply a pitch ramp to your selection. They do not infer sentence meaning. Listen and adjust the selection and pitch to match your intended delivery."
+              "text": "Rise tilts the pitch of your selection up or down toward its end. It does not infer sentence meaning. Select the last word, listen and adjust it to match your intended delivery."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can it tune speech or chant to notes, like Auto-Tune or Melodyne?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Each syllable becomes a note you can drag; it snaps to the semitones of A4 = 440 Hz. Snap to notes moves the centres of the selected notes onto the nearest semitone, Straighten flattens the pitch within each note, and together at 100% they give flat notes on the grid with natural glides between them. Smooth softens fast wobbles while keeping the melody."
             }
           },
           {
@@ -127,7 +135,7 @@
       <p>Shape how a sentence sounds. Adjust its pitch, emphasis and pace.</p>
     </section>
 
-    <link rel="stylesheet" href="/util/prosody/editor.css?v=8a597653caac6ab2d6305fc0">
+    <link rel="stylesheet" href="/util/prosody/editor.css?v=960a003e1f40a37a8cf718b0">
     <div class="prosody">
       <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
@@ -141,26 +149,31 @@
         <div class="row"><strong id="filename" class="file"></strong><button id="replace" class="btn ghost">Change file</button><button id="undo" class="btn ghost" disabled>Undo</button><button id="reset" class="btn ghost" disabled>Reset</button></div>
         <fieldset id="controls" disabled>
           <div class="plot">
-            <div class="legend" aria-label="Plot legend"><span class="wave-key">Waveform</span><span class="detected-key">Detected</span><span class="target-key">Edited</span></div>
-            <details class="plot-help"><summary aria-label="How to edit the plot">?</summary><div id="curve-help">Drag the curve to change pitch. Drag the background or the selection edges to select a phrase. Pinch to zoom and pan; scroll sideways to pan. Double-click or Ctrl/⌘A to select all.<br><br>Keyboard: +/− zoom, 0 shows all, F fits selection. Arrow keys choose and adjust pitch points. Tab to a selection edge and use ←/→ to move it; Shift makes larger steps. Times refer to the original recording.</div></details>
-            <svg id="curve" viewBox="0 0 960 320" tabindex="0" role="group" aria-label="Pitch curve editor" aria-describedby="curve-help"></svg>
-            <button id="selection-start" class="selection-handle" role="slider" aria-label="Selection start" aria-orientation="horizontal" aria-controls="curve"></button>
-            <button id="selection-end" class="selection-handle" role="slider" aria-label="Selection end" aria-orientation="horizontal" aria-controls="curve"></button>
-            <output id="point-info" class="point-info"></output>
-            <div class="plot-tools" role="group" aria-label="Waveform view">
-              <button id="zoom-less" aria-label="Zoom out waveform" title="Zoom out (−)">−</button><button id="zoom-in" aria-label="Zoom in waveform" title="Zoom in (+)">+</button>
-              <button id="zoom" aria-label="Fit selection" title="Fit selection (F)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5H5v14h3m8-14h3v14h-3M9 12h6"/></svg></button>
-              <button id="zoom-out" aria-label="Show full recording" title="Show full recording (0)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14m16-14v14M7 12h10m-7-3-3 3 3 3m4-6 3 3-3 3"/></svg></button>
+            <div class="plot-bar">
+              <div class="legend" aria-label="Plot legend"><span class="detected-key">Original</span><span class="target-key">Edited</span></div>
+              <output id="point-info" class="point-info"></output>
+              <div class="plot-tools" role="group" aria-label="Waveform view">
+                <button id="zoom-less" aria-label="Zoom out waveform" title="Zoom out (−)">−</button><button id="zoom-in" aria-label="Zoom in waveform" title="Zoom in (+)">+</button>
+                <button id="zoom" aria-label="Fit selection" title="Fit selection (F)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5H5v14h3m8-14h3v14h-3M9 12h6"/></svg></button>
+                <button id="zoom-out" aria-label="Show full recording" title="Show full recording (0)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14m16-14v14M7 12h10m-7-3-3 3 3 3m4-6 3 3-3 3"/></svg></button>
+              </div>
+              <details class="plot-help"><summary aria-label="How to edit the plot">?</summary><div id="curve-help">Each blob is a syllable, as thick as it is loud; faint ones are noise without a clear pitch. Drag a note up or down to move it: it snaps to semitones, or moves freely with Alt (⌥). Double-click a note to snap it. Click a note to select it, Shift-click to add one, or drag across the plot to select a range; click empty space or press Esc to clear. Pinch or Ctrl-scroll to zoom; scroll sideways to pan.<br><br>Keyboard: ←/→ select the previous or next note, ↑/↓ move the selection by 10 cents (Shift: a semitone), +/− zoom, 0 shows all, F fits the selection, Ctrl/⌘A selects all. Tab to a selection edge and use ←/→ to move it. Times refer to the original recording.</div></details>
             </div>
-            <div id="view-scroll" class="plot-scroll" tabindex="0" role="scrollbar" aria-label="Waveform position" aria-controls="curve" aria-orientation="horizontal"><div></div></div>
+            <div class="plot-canvas">
+              <svg id="curve" viewBox="0 0 960 300" tabindex="0" role="group" aria-label="Pitch editor" aria-describedby="curve-help"></svg>
+              <button id="selection-start" class="selection-handle" role="slider" aria-label="Selection start" aria-orientation="horizontal" aria-controls="curve"></button>
+              <button id="selection-end" class="selection-handle" role="slider" aria-label="Selection end" aria-orientation="horizontal" aria-controls="curve"></button>
+              <div id="view-scroll" class="plot-scroll" tabindex="0" role="scrollbar" aria-label="Waveform position" aria-controls="curve" aria-orientation="horizontal"><div></div></div>
+            </div>
           </div>
           <div class="edit-grid">
-            <section><h2>Pitch</h2>
-              <div class="parameter"><label for="variation">Intonation</label><input id="variation" type="range" min="0" max="200" step="10" value="100" aria-describedby="variation-help"><output id="variation-value" for="variation">100%</output><button id="vary" class="btn ghost">Apply</button></div>
-              <span id="variation-help" class="sr-only">100% keeps the pitch range. Lower values flatten intonation toward the middle; higher values raise the peaks above the pitch floor. Smoothing softens rapid pitch fluctuations.</span>
-              <details class="pitch-options hint"><summary>Smoothing</summary><label for="smoothing">Window (ms)<input id="smoothing" type="number" min="0" max="200" step="10" value="60" aria-describedby="smoothing-help"></label><p id="smoothing-help">Applied with Intonation. Higher values soften faster pitch changes; 0 keeps every fluctuation.</p></details>
-              <div class="parameter"><label for="semitones">Transpose</label><input id="semitones" type="number" step="0.5" value="0" aria-label="Transpose in semitones"><span class="hint">st</span><button id="shift" class="btn ghost">Apply</button></div>
-              <div class="actions"><button id="rise" class="btn ghost" aria-label="Rising end">Rise</button><button id="fall" class="btn ghost" aria-label="Falling end">Fall</button><button id="pitch-reset" class="btn ghost">Restore pitch</button></div>
+            <section><h2>Pitch <span id="scope" class="hint"></span></h2>
+              <div class="parameter" title="Softens pitch changes faster than the window."><label for="smooth">Smooth</label><input id="smooth" type="range" min="0" max="200" step="10" value="0" aria-describedby="smooth-help"><output id="smooth-value" for="smooth"></output><span id="smooth-help" class="sr-only">Softens pitch changes faster than the window.</span></div>
+              <div class="parameter" title="Flattens each note toward its centre."><label for="straighten">Straighten</label><input id="straighten" type="range" min="0" max="100" step="5" value="0" aria-describedby="straighten-help"><output id="straighten-value" for="straighten"></output><span id="straighten-help" class="sr-only">Flattens each note toward its centre.</span></div>
+              <div class="parameter" title="Moves each note centre toward the nearest semitone."><label for="snap">Snap to notes</label><input id="snap" type="range" min="0" max="100" step="5" value="0" aria-describedby="snap-help"><output id="snap-value" for="snap"></output><span id="snap-help" class="sr-only">Moves each note centre toward the nearest semitone.</span></div>
+              <div class="parameter" title="Below 100% flattens the melody toward its middle; above, raises its peaks over its floor."><label for="intonation">Intonation</label><input id="intonation" type="range" min="0" max="200" step="10" value="100" aria-describedby="intonation-help"><output id="intonation-value" for="intonation"></output><span id="intonation-help" class="sr-only">Below 100% flattens the melody toward its middle; above, raises its peaks over its floor.</span></div>
+              <div class="parameter" title="Raises or lowers the pitch gradually from the start of the selection to its end."><label for="rise">Rise</label><input id="rise" type="range" min="-6" max="6" step="0.5" value="0" aria-describedby="rise-help"><output id="rise-value" for="rise"></output><span id="rise-help" class="sr-only">Raises or lowers the pitch gradually from the start of the selection to its end.</span></div>
+              <div class="actions"><button id="pitch-reset" class="btn ghost">Restore pitch</button></div>
             </section>
             <section><h2>Timing</h2>
               <label>Duration (s)<input id="duration" type="number" min="0.01" step="0.01" value="1"></label><button id="retime" class="btn ghost">Apply</button>
@@ -174,10 +187,11 @@
       </section>
     </div>
     <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/stretch-wsola" target="_blank" rel="noopener"><code>@audio/stretch-wsola</code></a> and <a href="https://npmjs.com/package/@audio/encode-wav" target="_blank" rel="noopener"><code>@audio/encode-wav</code></a>.</p>
-    <section class="seo"><h2>Edit delivery, one phrase at a time</h2><p>Select a word or phrase, reduce excessive pitch variation, shift its emphasis or adjust its duration. Pinch to zoom into the waveform and drag on the plot to select a phrase.</p><p>Pitch and timing edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally. Harvest tracks pitch continuously across each phrase and glottal cycle marks make it exact per cycle. Every edited voiced phrase is rebuilt whole at the new pitch and duration: the waveform engine resamples the recording's own voice cycles and restores their formants, the vocoder engine rebuilds the voice for large changes. Unvoiced audio in a retimed span is stretched with WSOLA and consonant bursts keep their length. WAV export contains audio only, without source tags.</p>
+    <section class="seo"><h2>Edit delivery, one syllable at a time</h2><p>Each syllable is a note on a piano roll. Drag it to another pitch, snap a phrase to semitones, straighten wobbly notes, smooth or exaggerate the intonation, or change a phrase's duration. Pinch to zoom into the recording and drag across the plot to select a phrase.</p><p>Pitch and timing edits use the <a href="https://github.com/mmorise/World">WORLD reference speech engine</a>, compiled to WebAssembly and run locally. Harvest tracks pitch continuously across each phrase and glottal cycle marks make it exact per cycle. Phrases are split into syllables at loudness dips, and pitch the tracker is unsure of follows the voice around it. Every edited voiced phrase is rebuilt whole at the new pitch and duration: the waveform engine resamples the recording's own voice cycles and restores their formants, the vocoder engine rebuilds the voice for large changes. Unvoiced audio in a retimed span is stretched with WSOLA and consonant bursts keep their length. WAV export contains audio only, without source tags.</p>
       <section class="faq" aria-label="Questions">
         <h3>Questions</h3>
-        <details><summary>Can this automatically fix the tone of a question?</summary><p>The rising and falling controls apply a pitch ramp to your selection. They do not infer sentence meaning. Listen and adjust the selection and pitch to match your intended delivery.</p></details>
+        <details><summary>Can this automatically fix the tone of a question?</summary><p>Rise tilts the pitch of your selection up or down toward its end. It does not infer sentence meaning. Select the last word, listen and adjust it to match your intended delivery.</p></details>
+        <details><summary>Can it tune speech or chant to notes, like Auto-Tune or Melodyne?</summary><p>Yes. Each syllable becomes a note you can drag; it snaps to the semitones of A4 = 440 Hz. Snap to notes moves the centres of the selected notes onto the nearest semitone, Straighten flattens the pitch within each note, and together at 100% they give flat notes on the grid with natural glides between them. Smooth softens fast wobbles while keeping the melody.</p></details>
         <details><summary>Will it preserve the voice?</summary><p>For changes within an octave the waveform engine resamples the recording's own voice cycles to the new pitch and restores their formants, so pulse shapes, breath and jitter stay the voice's own. Larger changes use the WORLD vocoder, which rebuilds the voice from its vocal-tract spectrum and breathiness and restores the original loudness contour. Consonants, silence and untouched phrases keep their original samples. Compare with the original before saving.</p></details>
         <details><summary>Why are parts of the curve missing?</summary><p>Silence and unvoiced consonants do not have a reliable fundamental pitch. Those regions stay unpitched. Very short clips may also have too little audio for detection.</p></details>
       </section>
@@ -209,7 +223,7 @@
   <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
     import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=8cf51a4e'
-    import { startEditor } from '/util/prosody/editor.bundle.js?v=8a597653caac6ab2d6305fc0'; startEditor('8a597653caac6ab2d6305fc0')
+    import { startEditor } from '/util/prosody/editor.bundle.js?v=960a003e1f40a37a8cf718b0'; startEditor('960a003e1f40a37a8cf718b0')
   </script>
 </body>
 </html>

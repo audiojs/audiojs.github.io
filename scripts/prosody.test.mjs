@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { analyze, render, encode, runs, engines } from '../util/prosody/process.js'
-import { retime, mapTime, transform, movePoint, pitchAt, validatePitch } from '../util/prosody/model.js'
+import { retime, mapTime, correct, shiftTo, restore, notesIn, centers, reference, noteName, hzToNote, noteToHz, GLIDE, pitchAt, validatePitch } from '../util/prosody/model.js'
 import { decodeWav, yin } from '../util/prosody/dsp.js'
 import { speechRun } from '../util/prosody/world.js'
 import { bandpass, periodicity } from '../util/prosody/noise.js'
@@ -73,7 +73,7 @@ test('vocoder: a touched voiced run is rebuilt whole; other runs, gaps and silen
 
 test('joins sit on the run edge frames; synthesis leads in by whole periods', () => {
   const a = phrase(), t = analyze(a, fs), [first, last] = runs(t.f0)[1]
-  const target = transform(t, t.f0, .6, 1.4, 'shift', 3), anchors = [[0, 0], [2, 2]]
+  const target = correct(t, t.f0, .6, 1.4, { shift: 3 }), anchors = [[0, 0], [2, 2]]
   const out = render(a, fs, t, target, anchors)
   const onset = Math.round(t.times[first] * fs), offset = Math.round(t.times[last] * fs)
   assert.deepEqual(out.subarray(0, onset), a.subarray(0, onset), 'dry up to the first voiced frame')
@@ -166,7 +166,7 @@ test('recordings beyond 60 seconds retain analysis and editable audio at the end
   assert.ok(t.times.at(-1) > 60.9)
   assert.ok(Math.abs(median(t.f0.subarray(-30)) - 260) < 1)
   assert.deepEqual(render(a, fs, t, t.f0, [[0, 0], [61, 61]]), a)
-  const target = transform(t, t.f0, 60, 61, 'shift', 3)
+  const target = correct(t, t.f0, 60, 61, { shift: 3 })
   const out = render(a, fs, t, target, [[0, 0], [61, 61]])
   assert.equal(out.length, a.length)
   assert.deepEqual(out.subarray(0, 59 * fs), a.subarray(0, 59 * fs))
@@ -175,7 +175,7 @@ test('recordings beyond 60 seconds retain analysis and editable audio at the end
 
 test('pitch edits reach requested F0, preserve length, other runs and original samples', () => {
   const a = phrase(), original = a.slice(), t = analyze(a, fs)
-  const target = transform(t, t.f0, 0.7, 1.3, 'shift', 3)
+  const target = correct(t, t.f0, 0.7, 1.3, { shift: 3 })
   const out = render(a, fs, t, target, [[0, 0], [2, 2]])
   assert.equal(out.length, a.length)
   assert.deepEqual(out.subarray(0, fs * 0.5), a.subarray(0, fs * 0.5))
@@ -292,12 +292,12 @@ test('waveform engine: unchanged cycles reproduce the source; pitch, timing, rat
   for (let i = Math.round((t.times[middle] + .02) * fs); i < Math.round(1.4 * fs); i++) { diff += (same[i] - a[i]) ** 2; ref += a[i] ** 2 }
   assert.ok(Math.sqrt(diff / ref) < .01, `cycles after a hairline edit are the source, delayed by a fraction of a sample (${Math.sqrt(diff / ref).toFixed(4)})`)
   assert.deepEqual(same.subarray(0, Math.round(.5 * fs)), a.subarray(0, Math.round(.5 * fs)))
-  const target = transform(t, t.f0, .6, 1.4, 'shift', 3), out = render(a, fs, t, target, anchors, 'waveform')
+  const target = correct(t, t.f0, .6, 1.4, { shift: 3 }), out = render(a, fs, t, target, anchors, 'waveform')
   assert.deepEqual(out, render(a, fs, t, target, anchors, 'auto'), 'auto picks the waveform engine for a small change')
   assert.notDeepEqual(out, render(a, fs, t, target, anchors, 'vocoder'))
-  const big = transform(t, t.f0, .6, 1.4, 'shift', 15)
+  const big = correct(t, t.f0, .6, 1.4, { shift: 15 })
   assert.deepEqual(render(a, fs, t, big, anchors, 'auto'), render(a, fs, t, big, anchors, 'vocoder'), 'auto picks the vocoder beyond an octave')
-  const octave = transform(t, t.f0, .6, 1.4, 'shift', 11)
+  const octave = correct(t, t.f0, .6, 1.4, { shift: 11 })
   assert.deepEqual(render(a, fs, t, octave, anchors, 'auto'), render(a, fs, t, octave, anchors, 'waveform'), 'auto keeps the waveform engine up to an octave')
   assert.ok(Math.abs(st(periodHz(out, fs, 1, 180 * 2 ** (3 / 12)), 180 * 2 ** (3 / 12))) < .02, 'shifted pitch is exact')
   assert.deepEqual(out.subarray(0, Math.round(t.times[first] * fs)), a.subarray(0, Math.round(t.times[first] * fs)))
@@ -306,7 +306,7 @@ test('waveform engine: unchanged cycles reproduce the source; pitch, timing, rat
   const slow = render(a, fs, t, t.f0, retime(anchors, .55, 1.45, 1.35), 'waveform')
   for (let time = .7; time < 1.8; time += .05) assert.ok(Math.abs(st(periodHz(slow, fs, time, 180), 180)) < .02, `stretched voice keeps 180 Hz at ${time.toFixed(2)} s`)
   for (const rate of [8000, 48000]) {
-    const b = tone(180, 1, rate), tb = analyze(b, rate), shifted = render(b, rate, tb, transform(tb, tb.f0, 0, 1, 'shift', -3), [[0, 0], [1, 1]], 'waveform')
+    const b = tone(180, 1, rate), tb = analyze(b, rate), shifted = render(b, rate, tb, correct(tb, tb.f0, 0, 1, { shift: -3 }), [[0, 0], [1, 1]], 'waveform')
     assert.ok(Math.abs(st(periodHz(shifted, rate, .5, 180 * 2 ** (-3 / 12)), 180 * 2 ** (-3 / 12))) < .02, `${rate} Hz: lowered pitch is exact`)
   }
   assert.throws(() => render(a, fs, t, target, anchors, 'psola'), /engine/)
@@ -335,7 +335,7 @@ test('waveform engine keeps formants: harmonic amplitudes match a voice produced
   const x = voice(155), t = analyze(x, rate)
   // Before the correction's lower clamp was lifted, +8 st measured 7.2 dB.
   for (const [shift, limit] of [[3, 1.6], [5, 1.6], [8, 1.6], [12, 1.6]]) {
-    const f1 = 155 * 2 ** (shift / 12), truth = voice(f1), out = render(x, rate, t, transform(t, t.f0, 0, 2, 'shift', shift), [[0, 0], [2, 2]], 'waveform')
+    const f1 = 155 * 2 ** (shift / 12), truth = voice(f1), out = render(x, rate, t, correct(t, t.f0, 0, 2, { shift: shift }), [[0, 0], [2, 2]], 'waveform')
     const errors = [.5, .8, 1.1, 1.4].map(time => harmonics(out, f1, time).map((v, h) => v - harmonics(truth, f1, time)[h]))
     const mean = errors[0].map((_, h) => errors.reduce((sum, e) => sum + e[h], 0) / errors.length), center = mean.reduce((a, b) => a + b) / mean.length
     const ripple = Math.sqrt(mean.reduce((sum, v) => sum + (v - center) ** 2, 0) / mean.length)
@@ -346,7 +346,7 @@ test('waveform engine keeps formants: harmonic amplitudes match a voice produced
 
 test('waveform engine on speech: joins add no level, consonants stay dry, pitch follows the edit', () => {
   const { channelData: [a], sampleRate } = sample(), track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
-  const target = transform(track, track.f0, 0, duration, 'variation', .5, .06), out = render(a, sampleRate, track, target, anchors, 'waveform')
+  const target = correct(track, track.f0, 0, duration, { intonation: .5, smooth: .06 }), out = render(a, sampleRate, track, target, anchors, 'waveform')
   for (const [first, last] of runs(track.f0)) for (const [i, j, direction] of [[first - 1, first, 1], [last, last + 1, -1]]) {
     if (i < 0 || j >= track.f0.length) continue
     const s = Math.round(track.times[i] * sampleRate), e = Math.round(track.times[j] * sampleRate), z = Math.round(.01 * sampleRate)
@@ -368,7 +368,7 @@ test('waveform engine on speech: joins add no level, consonants stay dry, pitch 
   errors.sort((p, q) => p - q)
   assert.ok(errors.length > 300 && errors[Math.floor(errors.length * .9)] < .3, `rendered pitch error p90 ${errors[Math.floor(errors.length * .9)]?.toFixed(3)} st over ${errors.length} frames`)
   // Exaggerated intonation moves faster than a 40 ms detector can follow; both engines must read alike.
-  const wide = transform(track, track.f0, 0, duration, 'variation', 1.5, .06)
+  const wide = correct(track, track.f0, 0, duration, { intonation: 1.5, smooth: .06 })
   const read = engine => { const y = render(a, sampleRate, track, wide, anchors, engine), e = []; for (let time = .2; time < duration - .2; time += .01) { const want = pitchAt(track, wide, time), p = measure(y, sampleRate, time); if (want && p?.clarity > .9) e.push(Math.abs(st(p.freq, want))) } return e.sort((p, q) => p - q)[Math.floor(e.length * .9)] }
   assert.ok(Math.abs(read('waveform') - read('vocoder')) < .15, 'waveform and vocoder engines follow an exaggerated contour alike')
 })
@@ -396,7 +396,7 @@ test('vocoder keeps the voice\'s breathiness: band periodicity of copy-synthesis
 
 test('vocoder adds no energy below the fundamental at phrase edges', () => {
   const { channelData: [a], sampleRate } = sample(), track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
-  const out = render(a, sampleRate, track, transform(track, track.f0, 0, duration, 'shift', 5), anchors, 'vocoder')
+  const out = render(a, sampleRate, track, correct(track, track.f0, 0, duration, { shift: 5 }), anchors, 'vocoder')
   const low = x => bandpass(x, sampleRate, 20, 70), la = low(a), lo = low(out), w = Math.round(.01 * sampleRate), excess = []
   for (const [first, last] of runs(track.f0)) for (const i of [first, last]) {
     const c = Math.round(track.times[i] * sampleRate)
@@ -422,7 +422,7 @@ test('waveform engine: a smoothed pitch jump never raises the level above the so
   for (let i = 0; i < x.length; i++) x[i] *= .3 / peak
   const t = analyze(x, rate), anchors = [[0, 0], [2, 2]]
   for (const amount of [.5, 1.5]) {
-    const out = render(x, rate, t, transform(t, t.f0, 0, 2, 'variation', amount, .06), anchors, 'waveform')
+    const out = render(x, rate, t, correct(t, t.f0, 0, 2, { intonation: amount, smooth: .06 }), anchors, 'waveform')
     let top = 0
     for (const v of out) top = Math.max(top, Math.abs(v))
     assert.ok(top < .3 * 1.12, `intonation ${amount * 100}%: peak ${top.toFixed(3)} against the source's .300`)
@@ -463,7 +463,7 @@ test('waveform engine: each glottal period keeps the shape of the true voice at 
   }
   const x = voice(110), t = analyze(x, rate)
   for (const shift of [7, -4]) {
-    const f1 = 110 * 2 ** (shift / 12), out = render(x, rate, t, transform(t, t.f0, 0, seconds, 'shift', shift), [[0, 0], [seconds, seconds]], 'waveform')
+    const f1 = 110 * 2 ** (shift / 12), out = render(x, rate, t, correct(t, t.f0, 0, seconds, { shift: shift }), [[0, 0], [seconds, seconds]], 'waveform')
     const m = match(shape(out, f1), shape(voice(f1), f1))
     assert.ok(m > .95, `${shift > 0 ? '+' : ''}${shift} st: period shape correlation ${m.toFixed(3)}`)
   }
@@ -478,7 +478,7 @@ test('analysis keeps a short voiced island whose Harvest pitch is off', () => {
   const t = analyze(x, sampleRate), island = Array.from(t.f0).filter((v, i) => t.times[i] >= .235 && t.times[i] <= .28)
   assert.ok(island.length === 8 && island.every(Boolean), `island voiced (${island.map(v => v.toFixed(0))})`)
   assert.ok(island.every(v => v > 105 && v < 135), `cycle marks correct Harvest's pitch (${island.map(v => v.toFixed(0))})`)
-  const out = render(x, sampleRate, t, transform(t, t.f0, 0, x.length / sampleRate, 'shift', 4), [[0, 0], [x.length / sampleRate, x.length / sampleRate]])
+  const out = render(x, sampleRate, t, correct(t, t.f0, 0, x.length / sampleRate, { shift: 4 }), [[0, 0], [x.length / sampleRate, x.length / sampleRate]])
   // A 30 ms window: the island is shorter than the usual 40 ms.
   for (const time of [.255, .265]) {
     const a = Math.round((time - .015) * sampleRate), n = Math.round(.03 * sampleRate)
@@ -520,44 +520,51 @@ test('waveform engine keeps the high band where it was: codec patches are not mo
     for (let k = Math.round(lo / rate * N); k <= Math.round(hi / rate * N); k++) e += re[k] ** 2 + im[k] ** 2
     return 10 * Math.log10(e + 1e-20)
   }
-  const t = analyze(x, rate), out = render(x, rate, t, transform(t, t.f0, 0, seconds, 'shift', 4), [[0, 0], [seconds, seconds]], 'waveform')
+  const t = analyze(x, rate), out = render(x, rate, t, correct(t, t.f0, 0, seconds, { shift: 4 }), [[0, 0], [seconds, seconds]], 'waveform')
   const patchLevel = level(x, 10000, 12000), moved = level(out, 10000, 12000) - patchLevel, above = level(out, 13000, 15500) - patchLevel
   assert.ok(Math.abs(moved) < 1, `the patch keeps its level at 10–12 kHz (${moved.toFixed(1)} dB)`)
   assert.ok(above < -60, `13–15.5 kHz stays empty: ${above.toFixed(1)} dB re the patch, where resampling the whole band left −33 dB`)
 })
 
-test('rules and point edits preserve unvoiced gaps and remain non-destructive', () => {
+test('edits preserve unvoiced gaps, remain non-destructive, and neutral corrections are exact', () => {
   const t = { times: Float32Array.of(0, .02, .04, .06, .08), f0: Float32Array.of(100, 200, 0, 100, 150) }
-  const result = transform(t, t.f0, 0, .08, 'variation', .5)
+  const result = correct(t, t.f0, 0, .08, { intonation: .5 })
   assert.equal(result[2], 0)
   assert.ok(result[0] > 100 && result[1] < 200)
-  const point = movePoint(t, t.f0, 1, 250)
-  assert.equal(point[1], 250); assert.equal(point[2], 0); assert.equal(point[3], 100)
+  for (const straighten of [0, 1]) assert.equal(correct(t, t.f0, 0, .08, { straighten, snap: 1 })[2], 0)
   assert.deepEqual(t.f0, Float32Array.of(100, 200, 0, 100, 150))
-  assert.throws(() => movePoint(t, t.f0, 2, 200), /voiced/)
-  assert.throws(() => transform(t, t.f0, .039, .041, 'shift', 1), /No voiced/)
+  assert.deepEqual(correct(t, result, 0, .08, {}), result, 'neutral values change nothing, bit-exactly')
+  assert.deepEqual(correct(t, result, 0, .08, { smooth: 0, intonation: 1, straighten: 0, snap: 0, rise: 0, shift: 0 }), result)
+  assert.deepEqual(restore(t, result, 0, .03), Float32Array.of(100, 200, 0, result[3], result[4]))
+  assert.throws(() => correct(t, t.f0, .039, .041, { shift: 1 }), /No voiced/)
+  assert.throws(() => restore(t, t.f0, .039, .041), /No voiced/)
+  for (const amount of [-.1, 1.1, NaN]) {
+    assert.throws(() => correct(t, t.f0, 0, .08, { straighten: amount }), /0% and 100%/)
+    assert.throws(() => correct(t, t.f0, 0, .08, { snap: amount }), /0% and 100%/)
+  }
+  assert.throws(() => correct(t, t.f0, 0, .08, { rise: NaN }), /finite/)
 })
 
 test('intonation flattens toward the median and exaggerates above the floor; transposition preserves intervals', () => {
   const track = { times: Float32Array.of(0, .1, .2, .3, .4), f0: Float32Array.of(100, 150, 200, 0, 120) }
   const source = track.f0.slice()
   for (const factor of [0, .5, 1]) {
-    const out = transform(track, source, 0, .3, 'variation', factor)
+    const out = correct(track, source, 0, .3, { intonation: factor })
     for (let i = 0; i < 3; i++) assert.ok(Math.abs(12 * Math.log2(out[i] / 150) - factor * 12 * Math.log2(source[i] / 150)) < 1e-5)
     assert.equal(out[1], 150); assert.equal(out[3], 0); assert.equal(out[4], 120)
     if (factor === 1) assert.deepEqual(out, source)
   }
   // Exaggeration keeps the floor (the lowest note here) and scales the intervals above it.
   for (const factor of [1.5, 2]) {
-    const out = transform(track, source, 0, .3, 'variation', factor)
+    const out = correct(track, source, 0, .3, { intonation: factor })
     assert.equal(out[0], 100, 'the floor stays')
     for (let i = 1; i < 3; i++) assert.ok(Math.abs(12 * Math.log2(out[i] / 100) - factor * 12 * Math.log2(source[i] / 100)) < 1e-5, `interval above the floor × ${factor}`)
     assert.equal(out[3], 0); assert.equal(out[4], 120)
   }
-  const shifted = transform(track, source, 0, .3, 'shift', -3)
+  const shifted = correct(track, source, 0, .3, { shift: -3 })
   for (let i = 0; i < 3; i++) assert.ok(Math.abs(12 * Math.log2(shifted[i] / source[i]) + 3) < 1e-5)
   assert.deepEqual(track.f0, source)
-  for (const amount of [-.1, 2.1, NaN, Infinity]) assert.throws(() => transform(track, source, 0, .3, 'variation', amount), /0% and 200%/)
+  for (const amount of [-.1, 2.1, NaN, Infinity]) assert.throws(() => correct(track, source, 0, .3, { intonation: amount }), /0% and 200%/)
 })
 
 test('invalid targets/maps rejected; WAV export contains exact float PCM and sample rate', async () => {
@@ -572,54 +579,217 @@ test('invalid targets/maps rejected; WAV export contains exact float PCM and sam
 
 test('selection edits glide over time; repeated shifts and dragging can exceed an octave', () => {
   const track = { times: Float32Array.from({ length: 401 }, (_, i) => i * .005), f0: new Float32Array(401).fill(180), hop: .005 }
-  for (const kind of ['shift', 'ramp']) {
-    const out = transform(track, track.f0, .5, 1.5, kind, 6)
+  for (const kind of ['shift', 'rise']) {
+    const out = correct(track, track.f0, .5, 1.5, { [kind]: 6 })
     assert.deepEqual(out.subarray(0, 101), track.f0.subarray(0, 101))
     assert.deepEqual(out.subarray(300), track.f0.subarray(300))
     let maxStep = 0
     for (let i = 1; i < out.length; i++) maxStep = Math.max(maxStep, Math.abs(12 * Math.log2(out[i] / out[i - 1])))
     assert.ok(maxStep < .6, `${kind}: ${maxStep} semitone per 5 ms (previously 6)`)
   }
-  const a = transform(track, track.f0, 0, 2, 'shift', 18)
-  const b = transform(track, a, 0, 2, 'shift', 6)
+  const a = correct(track, track.f0, 0, 2, { shift: 18 })
+  const b = correct(track, a, 0, 2, { shift: 6 })
   assert.ok(Math.abs(a[200] / 180 - 2 ** 1.5) < 1e-6)
   assert.equal(b[200], 720)
-  const dragged = movePoint(track, track.f0, 200, 720)
-  assert.equal(dragged[200], 720)
-  assert.ok(Math.abs(12 * Math.log2(dragged[200] / dragged[199])) < .2, 'local gesture has no sharp corner at its peak')
-  assert.ok(Math.abs(12 * Math.log2(dragged[181] / dragged[180])) < .2, 'local gesture eases out at its support boundary')
-  assert.deepEqual(transform(track, b, 0, 2, 'reset', 0), track.f0)
-  for (const amount of [NaN, Infinity, 100000]) assert.throws(() => transform(track, track.f0, 0, 2, 'shift', amount))
+  // A dragged selection lands its note's centre on the goal despite its eased edges.
+  const dragged = shiftTo(track, track.f0, .9, 1.1, 1, hzToNote(720))
+  assert.ok(Math.abs(centers(track, notesIn(track, .9, 1.1), reference(track, dragged))[0] - hzToNote(720)) < 1e-4)
+  for (let i = 0; i < dragged.length; i++) if (track.times[i] < .9 || track.times[i] > 1.1) assert.equal(dragged[i], 180)
+  const fifth = shiftTo(track, track.f0, .9, 1.1, 1, hzToNote(180) + 5)
+  let dragStep = 0
+  for (let i = 1; i < fifth.length; i++) dragStep = Math.max(dragStep, Math.abs(12 * Math.log2(fifth[i] / fifth[i - 1])))
+  assert.ok(dragStep < 1, `a 200 ms syllable dragged 5 semitones glides: ${dragStep} semitone per 5 ms`)
+  assert.deepEqual(restore(track, b, 0, 2), track.f0)
+  for (const amount of [NaN, Infinity, 100000]) assert.throws(() => correct(track, track.f0, 0, 2, { shift: amount }))
   for (const [start, end] of [[.5, .5], [.501, .509], [1.99, 2]]) {
-    const out = transform(track, track.f0, start, end, 'shift', 6)
+    const out = correct(track, track.f0, start, end, { shift: 6 })
     assert.ok(out.every(x => Number.isFinite(x) && x >= 180 && x <= 255))
     for (let i = 0; i < out.length; i++) if (track.times[i] < start || track.times[i] > end) assert.equal(out[i], 180)
   }
   // A selection separated by a consonant needs no pitch return at the gap.
   track.f0[99] = track.f0[301] = 0
-  const phrase = transform(track, track.f0, .5, 1.5, 'shift', 6)
+  const phrase = correct(track, track.f0, .5, 1.5, { shift: 6 })
   assert.ok(phrase[100] > 254 && phrase[300] > 254)
 })
 
 test('smoothing removes fast modulation in pitch and rendered audio without crossing gaps', () => {
   const track = { times: Float32Array.from({ length: 401 }, (_, i) => i * .005), f0: new Float32Array(401).fill(180), hop: .005 }
   const target = Float32Array.from(track.times, t => 180 * 2 ** (.25 * Math.sin(2 * Math.PI * 25 * t)))
-  const smooth = transform(track, target, 0, 2, 'variation', 1, .1)
+  const smooth = correct(track, target, 0, 2, { intonation: 1, smooth: .1 })
   for (let i = 20; i < 380; i++) assert.ok(Math.abs(12 * Math.log2(smooth[i] / 180)) < .1)
   const out = render(tone(), fs, track, smooth, [[0, 0], [2, 2]])
   for (let time = .3; time < 1.7; time += .02) {
     assert.ok(measure(out, fs, time)?.clarity > .95)
     assert.ok(Math.abs(st(periodHz(out, fs, time, 180), 180)) < .02, `smooth output at ${time}: ${periodHz(out, fs, time, 180)} Hz`)
   }
-  assert.deepEqual(transform(track, target, 0, 2, 'variation', 1, 0), target)
-  assert.deepEqual(transform(track, target, 0, 2, 'variation', 1, .1), smooth, 'A → A after render')
+  assert.deepEqual(correct(track, target, 0, 2, { intonation: 1, smooth: 0 }), target)
+  assert.deepEqual(correct(track, target, 0, 2, { intonation: 1, smooth: .1 }), smooth, 'A → A after render')
   track.f0.fill(0, 199, 202)
   const separated = Float32Array.from(track.f0, (v, i) => v ? i < 200 ? 120 : 300 : 0)
-  const unchanged = transform(track, separated, 0, 2, 'variation', 1, .2)
+  const unchanged = correct(track, separated, 0, 2, { intonation: 1, smooth: .2 })
   assert.deepEqual(unchanged, separated, 'smoothing cannot bridge even a 15 ms unvoiced gap')
   const single = { times: Float32Array.of(0), f0: Float32Array.of(180), hop: .005 }
-  assert.deepEqual(transform(single, single.f0, 0, .02, 'variation', 1, .2), single.f0)
-  for (const value of [-1, NaN, Infinity, .201]) assert.throws(() => transform(single, single.f0, 0, .02, 'variation', .5, value), /smoothing/)
+  assert.deepEqual(correct(single, single.f0, 0, .02, { intonation: 1, smooth: .2 }), single.f0)
+  for (const value of [-1, NaN, Infinity, .201]) assert.throws(() => correct(single, single.f0, 0, .02, { intonation: .5, smooth: value }), /smoothing/)
+})
+
+// Twelve-tone equal temperament: MIDI note 69 = A4 = 440 Hz (ISO 16:1975, MIDI 1.0
+// Detailed Specification), MIDI 60 = C4, f = 440 · 2^((n − 69) / 12): A♯4 = 466.1638 Hz,
+// D♯3 = 155.5635 Hz.
+test('note names and snapping follow twelve-tone equal temperament at A4 = 440 Hz', () => {
+  assert.deepEqual([69, 60, 70, 59.6, 47, 51].map(noteName), ['A4', 'C4', 'A♯4', 'C4', 'B2', 'D♯3'])
+  const steady = hz => ({ times: Float32Array.from({ length: 81 }, (_, i) => i * .005), f0: new Float32Array(81).fill(hz), hop: .005 })
+  for (const [hz, want] of [[438, 440], [452, 440], [455, 466.1638], [155, 155.5635]]) {
+    const t = steady(hz), out = correct(t, t.f0, 0, .5, { snap: 1 })
+    for (const v of out) assert.ok(Math.abs(v - want) < 1e-3, `${hz} Hz snaps to ${want} Hz, not ${v}`)
+  }
+  const t = steady(438), half = correct(t, t.f0, 0, .5, { snap: .5 })
+  assert.ok(Math.abs(hzToNote(half[40]) - (hzToNote(438) + 69) / 2) < 1e-5, '50% moves halfway in semitones')
+  const one = { times: Float32Array.of(0), f0: Float32Array.of(452), hop: .005 }
+  assert.ok(Math.abs(correct(one, one.f0, 0, .02, { snap: 1, straighten: 1 })[0] - 440) < 1e-3, 'a single frame snaps')
+})
+
+// Three joined syllables (one voiced run) and one after a gap, each gliding
+// and wobbling around an off-grid centre.
+function syllableTrack() {
+  const times = Float32Array.from({ length: 320 }, (_, i) => i * .005), mids = [50.3, 52.7, 49.45, 55.2]
+  const notes = [[0, 79], [80, 159], [160, 239], [260, 319]]
+  const f0 = Float32Array.from(times, (t, i) => {
+    const k = notes.findIndex(([a, b]) => i >= a && i <= b)
+    return k < 0 ? 0 : noteToHz(mids[k] + .6 * Math.sin(2 * Math.PI * 5.5 * t) + .8 * ((i - notes[k][0]) / (notes[k][1] - notes[k][0]) - .5))
+  })
+  return { times, f0, hop: .005, notes }
+}
+const bodies = (track, notes) => notes.map(([a, b], k) => {
+  const joinedBefore = k && notes[k - 1][1] === a - 1, joinedAfter = notes[k + 1]?.[0] === b + 1, out = []
+  for (let i = a; i <= b; i++) if ((!joinedBefore || track.times[i] - track.times[a] >= GLIDE / 2) && (!joinedAfter || track.times[b] - track.times[i] >= GLIDE / 2)) out.push(i)
+  return out
+})
+
+test('straighten flattens each note at its centre; snap puts centres on semitones; joined notes glide', () => {
+  const track = syllableTrack(), all = notesIn(track, 0, 1.6), source = reference(track, track.f0), before = centers(track, all, source)
+  const maxStep = values => { let max = 0; for (let i = 1; i < values.length; i++) if (values[i] && values[i - 1]) max = Math.max(max, Math.abs(12 * Math.log2(values[i] / values[i - 1]))); return max }
+  const flat = correct(track, track.f0, 0, 1.6, { straighten: 1 }), after = centers(track, all, reference(track, flat))
+  for (const [k, body] of bodies(track, all).entries()) {
+    assert.ok(Math.abs(after[k] - before[k]) < 1e-3, `note ${k} keeps its centre`)
+    for (const i of body) assert.ok(Math.abs(hzToNote(flat[i]) - after[k]) < 1e-5, `note ${k} is flat at frame ${i}`)
+  }
+  assert.ok(maxStep(flat) < .35, `joined straightened notes glide: ${maxStep(flat)} semitone per 5 ms`)
+  // Half straightening halves the wobble; each note keeps its centre by a uniform offset.
+  const half = correct(track, track.f0, 0, 1.6, { straighten: .5 })
+  for (const body of bodies(track, all)) {
+    const rest = body.map(i => hzToNote(half[i]) - .5 * source[i])
+    assert.ok(Math.max(...rest) - Math.min(...rest) < 1e-5, 'half straightening halves the wobble')
+  }
+  const tuned = correct(track, track.f0, 0, 1.6, { straighten: 1, snap: 1 }), notes = centers(track, all, reference(track, tuned))
+  assert.deepEqual(notes.map(Math.round), before.map(Math.round))
+  for (const [k, body] of bodies(track, all).entries()) {
+    assert.ok(Math.abs(notes[k] - Math.round(before[k])) < 1e-3, `note ${k} centres on ${Math.round(before[k])}: ${notes[k]}`)
+    for (const i of body) assert.ok(Math.abs(hzToNote(tuned[i]) - Math.round(before[k])) < 1e-3)
+  }
+  // Their largest step, 4 semitones, is a raised cosine over GLIDE: at most 4 · π/2 / 16 per frame.
+  assert.ok(maxStep(tuned) <= 4 * Math.PI / 2 / (GLIDE / .005) + 1e-3, `tuned notes glide: ${maxStep(tuned)} semitone per 5 ms`)
+  const moved = centers(track, all, reference(track, correct(track, track.f0, 0, 1.6, { snap: 1 })))
+  for (const [k, v] of moved.entries()) assert.ok(Math.abs(v - Math.round(before[k])) < 1e-3, 'snap alone moves centres onto the grid')
+  // Tuning a tuned curve changes nothing.
+  const again = correct(track, tuned, 0, 1.6, { straighten: 1, snap: 1 })
+  for (let i = 0; i < tuned.length; i++) assert.ok(Math.abs(again[i] - tuned[i]) <= 1e-4 * tuned[i], `tuning is idempotent at frame ${i}`)
+  // A selection edits only its own notes.
+  const first = correct(track, track.f0, 0, .4, { straighten: 1, snap: 1 })
+  for (let i = 80; i < 320; i++) assert.equal(first[i], track.f0[i])
+})
+
+test('untrusted frames follow the change of the voice around them', () => {
+  const track = syllableTrack()
+  track.reliable = Uint8Array.from(track.f0, v => +!!v)
+  const base = track.f0.slice()
+  // Frames 100–107 are noise the tracker called an octave higher.
+  for (let i = 100; i <= 107; i++) { base[i] *= 2; track.f0[i] *= 2; track.reliable[i] = 0 }
+  const clean = syllableTrack(), all = notesIn(track, 0, 1.6)
+  clean.reliable = track.reliable
+  assert.deepEqual(centers(track, all, reference(track, base)), centers(clean, all, reference(clean, clean.f0)), 'centres ignore untrusted frames')
+  const ref = reference(track, base)
+  for (let i = 100; i <= 107; i++) assert.ok(Math.abs(ref[i] - (ref[99] + (ref[108] - ref[99]) * (i - 99) / 9)) < 1e-5, 'the reference bridges them')
+  const out = correct(track, base, 0, 1.6, { straighten: 1, snap: 1 }), change = i => hzToNote(out[i]) - hzToNote(base[i])
+  for (let i = 100; i <= 107; i++) assert.ok(Math.abs(change(i) - (change(99) + (change(108) - change(99)) * (i - 99) / 9)) < 1e-5, 'they take the change of their neighbours')
+  assert.ok(Math.abs(hzToNote(out[103]) - hzToNote(out[99]) - 12) < 1, 'and are not pulled an octave down to the note')
+  // A note of noise only has no centre; it is not straightened toward one but
+  // carries the change of the trusted voice before it, to the end of its run.
+  track.reliable.fill(0, 160, 240)
+  assert.equal(centers(track, notesIn(track, 0, 1.6), reference(track, base))[2], null)
+  const noisy = correct(track, base, 0, 1.6, { straighten: 1, snap: 1 }), held = hzToNote(noisy[159]) - hzToNote(base[159])
+  for (let i = 160; i < 240; i++) assert.ok(Math.abs(hzToNote(noisy[i]) - hzToNote(base[i]) - held) < 1e-5)
+})
+
+test('analysis: syllable notes split voiced runs at loudness dips; noise is not trusted', () => {
+  const rate = 16000, x = tone(180, .8, rate)
+  // An 18 dB cosine dip centred at 0.4 s, voicing continuous through it.
+  for (let i = 0; i < x.length; i++) { const d = Math.abs(i / rate - .4); if (d < .07) x[i] *= 10 ** (-18 / 20 * (.5 + .5 * Math.cos(Math.PI * d / .07))) }
+  const t = analyze(x, rate)
+  assert.equal(runs(t.f0).length, 1, 'one voiced run')
+  assert.equal(t.notes.length, 2, 'split into two notes')
+  const cut = t.times[t.notes[1][0]]
+  assert.ok(Math.abs(cut - .4) < .03, `split at the dip: ${cut} s`)
+  assert.equal(analyze(tone(180, .8, rate), rate).notes.length, 1, 'a steady tone is one note')
+  const { channelData: [a], sampleRate } = sample(), speech = analyze(a, sampleRate)
+  // "We can change how this sentence sounds. Try making the last word rise, or
+  // give this phrase a little more time." has 24 syllables.
+  assert.ok(speech.notes.length >= 20 && speech.notes.length <= 28, `${speech.notes.length} notes for 24 syllables`)
+  const owner = new Int16Array(speech.f0.length).fill(-1)
+  for (const [k, [p, q]] of speech.notes.entries()) for (let i = p; i <= q; i++) { assert.equal(owner[i], -1); assert.ok(speech.f0[i] > 0); owner[i] = k }
+  for (let i = 0; i < owner.length; i++) assert.equal(owner[i] >= 0, speech.f0[i] > 0, 'notes partition the voiced frames')
+  const voiced = speech.f0.filter(Boolean).length, trusted = speech.reliable.reduce((sum, v) => sum + v, 0)
+  assert.ok(trusted / voiced > .95, `${trusted} of ${voiced} voiced frames trusted`)
+  for (let i = 0; i < speech.f0.length; i++) if (!speech.f0[i]) assert.equal(speech.reliable[i], 0)
+  // A 150 Hz voice (MIDI 50.86) with noise: a burst inside the vowel, where the
+  // tracker leaves the voice by 10 or more semitones, and a breathy voice
+  // throughout, whose weak frames continue its pitch.
+  const voice = tone(150, 1, rate)
+  const noisy = (burst, breath) => {
+    let seed = 3
+    const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647 - .5
+    return voice.map((v, i) => { const inside = Math.abs(i / rate - .5) < .05, level = inside ? burst || breath : breath; return v * (inside && burst ? .1 : 1) + (level && .2 * level * rnd()) })
+  }
+  let left = 0
+  for (const burst of [2, 3, 4]) {
+    const t = analyze(noisy(burst, 0), rate), astray = t.f0.map((v, i) => v && Math.abs(hzToNote(v) - hzToNote(150)) >= 3 ? 1 : 0)
+    left += astray.reduce((sum, v) => sum + v, 0)
+    for (let i = 0; i < t.f0.length; i++) {
+      if (astray[i]) assert.equal(t.reliable[i], 0, `burst ${burst}: frame at ${t.times[i].toFixed(3)} s, ${t.f0[i].toFixed(0)} Hz, is not trusted`)
+      if (t.f0[i] && Math.abs(t.times[i] - .5) > .1) assert.equal(t.reliable[i], 1, 'the voice around it is')
+    }
+  }
+  assert.ok(left >= 5, `the tracker left the voice in ${left} burst frames`)
+  // At breath 4 a few frames are periodic and carry the rest; at 7 none is.
+  for (const [breath, periodic] of [[4, [1, 10]], [7, [0, 0]]]) {
+    const t = analyze(noisy(0, breath), rate), count = t.periodicity.filter((v, i) => t.f0[i] && v >= .5).length
+    assert.ok(count >= periodic[0] && count <= periodic[1], `breath ${breath}: ${count} periodic frames`)
+    assert.ok(t.reliable.every((v, i) => v === +!!t.f0[i]), `breath ${breath}: a breathy voice is trusted whole`)
+    assert.ok(centers(t, t.notes, reference(t, t.f0)).every(c => c != null), 'and every note has a centre to straighten toward')
+  }
+})
+
+test('tuned voice renders flat at its semitone; on speech notes land within cents', async () => {
+  const { vowel } = await import('./prosody-fixture.mjs')
+    const { samples, track } = vowel(fs)
+  // The fixture glides ±3 semitones around 155 Hz (D♯3 −6 ¢).
+  const target = correct(track, track.f0, 0, 3, { straighten: 1, snap: 1 })
+  for (const v of target) assert.ok(Math.abs(v - 155.5635) < 1e-3)
+  const out = render(samples, fs, track, target, [[0, 0], [3, 3]])
+  for (let time = .3; time < 2.7; time += .1) assert.ok(Math.abs(st(periodHz(out, fs, time, 155.5635), 155.5635)) < .05, `${time.toFixed(1)} s: ${periodHz(out, fs, time, 155.5635)} Hz`)
+  // Real speech, measured with YIN at the middle of every note of 80 ms or more.
+  const { channelData: [a], sampleRate } = sample(), speech = analyze(a, sampleRate), duration = a.length / sampleRate
+  for (const engine of ['waveform', 'vocoder']) {
+    const tuned = correct(speech, speech.f0, 0, duration, { straighten: 1, snap: 1 }), rendered = render(a, sampleRate, speech, tuned, [[0, 0], [duration, duration]], engine), want = reference(speech, tuned), errors = []
+    for (const [p, q] of speech.notes) {
+      if (speech.times[q] - speech.times[p] < .08) continue
+      const time = (speech.times[p] + speech.times[q]) / 2, pitch = measure(rendered, sampleRate, time)
+      if (pitch?.clarity > .8) errors.push(Math.abs(hzToNote(pitch.freq) - want[Math.round((time - speech.times[0]) / speech.hop)]))
+    }
+    errors.sort((p, q) => p - q)
+    assert.ok(errors.length >= 20, `${engine}: ${errors.length} notes measured`)
+    assert.ok(errors[errors.length >> 1] < .1 && errors[Math.floor(errors.length * .9)] < .3, `${engine}: median ${errors[errors.length >> 1].toFixed(3)}, p90 ${errors[Math.floor(errors.length * .9)].toFixed(3)} semitone`)
+  }
 })
 
 test('pitch range follows synthesis bounds, and output reaches shifts beyond one octave', async () => {
@@ -633,7 +803,7 @@ test('pitch range follows synthesis bounds, and output reaches shifts beyond one
   const { samples, track: voiced } = vowel(fs)
   let first
   for (const amount of [-18, 18, -18]) {
-    const target = transform(voiced, voiced.f0, 0, 3, 'shift', amount)
+    const target = correct(voiced, voiced.f0, 0, 3, { shift: amount })
     const out = render(samples, fs, voiced, target, [[0, 0], [3, 3]])
     const pitch = measure(out, fs, 1.5, 40, 800)
     assert.ok(pitch?.clarity > .98)
@@ -669,7 +839,7 @@ test('speech rendering: lowered and raised pitches, silence, sample rates, A →
     const track = analyze(a, sampleRate), anchors = [[0, 0], [1, 1]]
     let first
     for (const amount of [-3, 3, -3]) {
-      const target = transform(track, track.f0, 0, 1, 'shift', amount)
+      const target = correct(track, track.f0, 0, 1, { shift: amount })
       const out = render(a, sampleRate, track, target, anchors)
       assert.equal(out.length, a.length)
       assert.ok(out.every(Number.isFinite))
@@ -686,7 +856,7 @@ test('speech rendering: lowered and raised pitches, silence, sample rates, A →
 test('rebuilt voice keeps the source amplitude contour, including its onset', () => {
   const a = tone(120, 1, 48000)
   for (let i = 0; i < 48000; i++) a[i] *= Math.min(1, i / 4800) * Math.min(1, (48000 - i) / 9600)
-  const t = analyze(a, 48000), target = transform(t, t.f0, 0, 1, 'shift', 3)
+  const t = analyze(a, 48000), target = correct(t, t.f0, 0, 1, { shift: 3 })
   const out = render(a, 48000, t, target, [[0, 0], [1, 1]])
   // 20 ms windows: over two periods, so the measure does not depend on where the cycles fall.
   for (let time = .02; time < .98; time += .01) {
@@ -698,7 +868,7 @@ test('rebuilt voice keeps the source amplitude contour, including its onset', ()
 test('built-in speech: edits follow continuous voicing; joins add no level and consonants stay dry', () => {
   const { channelData: [a], sampleRate } = sample()
   const track = analyze(a, sampleRate), duration = a.length / sampleRate, anchors = [[0, 0], [duration, duration]]
-  const target = transform(track, track.f0, 0, duration, 'variation', .5, .06)
+  const target = correct(track, track.f0, 0, duration, { intonation: .5, smooth: .06 })
   const maxStep = (curve, start, end) => {
     let max = 0
     for (let i = 1; i < curve.length; i++) if (track.times[i] >= start && track.times[i] <= end && curve[i] && curve[i - 1]) max = Math.max(max, Math.abs(12 * Math.log2(curve[i] / curve[i - 1])))
