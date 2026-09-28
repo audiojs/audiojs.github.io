@@ -7,7 +7,7 @@ import { extname, normalize, resolve, sep } from 'path'
 import { fileURLToPath } from 'url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/+$/, '')
-const PAGES = ['/lab/', '/lab/words-under-the-waveform/', '/lab/waveform/', '/lab/spectrogram/', '/lab/scrub/']
+const PAGES = ['/lab/', '/lab/words-under-the-waveform/', '/lab/waveform/', '/lab/spectrogram/', '/lab/scrub/', '/lab/layout/']
 
 let chromium
 try { ({ chromium } = await import('playwright')) } catch { console.error('playwright is not installed: npm i -D playwright'); process.exit(2) }
