@@ -56,11 +56,13 @@
   </figure>
 
   <h2><small>4</small>Brightness by level</h2>
-  <p>Or shade the fill by how often the sound reaches each level: bright where it lives, dim where it rarely goes. Two guesses from the peak and RMS,<sup><a href="#r13">13</a></sup> and two counts of the samples themselves. The last is an oscilloscope's afterglow, bright where a wave turns.<sup><a href="#r4">4</a></sup></p>
+  <p>Or shade the fill by how often the sound reaches each level: bright where it lives, dim where it rarely goes. Four guesses from the peak and RMS, of how much passes each level or sits at it,<sup><a href="#r13">13</a>,<a href="#r14">14</a></sup> and two counts of the samples themselves. The last is an oscilloscope's afterglow, bright where a wave turns.<sup><a href="#r4">4</a></sup></p>
   <figure id="shade">
     <div class="grid">
       <div><canvas data-style="power"></canvas><figcaption>Power law: 1 − (level / peak)<sup>k</sup>, k from peak and RMS</figcaption></div>
       <div><canvas data-style="gauss"></canvas><figcaption>Gaussian: erfc(level / RMS√2), noise of that RMS</figcaption></div>
+      <div><canvas data-style="laplace"></canvas><figcaption>Laplace, at the level: e<sup>−√2·level / RMS</sup>, as speech is</figcaption></div>
+      <div><canvas data-style="normal"></canvas><figcaption>Gaussian, at the level: e<sup>−level² / 2RMS²</sup></figcaption></div>
       <div><canvas data-style="share"></canvas><figcaption>Counted: samples at or past the level</figcaption></div>
       <div><canvas data-style="time"></canvas><figcaption>Counted: samples at the level</figcaption></div>
     </div>
@@ -118,7 +120,7 @@
       <label>Samples per pixel <input type="range" name="zoom" min="0" max="1" step=".001" value="0"><output for="zoom"></output></label>
       <span class="group">Reduce <span data-name="reduce"><button data-value="nth" aria-pressed="false">every Nth</button><button data-value="minmax" aria-pressed="true">lowest–highest</button></span></span>
       <span class="group">Edges <span data-name="edges"><button data-value="columns" aria-pressed="false">pixel</button><button data-value="smooth" aria-pressed="true">smooth</button></span></span>
-      <span class="group">Fill <span data-name="fill"><button data-value="flat" aria-pressed="false">flat</button><button data-value="rms" aria-pressed="false">RMS</button><button data-value="power" aria-pressed="true">power law</button><button data-value="gauss" aria-pressed="false">Gaussian</button><button data-value="share" aria-pressed="false">at or past</button><button data-value="time" aria-pressed="false">at</button></span></span>
+      <span class="group">Fill <span data-name="fill"><button data-value="flat" aria-pressed="false">flat</button><button data-value="rms" aria-pressed="false">RMS</button><button data-value="power" aria-pressed="true">power law</button><button data-value="gauss" aria-pressed="false">Gaussian</button><button data-value="laplace" aria-pressed="false">Laplace at</button><button data-value="normal" aria-pressed="false">Gaussian at</button><button data-value="share" aria-pressed="false">at or past</button><button data-value="time" aria-pressed="false">at</button></span></span>
       <label>Floor <input type="range" name="floor" min="0" max=".6" step=".01" value=".3"><output for="floor"></output></label>
       <label>Gamma <input type="range" name="gamma" min=".3" max="2.5" step=".05" value="1"><output for="gamma"></output></label>
       <span class="group">Scale <span data-name="scale"><button data-value="linear" aria-pressed="true">linear</button><button data-value="db" aria-pressed="false">decibels</button></span></span>
@@ -149,6 +151,7 @@
     <li id="r11">D. H. Brainard, “Cone contrast and opponent modulation color spaces,” in <i>Human Color Vision</i>, 2nd ed. (1996).</li>
     <li id="r12">B. Ottosson, <a href="https://bottosson.github.io/posts/oklab/">A perceptual color space for image processing</a> (2020): OKLab.</li>
     <li id="r13">M. Abramowitz &amp; I. A. Stegun, <i>Handbook of Mathematical Functions</i> (1964), 7.1.26: erfc, for the Gaussian guess.</li>
+    <li id="r14">S. Gazor &amp; W. Zhang, “Speech probability distribution,” <i>IEEE Signal Processing Letters</i> 10 (2003): speech is closer to Laplace than to Gaussian.</li>
   </ol>
   <footer><a href="/lab/">Audio Lab</a> · experiments from <a href="/">audiojs</a></footer>
 </main>

@@ -110,11 +110,15 @@ redraws.push(demo(rmsFigure, ({ with: w }) => {
 // ── 4. Brightness by level ──────────────────────────────────────
 // erfc, Abramowitz & Stegun 7.1.26 (error under 1.5e-7)
 const erfc = x => { const t = 1 / (1 + .3275911 * x); return t * (.254829592 + t * (-.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429)))) * Math.exp(-x * x) }
-// How often a column reaches level v, 0..1: guessed from its peak and RMS (power law; Gaussian noise of that RMS), or
+// How often a column reaches level v, 0..1: guessed from its peak and RMS (past v: power law, Gaussian noise of that RMS;
+// at v: Laplace, Gaussian), or
 // counted over its samples in `bins` levels (share: at or past v; time: at v, an oscilloscope's afterglow)
 function shading(style, x, c, from, spp, bins) {
   if (style === 'power') return (col, v) => { const P = v >= 0 ? c.hi[col] : -c.lo[col]; if (!(P > 0)) return 1; const q = Math.min(.98, c.rms[col] ** 2 / P ** 2); return 1 - Math.min(1, Math.abs(v) / P) ** (2 * q / (1 - q)) }
   if (style === 'gauss') return (col, v) => c.rms[col] > 0 ? erfc(Math.abs(v) / (c.rms[col] * Math.SQRT2)) : 1
+  // at v rather than past it: the density of Laplace and of Gaussian noise of the column's RMS, against its density at 0
+  if (style === 'laplace') return (col, v) => c.rms[col] > 0 ? Math.exp(-Math.SQRT2 * Math.abs(v) / c.rms[col]) : 1
+  if (style === 'normal') return (col, v) => c.rms[col] > 0 ? Math.exp(-.5 * (v / c.rms[col]) ** 2) : 1
   const counts = new Float32Array(c.W * bins), most = new Float32Array(c.W), above = new Float32Array(c.W), below = new Float32Array(c.W)
   const bin = v => Math.min(bins - 1, Math.max(0, Math.floor((1 - v) / 2 * bins)))
   for (let col = 0; col < c.W; col++) for (let i = Math.max(0, Math.floor(from + col * spp)), end = Math.min(x.length, Math.floor(from + (col + 1) * spp)); i < end; i++) {
