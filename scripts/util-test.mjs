@@ -47,7 +47,7 @@ try {
     // parse the saved bytes with the same tag parsers the page decodes with
     const r = await page.evaluate(async fmt => {
       const bytes = new Uint8Array(await (await fetch(document.querySelector('.out a.btn').href)).arrayBuffer())
-      const p = await import('https://esm.sh/@audio/decode@3.14.0/meta')
+      const p = await import('https://esm.sh/@audio/decode@4.1.1/meta')
       const parse = { mp3: p.mp3, flac: p.flac, ogg: p.oga, opus: p.opus, wav: p.wav }[fmt]
       const m = parse?.(bytes)?.meta
       return { size: bytes.length, title: m?.title, artist: m?.artist, pictures: m?.pictures?.length ?? 0, parser: !!parse }
@@ -65,7 +65,7 @@ try {
   await page.waitForFunction(b => { const a = document.querySelector('.out a.btn'); return a && a.href !== b && !a.closest('.out').hidden }, prev, { timeout: 60000 })
   const plain = await page.evaluate(async () => {
     const bytes = new Uint8Array(await (await fetch(document.querySelector('.out a.btn').href)).arrayBuffer())
-    const m = (await import('https://esm.sh/@audio/decode@3.14.0/meta')).mp3(bytes)?.meta
+    const m = (await import('https://esm.sh/@audio/decode@4.1.1/meta')).mp3(bytes)?.meta
     return { size: bytes.length, title: m?.title ?? null }
   })
   check(plain.size > 1000 && plain.title === null, `untagged wav → mp3 without tags (${plain.size} B)`)

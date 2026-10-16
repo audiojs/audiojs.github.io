@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audio in JavaScript: from new Audio() to a library · audiojs lab</title>
+  <meta name="description" content="How to play, process and save sound in JavaScript: new Audio(), the Web Audio API with a live equalizer and spectrum, decoding files and writing WAV, audio in Node.js, and which JS audio library fits which job.">
+  <link rel="canonical" href="https://audiojs.dev/lab/audio-in-javascript/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://audiojs.dev/lab/audio-in-javascript/">
+  <meta property="og:title" content="Audio in JavaScript: from new Audio() to a library">
+  <meta property="og:description" content="Play, process and save sound in JavaScript, in the browser and in Node, each step live in the page, and which library fits which job.">
+  <meta property="og:site_name" content="audiojs">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Audio in JavaScript: from new Audio() to a library",
+    "description": "Play, process and save sound in JavaScript, in the browser and in Node, each step live in the page, and which library fits which job.",
+    "datePublished": "2026-10-14",
+    "url": "https://audiojs.dev/lab/audio-in-javascript/",
+    "author": { "@type": "Organization", "name": "audiojs", "url": "https://audiojs.dev/" }
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/bar.css?v=4e6dabc4">
+  <link rel="stylesheet" href="/lab/lab.css">
+  <style>
+    /* code: on paper, a shade darker, scrolling inside its own box */
+    :is(pre.code, audio-repl pre) { margin: 0; padding: 14px 16px; overflow-x: auto; border-radius: 10px; background: oklch(92.5% .004 80); font: 13px/1.6 var(--mono); tab-size: 2; }
+    :is(pre.code, audio-repl pre) code { font: inherit; }
+    pre.code i { font-style: normal; color: var(--mute); }
+    main > pre.code { margin: 18px -32px 14px; }
+    figure .table { margin: 0; }
+    #formats th:last-child { text-align: left; }
+    figure > pre.code { margin-bottom: 10px; }
+    audio-repl { display: block; }
+    @media (max-width: 800px) { main > pre.code { margin-inline: 0; } }
+    .controls input.wide { flex: 1 1 220px; width: auto; min-width: 0; }
+    .controls .wide-label { flex: 1 1 280px; }
+    .controls .wide-label input { flex: 1; width: auto; min-width: 0; }
+    .controls output { min-width: 5ch; }
+    .controls select { max-width: 240px; }
+    .file input { max-width: 230px; font: inherit; font-size: 12px; }
+    #events { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 10px 0 0; }
+    #events span { white-space: nowrap; }
+    #events b { font-weight: 500; color: var(--ink); }
+    #events .fresh, #events .fresh b { color: var(--accent); }
+    .readout code { font-size: 1em; }
+    #autoplay { display: block; margin: 8px 0 14px; }
+    td.no { color: var(--mute); }
+    #formats td:last-child { white-space: normal; text-align: left; }
+    td code { font-size: 12px; }
+    #download[hidden] { display: none; }
+    .legend { display: inline-block; margin-right: 14px; }
+    :is(p, figcaption) code { overflow-wrap: anywhere; }
+    .key { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: -1px; }
+    .key.ink { background: var(--panel-ink); } .key.dim { background: var(--panel-ink-3); } .key.accent { background: var(--panel-accent); }
+    /* the tools: a table on a wide screen, a card a row on a narrow one */
+    .tools td, .tools th { white-space: normal; text-align: left; vertical-align: top; }
+    .tools th[scope=row] { width: 10.5em; font-weight: 800; }
+    .tools td:last-child { width: 9.5em; color: var(--mute); }
+    @media (max-width: 640px) {
+      .tools thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+      .tools tr { display: block; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+      .tools :is(th, td), .tools :is(th[scope=row], td:last-child) { display: block; width: auto; padding: 2px 0; border: 0; }
+      .tools td::before { content: attr(data-label) ': '; color: var(--mute); }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-bar">
+    <a class="site-brand" href="/" aria-label="audiojs home"><svg aria-hidden="true" viewBox="0 5 90.4 17" fill="currentColor"><path d="M4.2 22Q3.3 22 2.7 21.6Q2 21.2 1.6 20.5Q1.1 19.8 1.1 19V14.2H11.2V12.4Q11.2 12.3 11.1 12.2Q11.1 12.1 10.9 12.1H1.1V9.2H11.1Q11.9 9.2 12.6 9.7Q13.3 10.1 13.7 10.8Q14.1 11.4 14.1 12.3V22ZM4.3 19.1H11.2V16.8H4V18.9Q4 19 4.1 19Q4.2 19.1 4.3 19.1ZM19 22Q18.2 22 17.5 21.6Q16.8 21.2 16.4 20.5Q16 19.8 16 19V9.2H18.9V18.9Q18.9 19 19 19Q19 19.1 19.1 19.1H25.8Q25.9 19.1 26 19Q26.1 19 26.1 18.9V9.2H29V19Q29 19.8 28.5 20.5Q28.1 21.2 27.4 21.6Q26.8 22 25.9 22H19ZM33.2 22Q32.4 22 31.7 21.6Q31 21.2 30.6 20.5Q30.2 19.8 30.2 19V12.3Q30.2 11.4 30.6 10.8Q31 10.1 31.7 9.7Q32.4 9.2 33.2 9.2H40.3V5.1H43.2V22H33.2ZM33.4 19.1H40Q40.1 19.1 40.2 19Q40.3 19 40.3 18.9V12.4Q40.3 12.3 40.2 12.2Q40.1 12.1 40 12.1H33.4Q33.2 12.1 33.2 12.2Q33.1 12.3 33.1 12.4V18.9Q33.1 19 33.2 19Q33.2 19.1 33.4 19.1ZM45.1 22V9.2H47.9V22ZM45.1 8V5.1H47.9V8ZM52.5 22Q51.7 22 51 21.6Q50.3 21.2 49.9 20.5Q49.5 19.8 49.5 19V12.3Q49.5 11.4 49.9 10.8Q50.3 10.1 51 9.7Q51.7 9.2 52.5 9.2H59.4Q60.2 9.2 60.9 9.7Q61.6 10.1 62 10.8Q62.4 11.4 62.4 12.3V19Q62.4 19.8 62 20.5Q61.6 21.2 60.9 21.6Q60.2 22 59.4 22H52.5ZM52.6 19.1H59.3Q59.4 19.1 59.5 19Q59.5 19 59.5 18.9V12.4Q59.5 12.3 59.5 12.2Q59.4 12.1 59.3 12.1H52.6Q52.5 12.1 52.4 12.2Q52.4 12.3 52.4 12.4V18.9Q52.4 19 52.4 19Q52.5 19.1 52.6 19.1Z"/><path d="M75.1 18.4Q74.1 18.4 73.4 17.8Q72.7 17.3 72.4 16.4L73.8 16Q73.9 16.5 74.3 16.8Q74.6 17.1 75.1 17.1Q75.4 17.1 75.7 16.9Q76.1 16.8 76.2 16.4Q76.3 16.2 76.4 15.9Q76.4 15.6 76.4 15.2V8.8H77.7V15.2Q77.7 15.6 77.7 15.9Q77.7 16.2 77.7 16.5Q77.6 16.8 77.4 17.1Q77.1 17.8 76.5 18.1Q75.9 18.4 75.1 18.4ZM82.8 18.4Q81.8 18.4 81 18Q80.2 17.7 79.7 17Q79.2 16.4 79 15.5L80.4 15.3Q80.6 16.1 81.3 16.6Q82 17.1 82.9 17.1Q83.5 17.1 84 16.9Q84.4 16.7 84.7 16.4Q85 16.1 85 15.6Q85 15.3 84.9 15.1Q84.8 14.9 84.7 14.8Q84.5 14.7 84.3 14.6Q84.1 14.4 83.8 14.4L81.4 13.7Q81.1 13.6 80.7 13.4Q80.4 13.2 80.1 13Q79.7 12.7 79.6 12.3Q79.4 11.9 79.4 11.3Q79.4 10.4 79.8 9.8Q80.3 9.2 81 8.9Q81.8 8.6 82.7 8.6Q83.7 8.6 84.4 9Q85.2 9.3 85.7 9.9Q86.2 10.5 86.4 11.4L84.9 11.6Q84.8 11.1 84.5 10.7Q84.2 10.3 83.7 10.1Q83.2 9.9 82.7 9.9Q82.2 9.9 81.8 10.1Q81.3 10.2 81.1 10.5Q80.8 10.8 80.8 11.2Q80.8 11.6 81 11.9Q81.3 12.1 81.6 12.3Q81.9 12.4 82.3 12.5L84 13Q84.3 13.1 84.7 13.2Q85.1 13.4 85.5 13.6Q85.9 13.9 86.2 14.4Q86.4 14.8 86.4 15.5Q86.4 16.2 86.1 16.7Q85.9 17.3 85.4 17.6Q84.9 18 84.2 18.2Q83.6 18.4 82.8 18.4Z" fill="none" stroke="currentColor" stroke-width=".8"/><rect x="68.9" y="5.5" width="21" height="16" fill="none" stroke="currentColor"/></svg></a>
+    <nav aria-label="audiojs"><a href="/util/">Utilities</a><a href="/lab/" aria-current="true">Lab</a><a href="/audio/">audio</a><a href="/audio/playground.html">Playground</a><a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a></nav>
+  </header>
+<main>
+  <nav class="top"><span class="crumb"><a href="/lab/">Lab</a></span><a href="https://github.com/audiojs/audiojs.github.io/tree/main/lab/audio-in-javascript">Source</a></nav>
+  <h1>Audio in JavaScript</h1>
+  <p class="lead">From the platform up: an element that plays a file, a graph that shapes the sound, the bytes that save it, the same in Node, then a library that does it in one chain. Every figure runs in this page.</p>
+
+  <h2><small>1</small>new Audio()</h2>
+  <p><code>new Audio(url)</code> makes an <code>&lt;audio&gt;</code> element without putting it in the page, and starts loading the file.<sup><a href="#r1">1</a></sup> It plays and pauses. <code>currentTime</code> is where it is, in seconds; <code>volume</code> runs from 0 to 1 and throws <code>IndexSizeError</code> outside it; <code>playbackRate</code> changes the speed and keeps the pitch. What happens arrives as events: <code>loadedmetadata</code> once the duration is known, <code>timeupdate</code> every 15 to 250 ms while it plays, <code>pause</code>, <code>ended</code>, <code>error</code>.<sup><a href="#r1">1</a></sup></p>
+  <figure id="player">
+<pre class="code"><code>const audio = new Audio('speech.mp3')
+
+play.onclick = () =&gt; audio.paused ? audio.play() : audio.pause()
+seek.oninput = () =&gt; audio.currentTime = seek.value
+volume.oninput = () =&gt; audio.volume = volume.value
+speed.onclick = e =&gt; audio.playbackRate = e.target.value
+
+audio.onloadedmetadata = () =&gt; seek.max = audio.duration
+audio.ontimeupdate = () =&gt; seek.value = audio.currentTime
+audio.onplay = audio.onpause = () =&gt;
+  play.textContent = audio.paused ? 'Play' : 'Pause'</code></pre>
+    <canvas aria-hidden="true"></canvas>
+    <div class="controls">
+      <button id="play" class="action">Play</button>
+      <label class="wide-label"><span class="hidden">Position</span><input type="range" id="seek" min="0" max="0" step="0.1" value="0"><output id="time" for="seek">0:00 / –:––</output></label>
+    </div>
+    <div class="controls">
+      <label>Volume <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5"></label>
+      <span class="group">Speed <span data-name="rate" role="group" aria-label="Playback rate"><button data-value="0.5" aria-pressed="false">0.5×</button><button data-value="1" aria-pressed="true">1×</button><button data-value="1.5" aria-pressed="false">1.5×</button><button data-value="2" aria-pressed="false">2×</button></span></span>
+    </div>
+    <p class="readout" id="events" aria-live="off"></p>
+    <figcaption><span class="legend"><i class="key dim"></i>buffered: downloaded</span><span class="legend"><i class="key ink"></i>played</span><span class="legend"><i class="key accent"></i>currentTime</span><br>Two minutes of NASA's <i>Houston We Have a Podcast</i>.<sup><a href="#r15">15</a></sup> The panel draws what the element reports; under the controls, each event and how often it has fired. The first few fired before anything was pressed.</figcaption>
+  </figure>
+  <p><code>play()</code> returns a promise. Until the reader clicks, taps or presses a key on the site, a browser may refuse sound and reject the promise with <code>NotAllowedError</code>; muted playback is allowed.<sup><a href="#r1">1</a>,<a href="#r3">3</a></sup> Chrome also allows sound on sites the reader often plays media on (desktop) or has added to the home screen (mobile).<sup><a href="#r2">2</a></sup> So start sound from a click, and on a rejection show a play button.</p>
+  <p class="readout" id="autoplay" role="status"></p>
+  <p>On iOS, <code>volume</code> stays 1: the phone's buttons set the level.<sup><a href="#r4">4</a></sup></p>
+  <p>An element plays a file as it is. To change the sound, start it at an exact moment or read its samples, there is the Web Audio API.</p>
+
+  <h2><small>2</small>Web Audio: a graph of nodes</h2>
+  <p>An <code>AudioContext</code> runs a graph: sources, through nodes that change the sound, into <code>destination</code>, the speakers. It renders 128 samples at a time, on a thread of its own.<sup><a href="#r5">5</a></sup> Like <code>play()</code>, a context made before any click starts <code>suspended</code>; call <code>resume()</code> from one.<sup><a href="#r2">2</a>,<a href="#r5">5</a></sup></p>
+  <p>An equalizer is three filters in a row, each a <code>BiquadFilterNode</code>. A low shelf lifts or cuts everything below its frequency; a peaking filter, a band around it, as wide as <code>Q</code> makes it; a high shelf, everything above. <code>gain</code> is in decibels, and the shelves ignore <code>Q</code>. The spec's formulas follow the Audio EQ Cookbook.<sup><a href="#r5">5</a>,<a href="#r6">6</a></sup> An <code>AnalyserNode</code> shows what comes out: an FFT of its last <code>fftSize</code> samples (a power of two, 32 to 32,768), Blackman-windowed, in decibels.<sup><a href="#r5">5</a></sup></p>
+  <figure id="eq">
+<pre class="code"><code>const ctx = new AudioContext()
+const bass = new BiquadFilterNode(ctx, { type: 'lowshelf', frequency: 200 })
+const mid = new BiquadFilterNode(ctx, { type: 'peaking', frequency: 1000, Q: 1 })
+const treble = new BiquadFilterNode(ctx, { type: 'highshelf', frequency: 4000 })
+const analyser = new AnalyserNode(ctx, { fftSize: 4096 })
+const level = new GainNode(ctx, { gain: 0.3 })
+bass.connect(mid).connect(treble).connect(analyser)
+  .connect(level).connect(ctx.destination)
+
+let source
+play.onclick = () =&gt; {
+  ctx.resume()                                     <i>// allowed: this is a click</i>
+  source = new AudioBufferSourceNode(ctx, { buffer, loop: true })
+  source.connect(bass)
+  source.start()
+}
+stop.onclick = () =&gt; source.stop()
+bassSlider.oninput = () =&gt; bass.gain.value = bassSlider.value   <i>// dB</i>
+
+const db = new Float32Array(analyser.frequencyBinCount)
+analyser.getFloatFrequencyData(db)                 <i>// each frame: the spectrum, dB a bin</i></code></pre>
+    <canvas aria-hidden="true"></canvas>
+    <div class="controls">
+      <button id="eq-play" class="action">Play</button>
+      <label>Bass <input type="range" name="bass" min="-12" max="12" step="1" value="0"><output></output></label>
+      <label>Mid <input type="range" name="mid" min="-12" max="12" step="1" value="0"><output></output></label>
+      <label>Treble <input type="range" name="treble" min="-12" max="12" step="1" value="0"><output></output></label>
+      <label>Volume <input type="range" id="level" min="0" max="1" step="0.01" value="0.3"></label>
+    </div>
+    <div class="controls">
+      <label>Sound <select id="loop"></select></label>
+      <label class="file">or open a file <input type="file" id="file" accept="audio/*"></label>
+    </div>
+    <p class="readout" id="eq-note"></p>
+    <figcaption><span class="legend"><i class="key dim"></i>the spectrum as it plays, from the analyser</span><span class="legend"><i class="key accent"></i>the three filters together, ±15 dB, from <code>getFrequencyResponse()</code></span><br>The drum loop is made in this page; open a file to equalize your own. Volume starts low.</figcaption>
+  </figure>
+  <p>A source node plays once: a second <code>start()</code> throws <code>InvalidStateError</code>, so each Play makes a new one.<sup><a href="#r5">5</a></sup> To equalize the player from step 1 instead, route its element through the same filters: <code>ctx.createMediaElementSource(audio).connect(bass)</code>.</p>
+
+  <h2><small>3</small>Files in, files out</h2>
+  <p><code>decodeAudioData()</code> turns a file's bytes into an <code>AudioBuffer</code>: each channel an array of 32-bit floats, resampled to the context's rate.<sup><a href="#r5">5</a></sup> The browser decides which formats it reads.</p>
+<pre class="code"><code>const bytes = await (await fetch('song.mp3')).arrayBuffer()
+const buffer = await ctx.decodeAudioData(bytes)
+buffer.getChannelData(0)                           <i>// Float32Array: the first channel</i></code></pre>
+  <p>Here is what yours reads, and records. Six files, each the same 50 ms tone, 2,205 samples at 44.1 kHz:</p>
+  <figure id="formats">
+    <div class="table">
+      <table>
+        <thead><tr><th scope="col">Format</th><th scope="col">Decodes</th><th scope="col">Samples back</th><th scope="col">Records as</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <figcaption>Measured in this browser as the table came into view: <code>decodeAudioData()</code> on each file, <code>MediaRecorder.isTypeSupported()</code> on each format. A decoded MP3 can come back longer than it was made: the encoder adds silence at both ends and notes how much in the file, and browsers differ in taking it off.<sup><a href="#r9">9</a></sup> This one came back as 2,205 samples in Chromium 151, 2,927 in Firefox 153 and 3,456 in WebKit 26.5; the Ogg Vorbis file, whole in Firefox, 128 samples short in the other two (Playwright's builds, October 2026).</figcaption>
+  </figure>
+  <p>Decoded, sound is large. An hour of stereo at 48 kHz is 3,600 × 48,000 × 2 floats of 4 bytes: 1.38 GB. The same hour as a 128 kbps MP3 is 57.6 MB, 24 times less. <code>decodeAudioData</code> takes a whole file at once; a long recording needs a decoder that works in pieces, such as WebCodecs' <code>AudioDecoder</code>.<sup><a href="#r10">10</a></sup></p>
+  <p>Web Audio has no encoder. <code>MediaRecorder</code> records a stream as it plays, in real time, into a format the browser picks: the table's last column.<sup><a href="#r7">7</a></sup> In October 2026 Playwright's Chromium, Firefox and WebKit each offered Opus in WebM, Firefox also Opus in Ogg, Chromium and WebKit AAC in MP4. None offered WAV, MP3 or FLAC. Chromium also takes <code>audio/webm;codecs=pcm</code>: uncompressed samples, in a WebM container.</p>
+  <p>WAV is plain enough to write by hand: a 44-byte header, then the samples as 16-bit integers.<sup><a href="#r8">8</a></sup> These lines are the whole encoder:</p>
+<pre class="code" id="wav-source"><code><i>// An AudioBuffer as a WAV file: a 44-byte header, then the samples as 16-bit integers</i>
+export function wav(buffer) {
+  const { numberOfChannels: k, sampleRate: rate, length: n } = buffer
+  const bytes = n * k * 2, view = new DataView(new ArrayBuffer(44 + bytes))
+  const text = (at, s) =&gt; [...s].forEach((c, i) =&gt; view.setUint8(at + i, c.charCodeAt()))
+  const u32 = (at, v) =&gt; view.setUint32(at, v, true)
+  const u16 = (at, v) =&gt; view.setUint16(at, v, true)
+  text(0, 'RIFF'); u32(4, 36 + bytes); text(8, 'WAVE')
+  text(12, 'fmt '); u32(16, 16); u16(20, 1)         <i>// 16 bytes of format; 1: integer PCM</i>
+  u16(22, k); u32(24, rate); u32(28, rate * k * 2)  <i>// channels, rate, bytes a second</i>
+  u16(32, k * 2); u16(34, 16)                       <i>// bytes a frame, bits a sample</i>
+  text(36, 'data'); u32(40, bytes)
+  const channels = Array.from({ length: k }, (_, c) =&gt; buffer.getChannelData(c))
+  for (let i = 0, at = 44; i &lt; n; i++) for (const x of channels) {   <i>// interleaved</i>
+    view.setInt16(at, Math.round(Math.max(-1, Math.min(1, x[i])) * 32767), true)
+    at += 2
+  }
+  return new Uint8Array(view.buffer)
+}</code></pre>
+  <p>To save the equalized sound, render the graph without speakers. An <code>OfflineAudioContext</code> renders as fast as it can, into an <code>AudioBuffer</code>. A node belongs to the context that made it, so the render makes its own filters:<sup><a href="#r5">5</a></sup></p>
+  <figure id="render">
+<pre class="code"><code>const offline = new OfflineAudioContext(1, buffer.length, buffer.sampleRate)
+const source = new AudioBufferSourceNode(offline, { buffer })
+const bass = new BiquadFilterNode(offline, { type: 'lowshelf', frequency: 200, gain: 6 })
+<i>// … mid and treble, made on offline too</i>
+source.connect(bass).connect(mid).connect(treble).connect(offline.destination)
+source.start()
+const rendered = await offline.startRendering()
+link.href = URL.createObjectURL(new Blob([wav(rendered)], { type: 'audio/wav' }))</code></pre>
+    <canvas aria-hidden="true"></canvas>
+    <div class="controls">
+      <button id="render-go" class="action">Render to WAV</button>
+      <a id="download" download="equalized.wav" hidden></a>
+    </div>
+    <p class="readout" id="render-note" role="status"></p>
+    <figcaption><span class="legend"><i class="key dim"></i>before</span><span class="legend"><i class="key accent"></i>after</span><br>The sound from step 2 through the equalizer as you left it there. Volume is for listening only and stays out of the file.</figcaption>
+  </figure>
+
+  <h2><small>4</small>Node.js</h2>
+  <p>Node has no <code>AudioContext</code>, no decoder and no way to the speakers: <code>fs</code> reads a file's bytes, and there it stops.<sup><a href="#r11">11</a></sup> Packages add the rest. <a href="https://github.com/audiojs/web-audio-api">web-audio-api</a> is the W3C API in plain JavaScript, for Node, Deno and Bun. Under its own Node runner it passes all 4,322 subtests of the Web Platform Tests it carries; that proves the corpus under that runner, not every browser behaviour, and it runs worklets on the main thread.<sup><a href="#r12">12</a></sup> <a href="https://github.com/ircam-ismm/node-web-audio-api">node-web-audio-api</a>, from IRCAM, runs its DSP in Rust, prebuilt for Windows, macOS and Linux.<sup><a href="#r13">13</a></sup></p>
+  <p>With web-audio-api's polyfill, the Web Audio lines from step 3 run in Node as they are; only the way the file comes in and goes out changes. From an MP3 to a WAV file:</p>
+<pre class="code"><code>import 'web-audio-api/polyfill'         <i>// AudioContext and its nodes, as globals</i>
+import { readFileSync, writeFileSync } from 'node:fs'
+import { wav } from './wav.js'          <i>// the lines above</i>
+
+const file = readFileSync('in.mp3')
+const sound = await new OfflineAudioContext(1, 1, 44100).decodeAudioData(file)
+const ctx = new OfflineAudioContext(sound.numberOfChannels, sound.length, sound.sampleRate)
+const source = new AudioBufferSourceNode(ctx, { buffer: sound })
+const bass = new BiquadFilterNode(ctx, { type: 'lowshelf', frequency: 200, gain: 6 })
+source.connect(bass).connect(ctx.destination)
+source.start()
+writeFileSync('out.wav', wav(await ctx.startRendering()))</code></pre>
+  <p>Speakers and microphones need native code: web-audio-api reaches them through <code>@audio/speaker</code> and <code>@audio/mic</code>.<sup><a href="#r12">12</a></sup> Sébastien Piquemal started web-audio-api in 2013; it is maintained at audiojs, which also makes this page.</p>
+
+  <h2><small>5</small>A library</h2>
+  <p>Each step above needed its own API. <a href="https://github.com/audiojs/audio">audio</a> does them in one chain, the same in a page and in Node. It decodes with its own WebAssembly codecs (WAV, MP3, FLAC, Ogg, Opus, AAC and more), edits without touching the source, filters, measures, plays, and encodes WAV, MP3, FLAC, Opus and Ogg.<sup><a href="#r14">14</a></sup> It is made at audiojs too. Below, its code runs live: edit it and hear the change.</p>
+  <figure class="repl">
+    <audio-repl panel="code" display="spec" height="320">
+<pre><code>audio('rhodes.wav')
+  .lowshelf(200, 6)
+  .eq(1000, -3, 1)
+  .highshelf(4000, 3)
+  .normalize(-1)</code></pre>
+    </audio-repl>
+    <figcaption>Step 2's equalizer as three calls on an electric piano, then the peak set to −1 dB.</figcaption>
+  </figure>
+  <figure class="repl">
+    <audio-repl panel="edits" display="wave" height="320">
+<pre><code>audio('handpan.wav')
+  .trim()
+  .normalize(-1)
+  .fade(0.1, 1)</code></pre>
+    </audio-repl>
+    <figcaption>Silence trimmed, the peak at −1 dB, a fade in over 0.1 s and out over 1 s: each step with its own sliders.</figcaption>
+  </figure>
+  <figure class="repl">
+    <audio-repl panel="code" display="wave" height="280">
+<pre><code>audio.from(t =&gt; [261.63, 329.63, 392]
+  .reduce((s, f) =&gt; s + 0.15 * Math.sin(2 * Math.PI * f * t), 0), { d: 2 })
+  .fade(0.01, 1)</code></pre>
+    </audio-repl>
+    <figcaption>Sound from a function of time: C, E and G, three sines, a C major chord 7 dB under full scale.</figcaption>
+  </figure>
+  <p>In Node, the same chain reads and writes files:</p>
+<pre class="code"><code>import audio from 'audio'                          <i>// npm i audio</i>
+
+const a = audio('in.mp3')
+  .lowshelf(200, 6).eq(1000, -3, 1).highshelf(4000, 3)
+  .trim().normalize(-1).fade(0.1, 0.5)
+await a.save('out.mp3')</code></pre>
+  <p>In a page, import it through a bundler or from <code>https://esm.sh/audio</code>: <code>a.play()</code> plays it, <code>await a.encode('mp3')</code> gives the file's bytes. Code written for <code>new Audio()</code> runs in Node after <code>import 'audio/polyfill'</code>.<sup><a href="#r14">14</a></sup> The <a href="/audio/playground.html">playground</a> is an audio editor built on it, each edit a line of this code.</p>
+
+  <h2><small>6</small>Which tool for which job</h2>
+  <p>Versions, licences and release dates are npm's on 14 October 2026.<sup><a href="#r16">16</a></sup> Two of these, audio and web-audio-api, are made at audiojs.</p>
+  <div class="table">
+    <table class="tools">
+      <thead><tr><th scope="col">Library</th><th scope="col">For</th><th scope="col">Not for</th><th scope="col">Latest on npm</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><a href="https://howlerjs.com/">howler.js</a></th><td data-label="For">Sounds in games and apps: sprites, many at once, fades, stereo and 3D panning; Web Audio, falling back to HTML5 Audio</td><td data-label="Not for">Editing, synthesis, saving files</td><td data-label="Latest on npm">2.2.4, MIT, 19 Sep 2023</td></tr>
+        <tr><th scope="row"><a href="https://tonejs.github.io/">Tone.js</a></th><td data-label="For">Music: synths, samplers, effects, and a transport that schedules notes in bars and beats</td><td data-label="Not for">Editing or encoding files</td><td data-label="Latest on npm">15.1.22, MIT, 27 Apr 2025 (15.5.57 as <code>next</code>, 4 Oct 2026)</td></tr>
+        <tr><th scope="row"><a href="https://github.com/CreateJS/SoundJS">SoundJS</a></th><td data-label="For">Game sound with CreateJS and PreloadJS: one API over Web Audio and HTML5 Audio</td><td data-label="Not for">A project that needs fixes: no npm release since 2017, no commit since March 2021</td><td data-label="Latest on npm">1.0.1, MIT, 18 Sep 2017</td></tr>
+        <tr><th scope="row"><a href="https://wavesurfer.xyz/">wavesurfer.js</a></th><td data-label="For">A waveform to play, zoom, and mark regions on; plugins for a timeline, a spectrogram, recording</td><td data-label="Not for">Processing or saving sound</td><td data-label="Latest on npm">8.0.2, BSD-3-Clause, 7 Oct 2026</td></tr>
+        <tr><th scope="row"><a href="https://github.com/chrisguttandin/standardized-audio-context">standardized-audio-context</a></th><td data-label="For">The Web Audio API, alike in every browser it supports; Tone.js runs on it</td><td data-label="Not for">Node; anything beyond the API itself</td><td data-label="Latest on npm">25.3.77, MIT, 31 Aug 2024</td></tr>
+        <tr><th scope="row"><a href="https://github.com/audiojs/web-audio-api">web-audio-api</a></th><td data-label="For">The Web Audio API in Node, Deno and Bun: render graphs on a server, test audio code in CI</td><td data-label="Not for">Browsers, which have their own; worklets that need a thread of their own</td><td data-label="Latest on npm">1.6.0, MIT, 7 Oct 2026</td></tr>
+        <tr><th scope="row"><a href="https://github.com/ircam-ismm/node-web-audio-api">node-web-audio-api</a></th><td data-label="For">The Web Audio API in Node with its DSP in Rust, for real-time graphs</td><td data-label="Not for">Linux without Jack or pipewire-jack, which its Linux builds play through</td><td data-label="Latest on npm">2.2.0, BSD-3-Clause, 9 Aug 2026</td></tr>
+        <tr><th scope="row"><a href="https://github.com/audiojs/audio">audio</a></th><td data-label="For">Files: decode, edit, filter, measure, encode and play, one chain in a page and in Node; a CLI</td><td data-label="Not for">Synthesis and note scheduling (Tone.js); a ready waveform widget (wavesurfer.js); game sound sprites (howler.js)</td><td data-label="Latest on npm">2.14.0, MIT, 12 Oct 2026</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Came for kolber's audio.js? Anthony Kolber's 2010 drop-in player for the <code>&lt;audio&gt;</code> tag lives at <a href="https://github.com/kolber/audiojs">github.com/kolber/audiojs</a>. This site is a different project.</p>
+
+  <ol class="refs">
+    <li id="r1">WHATWG, <a href="https://html.spec.whatwg.org/multipage/media.html">HTML Living Standard, Media elements</a>: <code>Audio()</code>, <code>timeupdate</code> every 15 to 250 ms, <code>volume</code> 0 to 1, <code>preservesPitch</code>, <code>play()</code> rejected with <code>NotAllowedError</code>.</li>
+    <li id="r2">Chrome for Developers, <a href="https://developer.chrome.com/blog/autoplay">Autoplay policy in Chrome</a>: media elements from Chrome 66, Web Audio from Chrome 71.</li>
+    <li id="r3">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay">Autoplay guide for media and Web Audio APIs</a>.</li>
+    <li id="r4">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volume">HTMLMediaElement: volume</a>, browser compatibility, Safari on iOS; Apple, <a href="https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/Using_HTML5_Audio_Video/Device-SpecificConsiderations/Device-SpecificConsiderations.html">Safari HTML5 Audio and Video Guide, iOS-Specific Considerations</a> (2012).</li>
+    <li id="r5">W3C, <a href="https://www.w3.org/TR/2021/REC-webaudio-20210617/">Web Audio API</a>, Recommendation, 17 June 2021: render quantum, rendering thread, <code>AudioBuffer</code>, <code>decodeAudioData</code>, <code>BiquadFilterNode</code>, <code>AnalyserNode</code>, <code>OfflineAudioContext</code>. Its successor, <a href="https://www.w3.org/TR/webaudio-1.1/">Web Audio API 1.1</a>, is a Working Draft (22 September 2026).</li>
+    <li id="r6">R. Bristow-Johnson, <a href="https://www.w3.org/TR/audio-eq-cookbook/">Audio EQ Cookbook</a>, W3C Group Note (2021).</li>
+    <li id="r7">W3C, <a href="https://www.w3.org/TR/mediastream-recording/">MediaStream Recording</a>: <code>MediaRecorder</code>, <code>isTypeSupported()</code>.</li>
+    <li id="r8">IBM &amp; Microsoft, <i>Multimedia Programming Interface and Data Specifications 1.0</i> (1991): RIFF WAVE; summarised by P. Kabal, <a href="https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html">Audio File Format Specifications: WAVE</a>, McGill University.</li>
+    <li id="r9">G. Bouvigne, <a href="http://gabriel.mp3-tech.org/mp3infotag.html">Mp3 Info Tag rev 1 specifications</a>: the LAME tag's encoder delay and padding.</li>
+    <li id="r10">W3C, <a href="https://www.w3.org/TR/webcodecs/">WebCodecs</a>: <code>AudioDecoder</code>.</li>
+    <li id="r11">Node.js, <a href="https://nodejs.org/api/globals.html">Global objects</a> and <a href="https://nodejs.org/api/fs.html">File system</a>.</li>
+    <li id="r12">audiojs, <a href="https://github.com/audiojs/web-audio-api">web-audio-api</a> 1.6.0: README; <a href="https://github.com/audiojs/web-audio-api/blob/main/site-metrics.json">site-metrics.json</a>, 4,322 subtests passing, 0 failing; <a href="https://github.com/audiojs/web-audio-api/blob/main/test/WPT.md">test/WPT.md</a>, what that count does and does not prove.</li>
+    <li id="r13">IRCAM, <a href="https://github.com/ircam-ismm/node-web-audio-api">node-web-audio-api</a>: README, supported platforms.</li>
+    <li id="r14">audiojs, <a href="https://github.com/audiojs/audio">audio</a> 2.14.0: README.</li>
+    <li id="r15">NASA, <a href="https://www.nasa.gov/podcasts/houston-we-have-a-podcast/artemis-iii-training/">Houston We Have a Podcast, episode 434: Artemis III Training</a>. Public domain; the first two minutes.</li>
+    <li id="r16">npm registry (<code>npm view &lt;name&gt; version license time</code>) and GitHub, read 14 October 2026.</li>
+  </ol>
+  <footer><a href="/lab/">Audio Lab</a> · experiments from <a href="/">audiojs</a></footer>
+</main>
+<script type="module" src="demo.js"></script>
+<script type="module" src="https://audio.js.org/embed.js"></script>
+</body>
+</html>

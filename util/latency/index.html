@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio latency test: measure your speaker-to-mic and Bluetooth delay in the browser · audiojs</title>
+  <meta name="description" content="Measure round-trip audio latency from your speakers to your microphone, and the delay of Bluetooth headphones with a tap test, next to what the browser reports. Runs in your browser; nothing is uploaded.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/latency/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/latency/">
+  <meta property="og:title" content="Audio latency test: measure your speaker-to-mic and Bluetooth delay in the browser">
+  <meta property="og:description" content="Measure round-trip audio latency from your speakers to your microphone, and the delay of Bluetooth headphones with a tap test, next to what the browser reports. Runs in your browser; nothing is uploaded.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/latency/#app",
+        "name": "Audio latency test",
+        "url": "https://audiojs.dev/util/latency/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Measure round-trip audio latency from your speakers to your microphone, and the delay of Bluetooth headphones with a tap test, next to what the browser reports. Runs in your browser; nothing is uploaded.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/",
+          "logo": "https://audiojs.dev/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/audiojs.github.io/blob/main/scripts/pages/latency.mjs"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Audio latency test",
+            "item": "https://audiojs.dev/util/latency/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is round-trip latency?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The time from the moment a page sends a sound until the microphone brings it back: the output buffers, the converter, the speaker, the air, the microphone and the input buffers. A recording app shifts each new take by this much to line it up with the backing track."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does the test say no loopback?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The microphone did not hear the chirps. Usually headphones are plugged in, so no sound reaches the room; or the volume is too low; or the browser is using a different microphone than you think. A processing step in the operating system or a headset that removes the speaker's sound has the same effect."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I measure my Bluetooth headphones' delay?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Run the tap test twice: once on wired headphones or the built-in speaker, once on the Bluetooth headphones. The difference between the two runs is what Bluetooth adds; your own timing cancels for the most part. For the round trip, hold the computer's microphone against an ear cup at a high volume, and keep the computer's microphone selected rather than the headset's."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why are echo cancellation, noise suppression and auto gain turned off?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Echo cancellation exists to remove the sound being played from what the microphone records, which is exactly the signal this test listens for. Noise suppression and automatic gain change the signal as well. The page asks for all three off and reports back if the browser kept one on."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why is the browser's figure different from the measured one?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The browser adds up only the buffers it knows about: AudioContext.baseLatency, outputLatency and, in Chrome 125 and later, the microphone's input latency. The measured round trip also holds the air (about 2.9 ms per metre) and any delay the operating system or the device does not report. Safari reports outputLatency only since version 18.4."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my microphone recorded or uploaded?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The recording lives in the tab's memory for the few seconds the analysis takes and is then dropped. Nothing is stored or sent."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/bar.css?v=4e6dabc4">
+  <link rel="stylesheet" href="/util/util.css?v=a794f8f2">
+  <link rel="modulepreload" href="/util/util.js?v=a1dc8e25">
+</head>
+<body>
+  <header class="site-bar">
+    <a class="site-brand" href="/" aria-label="audiojs home"><svg aria-hidden="true" viewBox="0 5 90.4 17" fill="currentColor"><path d="M4.2 22Q3.3 22 2.7 21.6Q2 21.2 1.6 20.5Q1.1 19.8 1.1 19V14.2H11.2V12.4Q11.2 12.3 11.1 12.2Q11.1 12.1 10.9 12.1H1.1V9.2H11.1Q11.9 9.2 12.6 9.7Q13.3 10.1 13.7 10.8Q14.1 11.4 14.1 12.3V22ZM4.3 19.1H11.2V16.8H4V18.9Q4 19 4.1 19Q4.2 19.1 4.3 19.1ZM19 22Q18.2 22 17.5 21.6Q16.8 21.2 16.4 20.5Q16 19.8 16 19V9.2H18.9V18.9Q18.9 19 19 19Q19 19.1 19.1 19.1H25.8Q25.9 19.1 26 19Q26.1 19 26.1 18.9V9.2H29V19Q29 19.8 28.5 20.5Q28.1 21.2 27.4 21.6Q26.8 22 25.9 22H19ZM33.2 22Q32.4 22 31.7 21.6Q31 21.2 30.6 20.5Q30.2 19.8 30.2 19V12.3Q30.2 11.4 30.6 10.8Q31 10.1 31.7 9.7Q32.4 9.2 33.2 9.2H40.3V5.1H43.2V22H33.2ZM33.4 19.1H40Q40.1 19.1 40.2 19Q40.3 19 40.3 18.9V12.4Q40.3 12.3 40.2 12.2Q40.1 12.1 40 12.1H33.4Q33.2 12.1 33.2 12.2Q33.1 12.3 33.1 12.4V18.9Q33.1 19 33.2 19Q33.2 19.1 33.4 19.1ZM45.1 22V9.2H47.9V22ZM45.1 8V5.1H47.9V8ZM52.5 22Q51.7 22 51 21.6Q50.3 21.2 49.9 20.5Q49.5 19.8 49.5 19V12.3Q49.5 11.4 49.9 10.8Q50.3 10.1 51 9.7Q51.7 9.2 52.5 9.2H59.4Q60.2 9.2 60.9 9.7Q61.6 10.1 62 10.8Q62.4 11.4 62.4 12.3V19Q62.4 19.8 62 20.5Q61.6 21.2 60.9 21.6Q60.2 22 59.4 22H52.5ZM52.6 19.1H59.3Q59.4 19.1 59.5 19Q59.5 19 59.5 18.9V12.4Q59.5 12.3 59.5 12.2Q59.4 12.1 59.3 12.1H52.6Q52.5 12.1 52.4 12.2Q52.4 12.3 52.4 12.4V18.9Q52.4 19 52.4 19Q52.5 19.1 52.6 19.1Z"/><path d="M75.1 18.4Q74.1 18.4 73.4 17.8Q72.7 17.3 72.4 16.4L73.8 16Q73.9 16.5 74.3 16.8Q74.6 17.1 75.1 17.1Q75.4 17.1 75.7 16.9Q76.1 16.8 76.2 16.4Q76.3 16.2 76.4 15.9Q76.4 15.6 76.4 15.2V8.8H77.7V15.2Q77.7 15.6 77.7 15.9Q77.7 16.2 77.7 16.5Q77.6 16.8 77.4 17.1Q77.1 17.8 76.5 18.1Q75.9 18.4 75.1 18.4ZM82.8 18.4Q81.8 18.4 81 18Q80.2 17.7 79.7 17Q79.2 16.4 79 15.5L80.4 15.3Q80.6 16.1 81.3 16.6Q82 17.1 82.9 17.1Q83.5 17.1 84 16.9Q84.4 16.7 84.7 16.4Q85 16.1 85 15.6Q85 15.3 84.9 15.1Q84.8 14.9 84.7 14.8Q84.5 14.7 84.3 14.6Q84.1 14.4 83.8 14.4L81.4 13.7Q81.1 13.6 80.7 13.4Q80.4 13.2 80.1 13Q79.7 12.7 79.6 12.3Q79.4 11.9 79.4 11.3Q79.4 10.4 79.8 9.8Q80.3 9.2 81 8.9Q81.8 8.6 82.7 8.6Q83.7 8.6 84.4 9Q85.2 9.3 85.7 9.9Q86.2 10.5 86.4 11.4L84.9 11.6Q84.8 11.1 84.5 10.7Q84.2 10.3 83.7 10.1Q83.2 9.9 82.7 9.9Q82.2 9.9 81.8 10.1Q81.3 10.2 81.1 10.5Q80.8 10.8 80.8 11.2Q80.8 11.6 81 11.9Q81.3 12.1 81.6 12.3Q81.9 12.4 82.3 12.5L84 13Q84.3 13.1 84.7 13.2Q85.1 13.4 85.5 13.6Q85.9 13.9 86.2 14.4Q86.4 14.8 86.4 15.5Q86.4 16.2 86.1 16.7Q85.9 17.3 85.4 17.6Q84.9 18 84.2 18.2Q83.6 18.4 82.8 18.4Z" fill="none" stroke="currentColor" stroke-width=".8"/><rect x="68.9" y="5.5" width="21" height="16" fill="none" stroke="currentColor"/></svg></a>
+    <nav aria-label="audiojs"><a href="/util/" aria-current="true">Utilities</a><a href="/lab/">Lab</a><a href="/audio/">audio</a><a href="/audio/playground.html">Playground</a><a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a></nav>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Audio latency test</h1>
+      <p>Measure the delay from your speakers to your microphone, and the delay you hear through Bluetooth headphones, beside what the browser reports.</p>
+    </section>
+
+    <style>
+      .lt h2 { font-weight: 800; font-size: var(--fs-md); letter-spacing: -.01em; }
+      .lt .sub { font-size: var(--fs-sm); line-height: 1.45; max-width: 34em; margin-left: auto; margin-right: auto; }
+      .lt .lvl { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); }
+      .lt + .lt, .panel + .lt { margin-top: 24px; }
+      .pad { display: grid; place-items: center; width: 100%; max-width: 420px; height: 128px; margin: 20px auto 0; padding: 0 16px; border: 2px solid var(--c-rule); border-radius: 8px; background: #fff; color: var(--c-mute); font: inherit; font-size: var(--fs-sm); font-weight: 700; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; transition: background .08s, border-color .15s; }
+      .pad:not(:disabled) { border-color: var(--c-accent); color: var(--c-ink); cursor: pointer; }
+      .pad.hit { background: #e6ede9; }
+      .pad:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 3px; }
+      .brh { font-weight: 700; font-size: var(--fs-sm); }
+      #rtReport, #tpReport, #brReport { align-items: start; }
+      #tpRuns { list-style: none; margin: 0; padding: 0; font-size: var(--fs-sm); font-weight: 500; line-height: 1.6; font-variant-numeric: tabular-nums; }
+      .seo ol.refs { margin: 10px 0 0; padding-left: 1.4em; font-size: var(--fs-xs); line-height: 1.55; color: var(--c-mute); }
+      .seo ol.refs li { margin-top: 4px; }
+      .seo sup { font-size: .7em; line-height: 0; }
+      @media (prefers-reduced-motion: reduce) { .pad { transition: none; } }
+    </style>
+    <section class="live lt" aria-labelledby="rtH">
+      <h2 id="rtH">Round trip: speaker to microphone</h2>
+      <div class="sub" id="rtMsg" role="status" aria-live="polite">Unplug headphones and turn the volume up, so the microphone hears the speaker. Ten short chirps play at the level below, about 10 seconds in all.</div>
+      <div class="meter" style="max-width:420px" aria-hidden="true"><i id="rtPeak" style="left:0"></i></div>
+      <div class="actions">
+        <button class="btn" id="rtStart" type="button">Start round-trip test</button>
+        <label class="lvl">Level <select id="rtLevel"><option value="0.063">-24 dBFS</option><option value="0.125">-18 dBFS</option><option value="0.25" selected>-12 dBFS</option><option value="0.5">-6 dBFS</option></select></label>
+      </div>
+    </section>
+    <section class="panel" id="rtPanel" hidden aria-label="Round-trip result">
+      <div class="row report" id="rtReport"></div>
+      <div class="row viz" id="rtViz"></div>
+    </section>
+    <section class="live lt" aria-labelledby="tpH">
+      <h2 id="tpH">Tap test: the delay you hear</h2>
+      <div class="sub" id="tpMsg" role="status" aria-live="polite">Put on the headphones you want to test, volume low at first. Twenty clicks play at 100 BPM: count four, then tap along with the rest.</div>
+      <button class="pad" id="pad" type="button" disabled>Tap here, or press Space</button>
+      <div class="actions">
+        <button class="btn" id="tpStart" type="button">Start tap test</button>
+        <label class="lvl">Level <select id="tpLevel"><option value="0.063">-24 dBFS</option><option value="0.125">-18 dBFS</option><option value="0.25" selected>-12 dBFS</option><option value="0.5">-6 dBFS</option></select></label>
+      </div>
+    </section>
+    <section class="panel" id="tpPanel" hidden aria-label="Tap test result">
+      <div class="row report" id="tpReport"></div>
+      <div class="row"><ol id="tpRuns"></ol></div>
+    </section>
+    <section class="panel" id="brPanel" hidden aria-labelledby="brH">
+      <div class="row"><h2 class="brh" id="brH">What the browser reports</h2></div>
+      <div class="row report" id="brReport"></div>
+    </section>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://www.npmjs.com/package/@audio/synth-chirp" target="_blank" rel="noopener"><code>@audio/synth-chirp</code></a>.</p>
+    <section class="seo">
+      <h2>Two delays, measured two ways</h2>
+      <p><strong>Round-trip latency</strong> is the time from the moment a page sends a sound until the microphone brings it back: the output buffers, the converter, the speaker, the air, the microphone and the input buffers. A recording app has to shift each new take by this much to line it up with the backing track. <strong>Output delay</strong> is the part you hear, from the page to your ears. Bluetooth headphones add to it, and a microphone often cannot hear headphones, so the tap test measures it with your ears instead.</p>
+      <h3>How the round trip is measured</h3>
+      <p>The page plays ten chirps, each a 100 ms sweep from 500 Hz to 10 kHz made with <code>@audio/synth-chirp</code>, 0.81 to 0.97 s apart. One AudioContext records what it sends to the speaker and what the microphone hears side by side in an AudioWorklet, so both share one sample clock and no timer has to guess when a chirp left. For each chirp the recording is cross-correlated with the chirp through an FFT, and the lag of the highest peak is the delay.<sup><a href="#r10">10</a></sup> The page takes the envelope of the correlation, so the speaker's polarity does not move the peak, and a parabola through its top three points places it between samples. A result counts only when most chirps come back at the same delay, within 2 ms: noise lands anywhere, and the uneven spacing keeps a sound that repeats on its own from lining up with every chirp. The page reports the median of the chirps that agree, their spread, and the peak ratio: the peak over the next-highest one more than 1 ms away, usually an echo. Near 1×, an echo nearly as loud as the direct sound could have been taken for it. Delays up to 600 ms are searched.</p>
+      <h3>Why the microphone's processing is off</h3>
+      <p>Echo cancellation exists "to remove sound being played from the input signals recorded by the microphones",<sup><a href="#r3">3</a></sup> which is the very sound this test listens for. Noise suppression and automatic gain alter the signal too. So the page asks for <code>echoCancellation</code>, <code>noiseSuppression</code> and <code>autoGainControl</code> all <code>false</code>, reads the track's settings back, and says so if the browser kept any of them on. These switches cover the browser's own processing; a voice filter in the operating system or in a headset is outside them.</p>
+      <h3>What the browser reports</h3>
+      <p><code>AudioContext.baseLatency</code> is the delay from the end of the audio graph into the system's audio stack; <code>outputLatency</code> runs from there to the output device.<sup><a href="#r1">1</a></sup> Chrome reports base latency since version 58 and output latency since 102, Firefox both since 70, Safari base latency since 14.1 and output latency since 18.4.<sup><a href="#r2">2</a></sup> Chrome 125 and later also report the microphone's input latency, in milliseconds, through the track's <code>stats</code>.<sup><a href="#r2">2</a>,<a href="#r4">4</a></sup> The sum leaves out the air and whatever the operating system does not tell the browser; the measured round trip includes all of it.</p>
+      <h3>The tap test, honestly</h3>
+      <p>The page schedules twenty clicks at 100 BPM on the audio clock and times your taps (Space, or a touch on the pad) against the moment each click left the page. Nothing on screen moves with the beat, so you follow your ears. The result includes you: most people tap slightly ahead of a steady beat, the negative mean asynchrony,<sup><a href="#r8">8</a></sup> and a keyboard or touchscreen adds its own delay before the page sees the press. So the absolute number carries a personal offset. Run it once on wired headphones or the built-in speaker and once on Bluetooth: the difference between the two runs is the delay Bluetooth adds, and your own offset largely cancels.</p>
+      <h3>Reading the numbers</h3>
+      <ul>
+        <li><strong>Phones.</strong> Android 16 requires a handheld with a speaker and a microphone to keep its round trip within 200 ms, 50 ms if it declares low-latency audio and 25 ms (20 ms through the analog jack) if it declares professional audio, measured natively with AAudio.<sup><a href="#r5">5</a></sup> A browser adds its own buffers on top.</li>
+        <li><strong>Bluetooth.</strong> Classic Bluetooth music streaming (A2DP) adds retransmissions and buffering against dropouts, so it "typically has a latency of 100 – 200 ms".<sup><a href="#r6">6</a></sup> Its delay reporting lets the playing device, a phone or a TV, ask the headphones for that delay and hold the picture back. Whether the figure reaches this page as <code>outputLatency</code> depends on the system and the browser: the tap test shows both numbers side by side.</li>
+        <li><strong>Lip sync.</strong> On average, viewers notice sound lagging the picture from about 125 ms and stop accepting it at about 185 ms; sound ahead of the picture is noticed from about 45 ms.<sup><a href="#r7">7</a></sup></li>
+        <li><strong>Distance.</strong> Sound travels about 343 m/s in air at 20 °C, so each metre between speaker and microphone adds 2.9 ms.<sup><a href="#r9">9</a></sup></li>
+      </ul>
+      <h3>Bluetooth headphones and the round trip</h3>
+      <p>A computer's microphone hears closed headphones only when pressed against an ear cup at a high volume; the peak ratio tells you whether it did. Keep the computer's microphone selected, not the headset's: A2DP, the classic music link, has no return audio path,<sup><a href="#r6">6</a></sup> so a classic headset's microphone works over the hands-free profile (HFP), a separate voice link, and the round trip would measure that link instead of the one you listen through.</p>
+      <p>For the frequency response and reverberation time of your speakers and room, use the <a href="/util/measure/">room and speaker measurement</a>.</p>
+      <h3>References</h3>
+      <ol class="refs">
+        <li id="r1">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/baseLatency">AudioContext.baseLatency</a> and <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/outputLatency">AudioContext.outputLatency</a>.</li>
+        <li id="r2">MDN, <a href="https://github.com/mdn/browser-compat-data">browser-compat-data</a>, api/AudioContext.json and api/MediaStreamTrackAudioStats.json (October 2026).</li>
+        <li id="r3">W3C, <a href="https://w3c.github.io/mediacapture-main/">Media Capture and Streams</a>: the echoCancellation, noiseSuppression and autoGainControl constrainable properties.</li>
+        <li id="r4">W3C, <a href="https://w3c.github.io/mediacapture-extensions/">Media Capture and Streams Extensions</a>: MediaStreamTrackAudioStats, input latency in milliseconds.</li>
+        <li id="r5">Android, <a href="https://source.android.com/docs/compatibility/16/android-16-cdd">Android 16 Compatibility Definition</a>, §5.6 Audio Latency: round-trip latency per device class.</li>
+        <li id="r6">N. Hunn, <a href="https://www.bluetooth.com/wp-content/uploads/2025/01/Introduction-to-LE-Audio-2.0.pdf"><i>Introducing Bluetooth LE Audio</i></a>, 2nd ed. (2024), published by the Bluetooth SIG: §1, HFP and A2DP; §5.3, A2DP latency and delay reporting.</li>
+        <li id="r7">ITU-R <a href="https://www.itu.int/rec/R-REC-BT.1359/en">BT.1359-1</a> (1998), Relative timing of sound and vision for broadcasting: detectability about +45 to −125 ms, acceptability about +90 to −185 ms.</li>
+        <li id="r8">B. H. Repp, “<a href="https://doi.org/10.3758/BF03206433">Sensorimotor synchronization: A review of the tapping literature</a>,” <i>Psychonomic Bulletin &amp; Review</i> 12 (2005): the negative mean asynchrony.</li>
+        <li id="r9">R. Nave, HyperPhysics, <a href="http://hyperphysics.phy-astr.gsu.edu/hbase/Sound/souspe.html">Speed of sound</a>: about 331.4 + 0.6·T m/s for air at T °C.</li>
+        <li id="r10">C. H. Knapp &amp; G. C. Carter, “The generalized correlation method for estimation of time delay,” <i>IEEE Trans. Acoustics, Speech, and Signal Processing</i> 24 (1976).</li>
+      </ol>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>What is round-trip latency?</summary><p>The time from the moment a page sends a sound until the microphone brings it back: the output buffers, the converter, the speaker, the air, the microphone and the input buffers. A recording app shifts each new take by this much to line it up with the backing track.</p></details>
+        <details><summary>Why does the test say no loopback?</summary><p>The microphone did not hear the chirps. Usually headphones are plugged in, so no sound reaches the room; or the volume is too low; or the browser is using a different microphone than you think. A processing step in the operating system or a headset that removes the speaker's sound has the same effect.</p></details>
+        <details><summary>How do I measure my Bluetooth headphones' delay?</summary><p>Run the tap test twice: once on wired headphones or the built-in speaker, once on the Bluetooth headphones. The difference between the two runs is what Bluetooth adds; your own timing cancels for the most part. For the round trip, hold the computer's microphone against an ear cup at a high volume, and keep the computer's microphone selected rather than the headset's.</p></details>
+        <details><summary>Why are echo cancellation, noise suppression and auto gain turned off?</summary><p>Echo cancellation exists to remove the sound being played from what the microphone records, which is exactly the signal this test listens for. Noise suppression and automatic gain change the signal as well. The page asks for all three off and reports back if the browser kept one on.</p></details>
+        <details><summary>Why is the browser's figure different from the measured one?</summary><p>The browser adds up only the buffers it knows about: AudioContext.baseLatency, outputLatency and, in Chrome 125 and later, the microphone's input latency. The measured round trip also holds the air (about 2.9 ms per metre) and any delay the operating system or the device does not report. Safari reports outputLatency only since version 18.4.</p></details>
+        <details><summary>Is my microphone recorded or uploaded?</summary><p>The recording lives in the tab's memory for the few seconds the analysis takes and is then dropped. Nothing is stored or sent.</p></details>
+      </section>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/stem-splitter/">Stem splitter</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI converter</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/tone-generator/">Tone generator</a></li>
+          <li><a href="/util/prosody/">Speech prosody editor</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/audiojs/audiojs.github.io/blob/main/scripts/pages/latency.mjs" target="_blank" rel="noopener">source</a> · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a1dc8e25'
+    const SWEEP = {"f0":500,"f1":10000,"duration":0.1,"max":0.6,"at":[0,0.9731,1.8017,2.7139,3.5693,4.5127,5.3211,6.2089,7.1633,8.0017]}, BEAT = {"count":20,"countIn":4,"period":0.6}
+    function fft(re, im, inverse = false) {
+  const n = re.length
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1
+    for (; j & bit; bit >>= 1) j ^= bit
+    j ^= bit
+    if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1, ang = (inverse ? 2 : -2) * Math.PI / len
+    for (let k = 0; k < half; k++) {
+      const wr = Math.cos(ang * k), wi = Math.sin(ang * k)
+      for (let a = k; a < n; a += len) {
+        const b = a + half, tr = re[b] * wr - im[b] * wi, ti = re[b] * wi + im[b] * wr
+        re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti
+      }
+    }
+  }
+}
+    function locate(rec, ref, { from = 0, to = rec.length - 1, guard = 48 } = {}) {
+  let n = 2
+  while (n < rec.length + ref.length) n *= 2
+  const xr = new Float64Array(n), xi = new Float64Array(n), yr = new Float64Array(n), yi = new Float64Array(n)
+  xr.set(rec); yr.set(ref)
+  fft(xr, xi); fft(yr, yi)
+  // rec · conj(ref), negative frequencies dropped and positive ones doubled: its inverse is the analytic correlation
+  for (let k = 0, h = n / 2; k < n; k++) {
+    const w = k === 0 || k === h ? 1 : k < h ? 2 : 0, r = xr[k] * yr[k] + xi[k] * yi[k], i = xi[k] * yr[k] - xr[k] * yi[k]
+    xr[k] = r * w; xi[k] = i * w
+  }
+  fft(xr, xi, true)
+  from = Math.max(from, 1 - ref.length); to = Math.min(to, rec.length - 1)
+  const at = l => Math.hypot(xr[(l + n) % n], xi[(l + n) % n]), env = new Float32Array(to - from + 1)
+  let top = from, peak = 0, next = 0
+  for (let l = from; l <= to; l++) { const v = env[l - from] = at(l); if (v > peak) { peak = v; top = l } }
+  for (let l = from; l <= to; l++) if (Math.abs(l - top) > guard && env[l - from] > next) next = env[l - from]
+  if (!peak) return { lag: NaN, ratio: 0, env, from }
+  const a = at(top - 1), b = at(top), c = at(top + 1), d = a - 2 * b + c
+  return { lag: top + (d < 0 ? (a - c) / (2 * d) : 0), ratio: next ? peak / next : Infinity, env, from }
+}
+    function quantile(xs, p) {
+  const s = Float64Array.from(xs).sort(), i = (s.length - 1) * p, lo = Math.floor(i)
+  return s.length ? s[lo] + (s[Math.min(lo + 1, s.length - 1)] - s[lo]) * (i - lo) : NaN
+}
+    function roundTrip(out, mic, ref, fs, { max = 0.6, gap = 0.1 } = {}) {
+  const guard = Math.round(fs / 1000), pad = 64, span = Math.round(max * fs), lags = [], ratios = [], curve = new Float64Array(span + 1)
+  for (let i = 0, quiet = Infinity; i < out.length; i++) {
+    if (Math.abs(out[i]) < 1e-6) { quiet++; continue }
+    if (quiet >= gap * fs && i + ref.length <= out.length) {
+      const a = Math.max(0, i - pad), o = locate(out.subarray(a, i + ref.length + pad), ref, { to: 2 * pad, guard })
+      const m = locate(mic.subarray(a, Math.min(mic.length, i + ref.length + pad + span)), ref, { from: Math.floor(o.lag), to: Math.floor(o.lag) + span, guard })
+      lags.push((m.lag - o.lag) / fs * 1000); ratios.push(m.ratio)
+      for (let k = 0; k < m.env.length && k <= span; k++) curve[k] += m.env[k]
+    }
+    quiet = 0
+  }
+  const mid = quantile(lags, 0.5), near = lags.map((x, i) => i).filter(i => Math.abs(lags[i] - mid) <= 2), hit = near.map(i => lags[i])
+  const peak = quantile(near.map(i => ratios[i]), 0.5)
+  const quality = !lags.length || near.length < Math.max(3, 0.6 * lags.length) || !(peak >= 1.1) ? 'none' : peak < 1.4 ? 'weak' : 'clear'
+  return {
+    quality, count: lags.length, agree: quality === 'none' ? 0 : near.length, lags, ratios,
+    delay: quality === 'none' ? NaN : quantile(hit, 0.5), spread: quality === 'none' ? NaN : Math.max(...hit) - Math.min(...hit),
+    ratio: quantile(quality === 'none' ? ratios : near.map(i => ratios[i]), 0.5), curve,
+  }
+}
+    function tapOffsets(taps, first, beat, { from = 0, to = Infinity, early = 150 } = {}) {
+  const seen = new Set(), out = []
+  for (const t of taps) {
+    const j = Math.floor((t - first + early) / beat)
+    if (!(j >= from && j < to) || seen.has(j)) continue
+    seen.add(j); out.push(t - first - j * beat)
+  }
+  return out
+}
+    function recorder() {
+  registerProcessor('latency-rec', class extends AudioWorkletProcessor {
+    constructor() {
+      super()
+      this.n = 0; this.a = new Float32Array(4096); this.b = new Float32Array(4096); this.on = true
+      this.port.onmessage = () => { this.post(true); this.on = false }
+    }
+    post(last) {
+      this.port.postMessage([this.a.slice(0, this.n), this.b.slice(0, this.n), last])
+      this.n = 0
+    }
+    process([input]) {
+      if (!this.on) return false
+      const x = input[0], y = input[1], m = x ? x.length : 128
+      for (let i = 0; i < m; i++) {
+        this.a[this.n] = x ? x[i] : 0; this.b[this.n] = y ? y[i] : 0
+        if (++this.n === 4096) this.post(false)
+      }
+      return true
+    }
+  })
+}
+    const chirpLib = import('https://esm.sh/@audio/synth-chirp@1.1.3').then(m => m.default)
+    const rtStart = $('rtStart'), rtMsg = $('rtMsg'), rtPeak = $('rtPeak'), rtLevel = $('rtLevel'), rtPanel = $('rtPanel'), rtReport = $('rtReport'), rtViz = $('rtViz')
+    const tpStart = $('tpStart'), tpMsg = $('tpMsg'), tpLevel = $('tpLevel'), tpPanel = $('tpPanel'), tpReport = $('tpReport'), tpRuns = $('tpRuns'), pad = $('pad')
+    const brPanel = $('brPanel'), brH = $('brH'), brReport = $('brReport')
+    const runs = []
+    const num = x => typeof x === 'number' && isFinite(x)
+    const ms = (s, d = 1) => (s * 1000).toFixed(d) + '<small>ms</small>'
+    const row = (k, v, note, cls) => el('div', {}, el('div', { class: 'k' }, k), el('div', { class: 'v' + (cls ? ' ' + cls : ''), html: v }), ...(note ? [el('div', { class: 'note' }, note)] : []))
+    // wait for the audio clock to reach t; give up if it stalls (no output device)
+    const until = (ctx, t, stop) => new Promise((res, rej) => { const by = performance.now() + (t - ctx.currentTime + 5) * 1000; const f = () => stop() || ctx.currentTime >= t ? res() : performance.now() > by ? rej(Error('the audio clock stopped')) : setTimeout(f, 50); f() })
+
+    // ── what the browser says about the path ──
+    async function outName(ctx) {
+      try {
+        const id = typeof ctx.sinkId === 'string' && ctx.sinkId ? ctx.sinkId : 'default'
+        const d = (await navigator.mediaDevices.enumerateDevices()).find(d => d.kind === 'audiooutput' && d.deviceId === id && d.label)
+        return d ? d.label.replace(/^Default - /, '') : ''
+      } catch { return '' }
+    }
+    function inLatency(track) {
+      const s = track && track.stats, l = track && track.getSettings && track.getSettings().latency
+      return s && num(s.averageLatency) && s.averageLatency > 0 ? s.averageLatency / 1000 : num(l) ? l : undefined
+    }
+    // the browser's own sum for this path: base + output (+ input when there is a microphone)
+    function figures(ctx, track) {
+      const parts = [['base', ctx.baseLatency], ['output', ctx.outputLatency], ...(track ? [['input', inLatency(track)]] : [])].filter(([, v]) => num(v))
+      return { sum: parts.reduce((s, [, v]) => s + v, 0), text: parts.map(([k, v]) => k + ' ' + (v * 1000).toFixed(1)).join(' + ') + ' ms', parts }
+    }
+    async function browserReport(ctx, track, what) {
+      const rows = [
+        row('Sample rate', (ctx.sampleRate / 1000) + '<small>kHz</small>'),
+        row('Base latency', num(ctx.baseLatency) ? ms(ctx.baseLatency) : 'not reported', 'AudioContext.baseLatency: from the end of the audio graph into the system\'s audio stack.'),
+        row('Output latency', num(ctx.outputLatency) ? ms(ctx.outputLatency) : 'not reported', 'AudioContext.outputLatency: from the system\'s audio stack to the output device. 0 can mean not measured.'),
+      ]
+      if (track) {
+        const l = inLatency(track), s = track.getSettings ? track.getSettings() : {}
+        const on = [['echoCancellation', 'echo cancellation'], ['noiseSuppression', 'noise suppression'], ['autoGainControl', 'auto gain']].filter(([k]) => s[k] !== undefined && s[k] !== false).map(([, n]) => n)
+        rows.push(
+          row('Input latency', num(l) ? ms(l) : 'not reported', 'From the microphone to the page, as the track reports it (Chrome 125+).'),
+          row('Mic processing', on.length ? on.join(', ') + ' on' : 'off', on.length ? 'The browser kept this on although the page asked for it off; the result may be off too.' : 'Echo cancellation, noise suppression and auto gain, all off as asked.', on.length ? 'warn list' : 'ok list'),
+          row('Microphone', track.label || 'unnamed', '', 'list'))
+      }
+      rows.push(row('Output', (await outName(ctx)) || 'system default', '', 'list'))
+      brH.textContent = 'What the browser reports, ' + what
+      brReport.replaceChildren(...rows); brPanel.hidden = false
+    }
+
+    // ── round trip ──
+    let rtStop = null
+    rtStart.addEventListener('click', async () => {
+      if (rtStop) return rtStop('Stopped.')
+      const ctx = new AudioContext({ latencyHint: 'interactive' })
+      let stream = null, done = false, timer = 0
+      const finish = msg => {
+        if (done) return; done = true; clearInterval(timer)
+        if (stream) stream.getTracks().forEach(t => t.stop())
+        ctx.close(); rtStop = null; rtStart.textContent = 'Start round-trip test'; tpStart.disabled = false; rtPeak.style.left = '0'; rtPeak.classList.remove('ok')
+        if (msg) rtMsg.textContent = msg
+      }
+      rtStop = finish; rtStart.textContent = 'Stop'; tpStart.disabled = true; rtPanel.hidden = true
+      try {
+        rtMsg.textContent = 'Asking for the microphone…'
+        // the browser's echo canceller exists to remove the speaker's sound from the microphone: the very signal measured here
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+        if (done) return
+        await ctx.resume()
+        const track = stream.getAudioTracks()[0], fs = ctx.sampleRate
+        const url = URL.createObjectURL(new Blob(['(' + recorder + ')()'], { type: 'text/javascript' }))
+        await ctx.audioWorklet.addModule(url); URL.revokeObjectURL(url)
+        const ref = (await chirpLib)({ f0: SWEEP.f0, f1: SWEEP.f1, duration: SWEEP.duration, fs, method: 'lin', amp: 1 })
+        if (done) return
+        let input
+        try { input = ctx.createMediaStreamSource(stream) } catch (e) { throw Error('this browser cannot connect the microphone at ' + fs + ' Hz (' + e.message + ')') }
+        const level = ctx.createGain(), merge = ctx.createChannelMerger(2)
+        const rec = new AudioWorkletNode(ctx, 'latency-rec', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1], channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete' })
+        level.gain.value = +rtLevel.value
+        level.connect(ctx.destination); level.connect(merge, 0, 0); input.connect(merge, 0, 1); merge.connect(rec); rec.connect(ctx.destination)
+        const outs = [], mics = []
+        let last
+        const flushed = new Promise(r => last = r)
+        rec.port.onmessage = ({ data: [a, b, end] }) => {
+          outs.push(a); mics.push(b)
+          let p = 0; for (const x of b) p = Math.max(p, Math.abs(x))
+          rtPeak.style.left = Math.min(100, p * 100) + '%'; rtPeak.classList.toggle('ok', p > 0.02 && p < 0.9)
+          if (end) last()
+        }
+        const buf = ctx.createBuffer(1, ref.length, fs); buf.getChannelData(0).set(ref)
+        const t0 = ctx.currentTime + 0.4
+        for (const at of SWEEP.at) { const s = ctx.createBufferSource(); s.buffer = buf; s.connect(level); s.start(t0 + at) }
+        timer = setInterval(() => { const k = SWEEP.at.filter(at => at <= ctx.currentTime - t0).length; rtMsg.textContent = k ? 'Chirp ' + k + ' of ' + SWEEP.at.length + '…' : 'Listening to the room…' }, 100)
+        await until(ctx, t0 + SWEEP.at[SWEEP.at.length - 1] + SWEEP.duration + SWEEP.max + 0.1, () => done)
+        if (done) return
+        clearInterval(timer); rec.port.postMessage('stop')
+        await Promise.race([flushed, new Promise((_, no) => setTimeout(() => no(Error('the recorder stopped answering')), 3000))])
+        rtMsg.textContent = 'Computing…'
+        await new Promise(r => setTimeout(r, 30))
+        const join = parts => { const x = new Float32Array(parts.reduce((s, p) => s + p.length, 0)); let o = 0; for (const p of parts) { x.set(p, o); o += p.length } return x }
+        const out = join(outs), mic = join(mics)
+        let pk = 0; for (const x of mic) pk = Math.max(pk, Math.abs(x))
+        const r = roundTrip(out, mic, ref, fs, { max: SWEEP.max }), f = figures(ctx, track)
+        rtReport.replaceChildren(
+          row('Round trip', r.quality === 'none' ? '–' : r.delay.toFixed(1) + '<small>ms</small>', r.quality === 'none' ? 'No one delay stands out across the chirps.' : 'Median of the ' + r.agree + ' of ' + r.count + ' chirps that agree within 2 ms.', r.quality === 'clear' ? 'ok' : r.quality === 'weak' ? 'warn' : ''),
+          row('Spread', r.quality === 'none' ? '–' : r.spread.toFixed(2) + '<small>ms</small>', 'Largest minus smallest of those chirps.'),
+          row('Peak ratio', num(r.ratio) ? r.ratio.toFixed(1) + '<small>×</small>' : '–', 'Correlation peak over the next-highest one more than 1 ms away, usually an echo. Near 1×, an echo or noise rivals the direct sound.', r.ratio >= 1.4 ? '' : 'warn'),
+          row('Browser\'s figures', f.parts.length ? (f.sum * 1000).toFixed(1) + '<small>ms</small>' : 'not reported', f.parts.length ? f.text + ', as reported. The air and any unreported delay are not in it.' : ''))
+        rtViz.replaceChildren(plot(r, fs)); rtPanel.hidden = false
+        await browserReport(ctx, track, 'round trip')
+        finish(!r.count ? 'The page could not record its own output, so there is nothing to compare. Try another browser.'
+          : pk < 1e-4 ? 'The microphone delivered silence: check that it is not muted and that the right input is selected.'
+          : r.quality === 'clear' ? 'Done: ' + r.agree + ' of ' + r.count + ' chirps agree.'
+          : r.quality === 'weak' ? 'Weak loopback: an echo or noise is nearly as strong as the direct sound, so the delay may belong to an echo. Point the speaker at the microphone or bring them closer, and run it again.'
+          : 'No loopback: the microphone did not hear the chirps. Unplug headphones so the sound comes from the speakers, turn the volume up, and check the input device.')
+      } catch (e) {
+        finish(e && e.name === 'NotAllowedError' ? 'The round trip needs the microphone. The tap test below works without it.' : 'The test stopped: ' + (e && e.message || e))
+      }
+    })
+
+    // the averaged correlation envelope over the delays searched, with the median marked
+    function plot(r, fs) {
+      const W = innerWidth < 600 ? 700 : 1200, H = 240, c = el('canvas'), g = c.getContext('2d') // narrower on phones, so it scales up
+      c.width = W; c.height = H; c.setAttribute('role', 'img')
+      c.setAttribute('aria-label', r.quality === 'none' ? 'Correlation envelope with no peak standing out' : 'Correlation envelope peaking at ' + r.delay.toFixed(1) + ' ms')
+      const span = r.quality === 'none' ? SWEEP.max * 1000 : Math.min(SWEEP.max * 1000, [10, 20, 50, 100, 200, 300, 600].find(v => v >= r.delay * 1.6) || 600)
+      const n = Math.min(r.curve.length, Math.round(span / 1000 * fs) + 1)
+      let top = 0; for (let i = 0; i < n; i++) top = Math.max(top, r.curve[i])
+      const x = t => 8 + (W - 16) * t / span, y = v => H - 30 - (H - 48) * v
+      g.fillStyle = '#0d1014'; g.fillRect(0, 0, W, H)
+      g.strokeStyle = 'rgba(237,235,228,.25)'; g.fillStyle = 'rgba(237,235,228,.8)'; g.font = '600 20px Manrope, sans-serif'; g.lineWidth = 1
+      const step = span / 5
+      for (let t = 0; t <= span + 1e-9; t += step) { g.beginPath(); g.moveTo(x(t), 10); g.lineTo(x(t), H - 30); g.stroke(); g.fillText(+t.toFixed(1) + ' ms', Math.min(x(t) + 6, W - 84), H - 6) }
+      g.strokeStyle = '#00a4b8'; g.lineWidth = 2; g.beginPath()
+      for (let px = 0; px < W - 16; px++) {
+        const i0 = Math.floor(px / (W - 16) * (n - 1)), i1 = Math.max(i0 + 1, Math.floor((px + 1) / (W - 16) * (n - 1)))
+        let v = 0; for (let i = i0; i < i1 && i < n; i++) v = Math.max(v, r.curve[i])
+        px ? g.lineTo(8 + px, y(top ? v / top : 0)) : g.moveTo(8, y(top ? v / top : 0))
+      }
+      g.stroke()
+      if (r.quality !== 'none') {
+        g.strokeStyle = '#edebe4'; g.lineWidth = 1; g.setLineDash([4, 4]); g.beginPath(); g.moveTo(x(r.delay), 10); g.lineTo(x(r.delay), H - 30); g.stroke(); g.setLineDash([])
+        g.fillStyle = '#edebe4'; g.fillText(r.delay.toFixed(1) + ' ms', Math.min(x(r.delay) + 8, W - 100), 30)
+      }
+      return c
+    }
+
+    // ── tap test ──
+    let tpStop = null
+    tpStart.addEventListener('click', async () => {
+      if (tpStop) return tpStop('Stopped.')
+      const ctx = new AudioContext({ latencyHint: 'interactive' })
+      const taps = [], clock = []
+      let done = false, frame = 0, poll = 0, t0 = Infinity
+      // the audio clock against performance.now(): the smallest gap seen is the moment the graph rendered (a low quantile, against stray bursts)
+      const sample = () => { if (ctx.currentTime > t0 - 0.3) clock.push(performance.now() - ctx.currentTime * 1000) }
+      const hit = e => { taps.push(e.timeStamp); sample(); pad.classList.add('hit'); setTimeout(() => pad.classList.remove('hit'), 90); tpMsg.textContent = taps.length + (taps.length === 1 ? ' tap' : ' taps') }
+      const key = e => { if (e.code !== 'Space' && e.key !== ' ') return; e.preventDefault(); if (e.type === 'keydown' && !e.repeat) hit(e) }
+      const finish = msg => {
+        if (done) return; done = true
+        cancelAnimationFrame(frame); clearInterval(poll)
+        document.removeEventListener('keydown', key); document.removeEventListener('keyup', key); pad.removeEventListener('pointerdown', hit)
+        ctx.close(); tpStop = null; pad.disabled = true; tpStart.textContent = 'Start tap test'; rtStart.disabled = false
+        if (msg) tpMsg.textContent = msg
+      }
+      tpStop = finish; tpStart.textContent = 'Stop'; rtStart.disabled = true
+      try {
+        await ctx.resume()
+        const fs = ctx.sampleRate, len = Math.round(0.03 * fs), click = ctx.createBuffer(1, len, fs), d = click.getChannelData(0)
+        for (let i = 0; i < len; i++) d[i] = Math.sin(2 * Math.PI * 1500 * i / fs) * Math.exp(-i / (0.004 * fs))
+        const level = ctx.createGain(); level.gain.value = +tpLevel.value; level.connect(ctx.destination)
+        t0 = ctx.currentTime + 0.8
+        for (let j = 0; j < BEAT.count; j++) { const s = ctx.createBufferSource(); s.buffer = click; s.connect(level); s.start(t0 + j * BEAT.period) }
+        const loop = () => { sample(); frame = requestAnimationFrame(loop) }
+        loop(); poll = setInterval(sample, 4)
+        document.addEventListener('keydown', key); document.addEventListener('keyup', key); pad.addEventListener('pointerdown', hit)
+        pad.disabled = false; pad.focus()
+        tpMsg.textContent = 'Count four clicks, then tap along with the rest.'
+        await until(ctx, t0 + BEAT.count * BEAT.period + 0.2, () => done)
+        if (done) return
+        const first = t0 * 1000 + quantile(clock, 0.02)
+        const offs = tapOffsets(taps, first, BEAT.period * 1000, { from: BEAT.countIn, to: BEAT.count })
+        const want = BEAT.count - BEAT.countIn
+        if (offs.length < want / 2) return finish('Only ' + offs.length + ' of ' + want + ' taps landed near a click. Tap once per click from the fifth one, and try again.')
+        const med = quantile(offs, 0.5), half = (quantile(offs, 0.75) - quantile(offs, 0.25)) / 2, f = figures(ctx, null), name = await outName(ctx)
+        runs.push({ med, half, name })
+        tpReport.replaceChildren(
+          row('Delay you hear', med.toFixed(0) + '<small>ms</small>', 'Median of ' + offs.length + ' of ' + want + ' taps, from the moment the page sent each click to your tap. It includes your own timing.'),
+          row('Spread', '±' + half.toFixed(0) + '<small>ms</small>', 'Half the range of your middle half of taps.', half > 50 ? 'warn' : ''),
+          row('Browser\'s figures', f.parts.length ? (f.sum * 1000).toFixed(1) + '<small>ms</small>' : 'not reported', f.parts.length ? f.text + ', as reported for this output.' : ''))
+        tpRuns.replaceChildren(...runs.map((r, i) => el('li', {}, 'Run ' + (i + 1) + ' · ' + (r.name || 'default output') + ': ' + r.med.toFixed(0) + ' ms ±' + r.half.toFixed(0) + (i ? ' · ' + (r.med >= runs[0].med ? '+' : '−') + Math.abs(r.med - runs[0].med).toFixed(0) + ' ms against run 1' : ''))))
+        tpPanel.hidden = false
+        await browserReport(ctx, null, 'tap test')
+        finish(half > 50 ? 'Your taps scatter by ±' + half.toFixed(0) + ' ms, so this median is rough. Run it again and tap with each click you hear.'
+          : runs.length === 1 ? 'Done. Switch to another output (wired, speaker, Bluetooth) and run it again: the difference between runs is what the output adds.' : 'Done: run ' + runs.length + ' is ' + Math.abs(med - runs[0].med).toFixed(0) + ' ms ' + (med >= runs[0].med ? 'later' : 'earlier') + ' than run 1.')
+      } catch (e) {
+        finish('The test stopped: ' + (e && e.message || e))
+      }
+    })
+  </script>
+</body>
+</html>

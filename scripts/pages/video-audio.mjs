@@ -3,7 +3,7 @@
 import { drop, src } from '../page-helpers.mjs'
 
 const REMUX = src('@audio/encode-mp4', '1.0.0', 'remux')
-const DECODE = src('@audio/decode', '3.15.0')
+const DECODE = src('@audio/decode', '4.1.1')
 
 export default {
   order: 15,

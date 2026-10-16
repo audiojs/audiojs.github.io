@@ -4,7 +4,7 @@ const load = u => import(u).catch(() => new Promise(r => setTimeout(r, 300)).the
 const mirLib = load('https://esm.sh/@audio/mir@1.1.3')
 const beatLib = load('https://esm.sh/@audio/beat@2.1.3')
 const midiLib = load('https://esm.sh/@audio/midi@1.0.2')
-const musicxmlLib = load('https://esm.sh/@audio/musicxml@0.1.0')
+const musicxmlLib = import('/util/vendor/musicxml.js?v=042c2889')
 const renderLib = load('https://esm.sh/@audio/midi-render@0.1.0')
 const noteLib = load('https://esm.sh/@audio/note@1.0.2')
 
@@ -12,26 +12,130 @@ const MAJOR = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
 const MINOR = ['Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'Bbm', 'Bm']
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const keyLabel = k => { const minor = k.slice(-1) === 'm', root = minor ? k.slice(0, -1) : k; return root.split('#').join('♯').split('b').join('♭') + ' ' + (minor ? 'minor' : 'major') }
+const tick = () => new Promise(r => setTimeout(r, 20))
+
+// Basic Pitch: loaded on the first polyphonic run, the model kept for the next file
+const SR = 22050, HOP = 256   // the model's input rate and frame hop (basic_pitch/constants.py)
+let bpLib
+const basicPitch = () => bpLib ??= (async () => {
+  const [bp, tf, resample] = await Promise.all([load('https://esm.sh/@spotify/basic-pitch@1.0.1?deps=@tensorflow/tfjs@4.22.0'), load('https://esm.sh/@tensorflow/tfjs@4.22.0'), load('https://esm.sh/@audio/resample-polyphase@1.1.0')])
+  tf.enableProdMode()
+  await tf.ready()
+  const model = await tf.loadGraphModel('https://cdn.jsdelivr.net/npm/@spotify/basic-pitch@1.0.1/model/model.json')
+  return { bp, tf, polyphase: resample.default, model: new bp.BasicPitch(Promise.resolve(model)) }
+})().catch(e => { bpLib = null; throw e })
+
+// Basic Pitch's note decoding (outputToNotesPoly: onset 0.5 and frame 0.3 thresholds from basic_pitch/constants.py,
+// energy tolerance 11 frames as in the paper) with its "melodia" pass reordered. The original rescans the whole
+// activation matrix for its maximum once per added note: minutes on a full song. Visiting cells largest first gives
+// the same notes in the same order: a cell is only ever zeroed, so the next one still above threshold is the running
+// maximum. Ties break as the original's argmax does: earliest frame, then highest pitch, (0, 0) first in frame 0.
+export function decode(bp, frames, onsets, minNoteLen) {
+  const T = 0.3, TOL = 11, nFrames = frames.length
+  const notes = bp.outputToNotesPoly(frames, onsets, 0.5, T, minNoteLen, true, null, null, false, TOL)
+  const energy = frames.map(r => r.slice())
+  const clear = (i, f) => { energy[i][f] = 0; if (f < 87) energy[i][f + 1] = 0; if (f > 0) energy[i][f - 1] = 0 }
+  for (const n of notes) for (let i = n.startFrame; i < n.startFrame + n.durationFrames; i++) clear(i, n.pitchMidi - 21)
+  const cells = []
+  for (let i = 0; i < nFrames; i++) for (let f = 0; f < 88; f++) if (energy[i][f] > T) cells.push(i * 88 + f)
+  const v = c => energy[c / 88 | 0][c % 88]
+  cells.sort((a, b) => v(b) - v(a) || (a / 88 | 0) - (b / 88 | 0) || (a === 0 ? -1 : b === 0 ? 1 : b - a))
+  for (const c of cells) {
+    const iMid = c / 88 | 0, f = c % 88
+    if (energy[iMid][f] <= T) continue
+    energy[iMid][f] = 0
+    let i = iMid + 1, k = 0
+    while (i < nFrames - 1 && k < TOL) { k = energy[i][f] < T ? k + 1 : 0; clear(i, f); i++ }
+    const iEnd = i - 1 - k
+    i = iMid - 1; k = 0
+    while (i > 0 && k < TOL) { k = energy[i][f] < T ? k + 1 : 0; clear(i, f); i-- }
+    const iStart = i + 1 + k
+    if (iEnd - iStart <= minNoteLen) continue
+    let sum = 0
+    for (let j = iStart; j < iEnd; j++) sum += frames[j][f]
+    notes.push({ startFrame: iStart, durationFrames: iEnd - iStart, pitchMidi: f + 21, amplitude: sum / (iEnd - iStart) })
+  }
+  return notes
+}
+
+// the model's output for the last file: a new tempo, key, grid or minimum note reuses it. One inference at a time:
+// an option changed mid-run starts a second run in this worker, and TensorFlow.js scopes are one stack, not one per run.
+let last = null, queue = Promise.resolve()
+const fingerprint = (x, fs) => { let s = 0; for (let i = 0; i < x.length; i += 997) s += x[i] * (i % 7 + 1); return fs + ':' + x.length + ':' + s }
+
+async function polyNotes(mono, fs, minMs, ui) {
+  ui.status('Loading Basic Pitch…')
+  const { bp, tf, polyphase, model } = await basicPitch()
+  const id = fingerprint(mono, fs)
+  const run = queue.then(async () => {
+    if (last?.id === id) return last
+    const backend = tf.getBackend() === 'webgl' ? 'WebGL' : tf.getBackend().toUpperCase()
+    ui.status('Listening for notes with Basic Pitch on ' + backend + '…'); await tick()
+    const t0 = performance.now(), x = fs === SR ? mono : polyphase(mono, { from: fs, to: SR })
+    const frames = [], onsets = []
+    tf.engine().startScope()   // Basic Pitch leaves its per-window tensors to the caller
+    try { await model.evaluateModel(x, (f, o) => { frames.push(...f); onsets.push(...o) }, p => ui.progress(p)) }
+    finally { tf.engine().endScope() }
+    return last = { id, frames, onsets, backend, secs: (performance.now() - t0) / 1000 }
+  })
+  queue = run.catch(() => {})
+  const out = await run
+  ui.status('Reading notes…'); await tick()
+  const notes = bp.noteFramesToTime(decode(bp, out.frames, out.onsets, Math.round(minMs / 1000 * SR / HOP)))
+    .map(n => ({ time: n.startTimeSeconds, duration: n.durationSeconds, midi: n.pitchMidi, velocity: n.amplitude }))
+    .sort((a, b) => a.time - b.time || a.midi - b.midi)
+  return { notes, backend: out.backend, secs: out.secs }
+}
+
+// most notes sounding at once
+function polyphony(notes) {
+  const ev = notes.flatMap(n => [[n.time, 1], [n.time + n.duration, -1]]).sort((a, b) => a[0] - b[0] || a[1] - b[1])
+  let on = 0, max = 0
+  for (const [, d] of ev) max = Math.max(max, on += d)
+  return max
+}
+
+// piano roll: a row per semitone, black-key rows shaded, C rows ruled and named, stronger notes brighter
+function roll(notes, dur) {
+  const W = 1344, midis = notes.map(n => n.midi)
+  const lo = Math.max(21, Math.min(...midis) - 2), hi = Math.min(108, Math.max(...midis) + 2), rows = hi - lo + 1
+  const rowH = Math.max(4, Math.min(20, Math.floor(560 / rows))), H = rows * rowH
+  const canvas = new OffscreenCanvas(W, H), ctx = canvas.getContext('2d')
+  const x = t => t / dur * W, y = m => (hi - m) * rowH
+  ctx.fillStyle = '#0d1014'; ctx.fillRect(0, 0, W, H)
+  for (let m = lo; m <= hi; m++) {
+    if ([1, 3, 6, 8, 10].includes(m % 12)) { ctx.fillStyle = 'rgba(237,235,228,.05)'; ctx.fillRect(0, y(m), W, rowH) }
+    if (m % 12 === 0) { ctx.fillStyle = 'rgba(237,235,228,.22)'; ctx.fillRect(0, y(m) + rowH - 1, W, 1) }
+  }
+  for (const n of notes) {
+    ctx.fillStyle = 'rgba(0,164,184,' + (0.4 + 0.6 * Math.min(1, n.velocity)).toFixed(2) + ')'
+    ctx.fillRect(x(n.time), y(n.midi) + 1, Math.max(2, x(n.duration)), Math.max(2, rowH - 2))
+  }
+  ctx.fillStyle = 'rgba(237,235,228,.8)'; ctx.font = '600 22px Manrope, sans-serif'
+  for (let m = lo; m <= hi; m++) if (m % 12 === 0) ctx.fillText('C' + (m / 12 - 1), 10, y(m) + rowH - 6)
+  return { width: W, height: H, data: ctx.getImageData(0, 0, W, H).data }
+}
 
 export default async function process(a, o, ui) {
-  const fs = a.sampleRate
+  const fs = a.sampleRate, poly = o.mode !== 'mono'
   const n = a.channelData[0].length, mono = new Float32Array(n)
   for (const ch of a.channelData) for (let i = 0; i < n; i++) mono[i] += ch[i] / a.channelData.length
 
   let bpm, tempoAuto = !o.tempo, tempoConfidence = null
   if (!tempoAuto) bpm = +o.tempo
   else {
-ui.status('Tracking the beat…'); await new Promise(r => setTimeout(r, 20))
+ui.status('Tracking the beat…'); await tick()
 const { detect } = await beatLib
 const b = detect(mono.subarray(0, Math.min(n, fs * 90)), { fs })
 bpm = Math.round(b.bpm); tempoConfidence = b.confidence
   }
 
-  ui.status('Listening for notes…'); await new Promise(r => setTimeout(r, 20))
   const { transcribe, chroma, key } = await mirLib
-  const minDuration = (+o.minNote || 80) / 1000
-  const notes = transcribe(mono, { fs, minDuration })
-  if (!notes.length) throw Error('No notes detected. Try a shorter minimum note length, or a file with a single clear melody line.')
+  const minMs = +o.minNote || (poly ? 128 : 80)
+  let notes, engine = null
+  if (poly) ({ notes, ...engine } = await polyNotes(mono, fs, minMs, ui))
+  else { ui.status('Listening for notes…'); await tick(); notes = transcribe(mono, { fs, minDuration: minMs / 1000 }) }
+  if (!notes.length) throw Error('No notes detected. Try a shorter minimum note length' + (poly ? '.' : ', or Polyphonic mode.'))
 
   let keyStr, keyAuto = !o.key || o.key === 'auto', keyConfidence = null
   if (keyAuto) {
@@ -42,14 +146,18 @@ keyStr = (k.mode === 'minor' ? MINOR : MAJOR)[k.tonic]
 keyConfidence = k.confidence
   } else keyStr = o.key
 
-  const quantize = +o.quantize || 0
+  // the scores need a grid (the MIDI file keeps every note as heard, unquantized)
+  const quantize = +o.quantize || 16
   const { write } = await midiLib
   const smf = write(notes, { bpm })
   const { default: writeMusicxml, toAbc } = await musicxmlLib
-  const xml = writeMusicxml(notes, { bpm, key: keyStr, quantize, title: 'Transcription' })
-  const abc = toAbc(notes, { bpm, key: keyStr, quantize })
+  // every note, those that overlap as voices on one staff
+  // a transcription's onsets on the grid alone: triplets would read its timing errors as rhythm
+  const scoreOpts = { bpm, key: keyStr, quantize, title: 'Transcription', ...(poly && { triplets: false }) }
+  const xml = writeMusicxml(notes, scoreOpts)
+  const abc = toAbc(notes, scoreOpts)
 
-  ui.status('Rendering the transcription…'); await new Promise(r => setTimeout(r, 20))
+  ui.status('Rendering the transcription…'); await tick()
   const render = (await renderLib).default
   const rendered = render(smf, { fs })
 
@@ -60,20 +168,26 @@ keyConfidence = k.confidence
   const lines = abc.split('\n')
   let kIdx = 0
   for (let i = 0; i < lines.length; i++) if (lines[i].indexOf('K:') === 0) { kIdx = i; break }
-  const body = lines.slice(kIdx + 1).join(' ')
-  const closeAt = body.lastIndexOf('|]')
-  const trimmedBody = (closeAt >= 0 ? body.slice(0, closeAt) : body).trim()
-  const barTokens = trimmedBody.split('|').map(s => s.trim()).filter(Boolean)
-  const bars = barTokens.slice(0, 8).join(' | ') + (barTokens.length > 8 ? ' …' : '')
+  // each voice's first bars, a line each, the first four voices (each voice's bars come after its V: line)
+  const voices = []
+  for (const l of lines.slice(kIdx + 1)) if (/^V:/.test(l)) voices.push(''); else if (l.trim() && !/^%%/.test(l)) voices.length ? voices[voices.length - 1] += ' ' + l : voices.push(l)
+  const first = (body, k) => {
+    const closeAt = body.lastIndexOf('|]'), tokens = (closeAt >= 0 ? body.slice(0, closeAt) : body).split('|').map(s => s.trim()).filter(Boolean)
+    return tokens.slice(0, k).join(' | ') + (tokens.length > k ? ' …' : '')
+  }
+  const bars = voices.length > 1 ? voices.slice(0, 4).map((v, i) => 'V' + (i + 1) + ': ' + first(v, 4)).concat(voices.length > 4 ? ['+ ' + (voices.length - 4) + ' more voices'] : []) : [first(voices[0] ?? '', 8)]
 
   return {
 report: [
   { k: 'Notes found', v: String(notes.length) },
+  ...(poly ? [{ k: 'Most at once', v: polyphony(notes) + '<small>notes</small>' }] : []),
   { k: 'Tempo used', v: bpm + '<small>BPM</small>', note: tempoAuto && (tempoConfidence < 0.4 ? 'Detected automatically, low confidence — set it manually if the notes look mistimed.' : 'Detected automatically from the beat.') },
   { k: 'Key', v: keyLabel(keyStr) + (keyAuto ? '<small>' + Math.round(keyConfidence * 100) + '% sure</small>' : ''), note: keyAuto && 'Detected from chroma frames over the first two minutes; used to spell the notation.' },
   { k: 'Pitch range', v: name(lo) + '–' + name(hi) },
-  { k: 'First bars', cls: 'list wide', v: '<code>' + esc(bars) + '</code>', note: 'ABC notation. Polyphonic recognition is approximate: best on monophonic melodies, piano and clean guitar. For a full mix, use an ML transcription tool instead.' },
+  ...(poly ? [{ k: 'Basic Pitch took', v: engine.secs.toFixed(1) + '<small>s on ' + engine.backend + '</small>', note: engine.backend !== 'WebGL' && 'WebGL is not available here, so the model ran on the CPU, which is slower.' }] : []),
+  { k: 'First bars', cls: 'list wide', v: '<code>' + bars.map(esc).join('<br>') + '</code>', note: poly ? 'ABC notation, a line for each voice. The scores keep every note: notes that overlap are written as voices on one staff.' : 'ABC notation. Melody mode keeps one note at a time; for chords, switch to Polyphonic.' },
 ],
+viz: roll(notes, n / fs),
 audio: { channelData: rendered.channelData, sampleRate: rendered.sampleRate },
 files: [
   { name: 'transcription.mid', data: smf, mime: 'audio/midi', label: 'Save MIDI' },

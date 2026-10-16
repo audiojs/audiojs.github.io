@@ -1,7 +1,7 @@
 /* audiojs utilities — shared shell */
 :root {
   --c-ink: #0d1014; --c-paper: #edebe4; --c-bg: #f1efe9; --c-accent: #00a4b8; --c-mute: #6b6f73; --c-rule: #d6d3cb; --c-err: #b3261e; --c-ok: #1f7a4d;
-  --f-body: 'Manrope', system-ui, sans-serif; --f-logo: 'Orbitron', sans-serif; --f-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --f-body: 'Manrope', system-ui, sans-serif; --f-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --fs-xs: clamp(12px, 1.5vw, 14px); --fs-sm: clamp(14px, 1.7vw, 16px); --fs-md: clamp(16px, 2vw, 19px); --fs-lg: clamp(22px, 3vw, 30px); --fs-xl: clamp(32px, 5vw, 48px);
 }
 * { box-sizing: border-box; }
@@ -11,15 +11,6 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
 a { color: inherit; }
 code { font-family: var(--f-mono); font-size: .92em; }
 .inner { max-width: 720px; margin: 0 auto; padding: 0 24px; }
-
-.top { background: var(--c-ink); color: var(--c-paper); padding: 18px 0; }
-.top .inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.brand { display: inline-flex; align-items: flex-end; gap: 6px; text-decoration: none; }
-.brand .name { font-family: var(--f-logo); font-weight: 600; font-size: 22px; line-height: .8; letter-spacing: -.02em; }
-.brand .js { border: 1px solid var(--c-paper); padding: 2px 3px; font-weight: 600; font-size: 13px; line-height: .85; letter-spacing: -.02em; color: transparent; -webkit-text-stroke: .06em var(--c-paper); }
-.top nav { font-size: var(--fs-xs); font-weight: 500; opacity: .8; }
-.top nav a { text-decoration: none; }
-.top nav a:hover { opacity: 1; text-decoration: underline; }
 
 .hero { padding: 56px 0 16px; text-align: center; }
 .hero h1 { font-weight: 800; font-size: var(--fs-xl); letter-spacing: -.03em; line-height: 1.05; }
@@ -120,6 +111,7 @@ footer a:hover { text-decoration: underline; }
 .faq summary::after { content: '+'; flex: none; color: var(--c-mute); font-weight: 500; transition: transform .25s ease; }
 .faq details[open] summary::after { content: '−'; }
 .faq summary:hover, .faq summary:focus-visible { color: var(--c-accent); outline: none; }
+.faq summary:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 2px; }
 /* unfold: height via ::details-content where supported (Chromium 131+), a short fade/slide of the answer everywhere */
 .faq details::details-content { block-size: 0; overflow: clip; transition: block-size .25s ease, content-visibility .25s allow-discrete; }
 .faq details[open]::details-content { block-size: auto; }

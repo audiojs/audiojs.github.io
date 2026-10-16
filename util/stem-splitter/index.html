@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stem splitter: separate vocals, drums, bass and other from a song, free, in your browser · audiojs</title>
+  <meta name="description" content="Split a song into vocals, drums, bass and other stems with a trained model (SCNet) running in your browser. Make a karaoke track, isolate an instrument, rebalance the mix, save WAV, FLAC or MP3. No upload; the 13 MB model downloads once.">
+  <meta name="theme-color" content="#0d1014">
+  <!-- cross-origin isolated (util/isolate.js), so the model runs on threads: the first visit reloads once the worker is in
+       control, unless the reader has reached for the page already (a file dropped or chosen is never lost to a reload:
+       threads from the next visit); a browser without COEP credentialless stays on one thread -->
+  <script>
+    if (!crossOriginIsolated && isSecureContext && navigator.serviceWorker && !navigator.serviceWorker.controller) {
+      let touched = false
+      for (const type of ['pointerdown', 'keydown', 'drop', 'paste']) addEventListener(type, () => touched = true, { capture: true, once: true })
+      navigator.serviceWorker.addEventListener('controllerchange', () => touched || location.reload(), { once: true })
+      navigator.serviceWorker.register('/util/isolate.js', { scope: './' }).catch(() => {})
+    }
+  </script>
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/stem-splitter/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/stem-splitter/">
+  <meta property="og:title" content="Stem splitter: separate vocals, drums, bass and other from a song, free, in your browser">
+  <meta property="og:description" content="Split a song into vocals, drums, bass and other stems with a trained model (SCNet) running in your browser. Make a karaoke track, isolate an instrument, rebalance the mix, save WAV, FLAC or MP3. No upload; the 13 MB model downloads once.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/stem-splitter/#app",
+        "name": "Stem splitter",
+        "url": "https://audiojs.dev/util/stem-splitter/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Split a song into vocals, drums, bass and other stems with a trained model (SCNet) running in your browser. Make a karaoke track, isolate an instrument, rebalance the mix, save WAV, FLAC or MP3. No upload; the 13 MB model downloads once.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/",
+          "logo": "https://audiojs.dev/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/neural"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Stem splitter",
+            "item": "https://audiojs.dev/util/stem-splitter/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is my song uploaded?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The song is decoded, separated and encoded in this tab. What travels over the network is the model: SCNet's weights (13 MB, or 45 MB for SCNet-large) from huggingface.co, fetched once and kept in the browser's cache, and ONNX Runtime from jsDelivr."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is this Demucs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. It runs SCNet, a different network (Tong et al., ICASSP 2024). On the 50 MUSDB18 test previews, SCNet-large's median SDR is 11.00 dB for vocals, 10.27 drums, 8.21 bass and 6.87 other, against Hybrid Transformer Demucs's 8.86, 9.55, 9.30 and 5.69: cleaner on three stems, behind on bass. Demucs's weights are licensed for research only, so this page does not ship them."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How long does it take?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "It depends on the graphics card more than anything. In Chromium on an Apple M4 Max, SCNet split a 4-minute song in 73 seconds on the GPU (WebGPU) and in 6 minutes 45 seconds on one CPU thread. SCNet-large took 2.1 seconds per second of audio on the GPU. The page shows an estimate before you start and the time left while it runs."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What if my browser has no WebGPU?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The model runs on the CPU through WebAssembly: the same result, several times slower. Firefox 148 and Chromium ran SCNet at the same pace on both paths. A browser without WebAssembly SIMD (before Chrome 91, Firefox 89, Safari 16.4) cannot run it, and the page says so."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do the stems add back to the song?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Very nearly. SCNet takes the song's mean out before it listens and gives it to no stem, and nothing forces its four stems to add up: on the test files here they summed to the song less its DC offset, give or take 38 to 43 dB under it. The mix you save loses nothing: it is the song plus each stem's change, so with every stem at 0 dB it is the song itself."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How much memory does it need?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "In Chromium, a 4-minute song took about 2 GB on top of the idle browser with SCNet on the GPU and 2.5 GB on the CPU; SCNet-large on the CPU took 3 GB for 10 seconds. Very long files can exhaust a tab: split them into parts."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use the stems commercially?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The model weights are MIT-licensed: SCNet's author confirmed it for the released checkpoints. They were trained on MUSDB18-HQ, whose licence covers educational use, and whether that reaches a model trained on it is unsettled. The song's own copyright is unchanged by splitting it."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/bar.css?v=4e6dabc4">
+  <link rel="stylesheet" href="/util/util.css?v=a794f8f2">
+  <link rel="modulepreload" href="/util/util.js?v=a1dc8e25">
+</head>
+<body>
+  <header class="site-bar">
+    <a class="site-brand" href="/" aria-label="audiojs home"><svg aria-hidden="true" viewBox="0 5 90.4 17" fill="currentColor"><path d="M4.2 22Q3.3 22 2.7 21.6Q2 21.2 1.6 20.5Q1.1 19.8 1.1 19V14.2H11.2V12.4Q11.2 12.3 11.1 12.2Q11.1 12.1 10.9 12.1H1.1V9.2H11.1Q11.9 9.2 12.6 9.7Q13.3 10.1 13.7 10.8Q14.1 11.4 14.1 12.3V22ZM4.3 19.1H11.2V16.8H4V18.9Q4 19 4.1 19Q4.2 19.1 4.3 19.1ZM19 22Q18.2 22 17.5 21.6Q16.8 21.2 16.4 20.5Q16 19.8 16 19V9.2H18.9V18.9Q18.9 19 19 19Q19 19.1 19.1 19.1H25.8Q25.9 19.1 26 19Q26.1 19 26.1 18.9V9.2H29V19Q29 19.8 28.5 20.5Q28.1 21.2 27.4 21.6Q26.8 22 25.9 22H19ZM33.2 22Q32.4 22 31.7 21.6Q31 21.2 30.6 20.5Q30.2 19.8 30.2 19V12.3Q30.2 11.4 30.6 10.8Q31 10.1 31.7 9.7Q32.4 9.2 33.2 9.2H40.3V5.1H43.2V22H33.2ZM33.4 19.1H40Q40.1 19.1 40.2 19Q40.3 19 40.3 18.9V12.4Q40.3 12.3 40.2 12.2Q40.1 12.1 40 12.1H33.4Q33.2 12.1 33.2 12.2Q33.1 12.3 33.1 12.4V18.9Q33.1 19 33.2 19Q33.2 19.1 33.4 19.1ZM45.1 22V9.2H47.9V22ZM45.1 8V5.1H47.9V8ZM52.5 22Q51.7 22 51 21.6Q50.3 21.2 49.9 20.5Q49.5 19.8 49.5 19V12.3Q49.5 11.4 49.9 10.8Q50.3 10.1 51 9.7Q51.7 9.2 52.5 9.2H59.4Q60.2 9.2 60.9 9.7Q61.6 10.1 62 10.8Q62.4 11.4 62.4 12.3V19Q62.4 19.8 62 20.5Q61.6 21.2 60.9 21.6Q60.2 22 59.4 22H52.5ZM52.6 19.1H59.3Q59.4 19.1 59.5 19Q59.5 19 59.5 18.9V12.4Q59.5 12.3 59.5 12.2Q59.4 12.1 59.3 12.1H52.6Q52.5 12.1 52.4 12.2Q52.4 12.3 52.4 12.4V18.9Q52.4 19 52.4 19Q52.5 19.1 52.6 19.1Z"/><path d="M75.1 18.4Q74.1 18.4 73.4 17.8Q72.7 17.3 72.4 16.4L73.8 16Q73.9 16.5 74.3 16.8Q74.6 17.1 75.1 17.1Q75.4 17.1 75.7 16.9Q76.1 16.8 76.2 16.4Q76.3 16.2 76.4 15.9Q76.4 15.6 76.4 15.2V8.8H77.7V15.2Q77.7 15.6 77.7 15.9Q77.7 16.2 77.7 16.5Q77.6 16.8 77.4 17.1Q77.1 17.8 76.5 18.1Q75.9 18.4 75.1 18.4ZM82.8 18.4Q81.8 18.4 81 18Q80.2 17.7 79.7 17Q79.2 16.4 79 15.5L80.4 15.3Q80.6 16.1 81.3 16.6Q82 17.1 82.9 17.1Q83.5 17.1 84 16.9Q84.4 16.7 84.7 16.4Q85 16.1 85 15.6Q85 15.3 84.9 15.1Q84.8 14.9 84.7 14.8Q84.5 14.7 84.3 14.6Q84.1 14.4 83.8 14.4L81.4 13.7Q81.1 13.6 80.7 13.4Q80.4 13.2 80.1 13Q79.7 12.7 79.6 12.3Q79.4 11.9 79.4 11.3Q79.4 10.4 79.8 9.8Q80.3 9.2 81 8.9Q81.8 8.6 82.7 8.6Q83.7 8.6 84.4 9Q85.2 9.3 85.7 9.9Q86.2 10.5 86.4 11.4L84.9 11.6Q84.8 11.1 84.5 10.7Q84.2 10.3 83.7 10.1Q83.2 9.9 82.7 9.9Q82.2 9.9 81.8 10.1Q81.3 10.2 81.1 10.5Q80.8 10.8 80.8 11.2Q80.8 11.6 81 11.9Q81.3 12.1 81.6 12.3Q81.9 12.4 82.3 12.5L84 13Q84.3 13.1 84.7 13.2Q85.1 13.4 85.5 13.6Q85.9 13.9 86.2 14.4Q86.4 14.8 86.4 15.5Q86.4 16.2 86.1 16.7Q85.9 17.3 85.4 17.6Q84.9 18 84.2 18.2Q83.6 18.4 82.8 18.4Z" fill="none" stroke="currentColor" stroke-width=".8"/><rect x="68.9" y="5.5" width="21" height="16" fill="none" stroke="currentColor"/></svg></a>
+    <nav aria-label="audiojs"><a href="/util/" aria-current="true">Utilities</a><a href="/lab/">Lab</a><a href="/audio/">audio</a><a href="/audio/playground.html">Playground</a><a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a></nav>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Stem splitter</h1>
+      <p>Drop a song. A trained model splits it into vocals, drums, bass and other: listen to each, mute, solo, rebalance, save.</p>
+    </section>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+      <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
+      <div class="t">Drop a song here</div>
+      <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+      <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
+    </div>
+    <form class="opts" id="opts">
+      <label>Model <select name="model">
+        <option value="scnet" selected>SCNet · 13 MB · fast</option>
+        <option value="scnet-large">SCNet-large · 45 MB · cleaner, slower</option>
+      </select></label>
+    </form>
+    <p class="hint" id="hint" aria-live="polite"></p>
+    <section class="panel" id="panel" hidden>
+      <div class="row">
+        <div class="file"><div class="n" id="name"></div><div class="m" id="meta"></div></div>
+        <button class="btn ghost" id="reset" type="button">Another file</button>
+      </div>
+      <div class="row" id="plan" hidden aria-live="polite">
+        <div class="status" id="planText"></div>
+        <button class="btn" id="start" type="button">Split into stems</button>
+      </div>
+      <div class="row" id="progress" hidden>
+        <div class="status" id="status" role="status"></div>
+        <button class="btn ghost" id="cancel" type="button" hidden>Cancel</button>
+        <div class="bar" id="bar" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+      </div>
+      <div class="row report" id="report" hidden></div>
+      <div id="mixer" hidden>
+        <div class="row transport">
+          <button class="btn" id="play" type="button" aria-label="Play">Play</button>
+          <span class="time" id="time">0:00 / 0:00</span>
+          <input type="range" id="seek" min="0" max="1" step="0.01" value="0" aria-label="Position">
+        </div>
+        <div id="stems"></div>
+        <div class="row out">
+          <label class="fmt">Format <select id="fmt"></select></label>
+          <span class="spacer"></span>
+          <a class="btn" id="saveMix" href="#">Save the mix</a>
+          <div class="note" id="mixNote" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+    <style>
+      #opts label { min-width: 0; max-width: 100%; } #opts select { min-width: 0; max-width: 100%; text-overflow: ellipsis; }
+      .hint { margin-top: 12px; min-height: 1.4em; font-size: var(--fs-xs); font-weight: 500; color: var(--c-mute); text-align: center; }
+      #plan .status { min-width: min(100%, 16em); }
+      .transport { gap: 12px; }
+      .transport .time { font-variant-numeric: tabular-nums; font-size: var(--fs-sm); font-weight: 600; min-width: 7.5em; }
+      .transport input { flex: 1 1 160px; min-width: 0; accent-color: var(--c-accent); }
+      .stem { display: grid; grid-template-columns: 4.2em minmax(0, 1fr) auto auto 7.5em 4.6em auto; grid-template-areas: "name wave mute solo level db save"; align-items: center; gap: 8px 10px; padding: 10px 20px; border-top: 1px solid var(--c-rule); }
+      .stem .name { grid-area: name; font-weight: 700; font-size: var(--fs-sm); }
+      .stem .wave { grid-area: wave; position: relative; height: 36px; cursor: pointer; }
+      .stem canvas { display: block; width: 100%; height: 100%; }
+      .stem .head { position: absolute; top: 0; bottom: 0; left: 0; width: 2px; margin-left: -1px; background: var(--c-accent); pointer-events: none; }
+      .stem.silent .wave, .stem.silent .name { opacity: .35; }
+      .stem .tog { width: 32px; height: 32px; padding: 0; border: 1px solid var(--c-rule); border-radius: 6px; background: #fff; font-weight: 700; cursor: pointer; }
+      .stem .tog:nth-of-type(1) { grid-area: mute; } .stem .tog:nth-of-type(2) { grid-area: solo; }
+      .stem .tog[aria-pressed="true"] { background: var(--c-ink); color: var(--c-paper); border-color: var(--c-ink); }
+      .stem input { grid-area: level; width: 100%; min-width: 0; accent-color: var(--c-accent); }
+      .stem output { grid-area: db; font-size: var(--fs-xs); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+      .stem .save { grid-area: save; padding: 6px 12px; }
+      .stem button:focus-visible, .transport button:focus-visible, #mixer a:focus-visible, #plan button:focus-visible, #cancel:focus-visible, .stem input:focus-visible, .transport input:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+      #mixer .out { border-top: 1px solid var(--c-rule); }
+      #mixer .note { flex-basis: 100%; font-size: var(--fs-xs); font-weight: 500; color: var(--c-err); }
+      #mixer .note:empty { display: none; }
+      .btn.busy { opacity: .6; cursor: progress; }
+      @media (max-width: 560px) {
+        .stem { grid-template-columns: minmax(0, 1fr) auto auto auto; grid-template-areas: "name mute solo save" "wave wave wave wave" "level level level db"; padding: 12px 16px; }
+      }
+    </style>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://www.npmjs.com/package/@audio/neural-separate" target="_blank" rel="noopener"><code>@audio/neural-separate</code></a>, <a href="https://www.npmjs.com/package/@audio/decode" target="_blank" rel="noopener"><code>@audio/decode</code></a>, <a href="https://www.npmjs.com/package/@audio/encode" target="_blank" rel="noopener"><code>@audio/encode</code></a>.</p>
+    <section class="seo">
+      <h2>Stems from a song, in the browser</h2>
+      <p>This page runs <a href="https://github.com/starrytong/SCNet" target="_blank" rel="noopener">SCNet</a>, a music source separation network, through <code>@audio/neural-separate</code> and <a href="https://onnxruntime.ai/docs/tutorials/web/" target="_blank" rel="noopener">ONNX Runtime Web</a>. Drop a song and it comes back as four tracks: vocals, drums, bass and everything else. Play them together, mute or solo any of them, move their levels, and save each stem or the new mix as WAV, FLAC or MP3. Nothing is uploaded.</p>
+      <h3>What it is good for</h3>
+      <ul>
+        <li><strong>Karaoke from an MP3</strong>: mute the vocals and save the mix. For vocals only, the <a href="/util/vocal-remover/">vocal remover</a> does it in one step and offers a larger vocals model.</li>
+        <li><strong>Practice</strong>: solo the bass or the drums to learn a part, or mute your own instrument and play along.</li>
+        <li><strong>Remixing and sampling</strong>: an a cappella, a drum break, a bass line, each as its own file.</li>
+        <li><strong>Rebalancing</strong>: the vocals 3 dB up in a mix that buries them, the drums down for a quieter room.</li>
+        <li><strong>A voice from under the music</strong>: the vocals stem keeps singing or speech and drops the music behind it. For speech under traffic, wind or hum, the <a href="/util/denoise/">noise remover</a> fits better.</li>
+      </ul>
+      <h3>Two models</h3>
+      <p>SCNet splits the spectrum into bands and models the low ones in more detail than the high ones, with LSTMs running along time and frequency. Both sizes were trained on MUSDB18-HQ by SCNet's authors; @audio/neural-separate runs their checkpoints with 8-bit weights, within 0.05 dB of the originals' median scores. Median SDR on the 50 MUSDB18 test previews (higher is cleaner):</p>
+      <ul>
+        <li><strong>SCNet</strong> (13 MB): vocals 9.88 dB, drums 9.43, bass 8.35, other 6.15.</li>
+        <li><strong>SCNet-large</strong> (45 MB): vocals 11.00 dB, drums 10.27, bass 8.21, other 6.87. On the same songs iZotope RX 12 Music Rebalance at its Best setting scores 10.89, 9.85, 9.66 and 6.45.</li>
+      </ul>
+      <p>The model hears the song in 11-second parts, each overlapping the next by half, and blends them. It is not perfect: reverb tails and backing vocals can leak between stems, and an electronic bass may land in other.</p>
+      <h3>References</h3>
+      <ul>
+        <li>W. Tong et al., <a href="https://arxiv.org/abs/2401.13276" target="_blank" rel="noopener">SCNet: Sparse Compression Network for Music Source Separation</a>, ICASSP 2024. Code and weights: <a href="https://github.com/starrytong/SCNet" target="_blank" rel="noopener">starrytong/SCNet</a> (MIT; the weights' licence confirmed in <a href="https://github.com/starrytong/SCNet/issues/35" target="_blank" rel="noopener">issue #35</a>), configs hosted by <a href="https://github.com/ZFTurbo/Music-Source-Separation-Training" target="_blank" rel="noopener">ZFTurbo/Music-Source-Separation-Training</a>.</li>
+        <li>S. Rouard, F. Massa, A. Défossez, <a href="https://arxiv.org/abs/2211.08553" target="_blank" rel="noopener">Hybrid Transformers for Music Source Separation</a>, ICASSP 2023 (HT Demucs); its weights' terms in <a href="https://github.com/facebookresearch/demucs/issues/327" target="_blank" rel="noopener">demucs#327</a>.</li>
+        <li>Z. Rafii, A. Liutkus, F.-R. Stöter, S. I. Mimilakis, R. Bittner, <a href="https://sigsep.github.io/datasets/musdb.html" target="_blank" rel="noopener">The MUSDB18 corpus for music separation</a>, 2017.</li>
+        <li>F.-R. Stöter, A. Liutkus, N. Ito, <a href="https://arxiv.org/abs/1804.06267" target="_blank" rel="noopener">The 2018 Signal Separation Evaluation Campaign</a>, LVA/ICA 2018: SDR by BSSEval v4, the median over 1-second windows, then over songs.</li>
+        <li>Every score above, and the 8-bit weights: <a href="https://github.com/audiojs/neural/tree/main/packages/neural-separate" target="_blank" rel="noopener">@audio/neural-separate's README</a>.</li>
+      </ul>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Is my song uploaded?</summary><p>No. The song is decoded, separated and encoded in this tab. What travels over the network is the model: SCNet's weights (13 MB, or 45 MB for SCNet-large) from huggingface.co, fetched once and kept in the browser's cache, and ONNX Runtime from jsDelivr.</p></details>
+        <details><summary>Is this Demucs?</summary><p>No. It runs SCNet, a different network (Tong et al., ICASSP 2024). On the 50 MUSDB18 test previews, SCNet-large's median SDR is 11.00 dB for vocals, 10.27 drums, 8.21 bass and 6.87 other, against Hybrid Transformer Demucs's 8.86, 9.55, 9.30 and 5.69: cleaner on three stems, behind on bass. Demucs's weights are licensed for research only, so this page does not ship them.</p></details>
+        <details><summary>How long does it take?</summary><p>It depends on the graphics card more than anything. In Chromium on an Apple M4 Max, SCNet split a 4-minute song in 73 seconds on the GPU (WebGPU) and in 6 minutes 45 seconds on one CPU thread. SCNet-large took 2.1 seconds per second of audio on the GPU. The page shows an estimate before you start and the time left while it runs.</p></details>
+        <details><summary>What if my browser has no WebGPU?</summary><p>The model runs on the CPU through WebAssembly: the same result, several times slower. Firefox 148 and Chromium ran SCNet at the same pace on both paths. A browser without WebAssembly SIMD (before Chrome 91, Firefox 89, Safari 16.4) cannot run it, and the page says so.</p></details>
+        <details><summary>Do the stems add back to the song?</summary><p>Very nearly. SCNet takes the song's mean out before it listens and gives it to no stem, and nothing forces its four stems to add up: on the test files here they summed to the song less its DC offset, give or take 38 to 43 dB under it. The mix you save loses nothing: it is the song plus each stem's change, so with every stem at 0 dB it is the song itself.</p></details>
+        <details><summary>How much memory does it need?</summary><p>In Chromium, a 4-minute song took about 2 GB on top of the idle browser with SCNet on the GPU and 2.5 GB on the CPU; SCNet-large on the CPU took 3 GB for 10 seconds. Very long files can exhaust a tab: split them into parts.</p></details>
+        <details><summary>Can I use the stems commercially?</summary><p>The model weights are MIT-licensed: SCNet's author confirmed it for the released checkpoints. They were trained on MUSDB18-HQ, whose licence covers educational use, and whether that reaches a model trained on it is unsettled. The song's own copyright is unchanged by splitting it.</p></details>
+      </section>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI converter</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/tone-generator/">Tone generator</a></li>
+          <li><a href="/util/prosody/">Speech prosody editor</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+          <li><a href="/util/latency/">Audio latency test</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/audiojs/neural" target="_blank" rel="noopener">source</a> · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a1dc8e25'
+    (async function stemSplitter(worker, { UTIL, SEPARATE, MODELS, STEMS }) {
+  const { decodeFile, chLabel } = await import(UTIL)
+  const form = $('opts'), select = form.elements.model, hint = $('hint')
+  const panel = $('panel'), name = $('name'), meta = $('meta'), reset = $('reset')
+  const plan = $('plan'), planText = $('planText'), start = $('start')
+  const progress = $('progress'), status = $('status'), bar = $('bar'), cancel = $('cancel')
+  const report = $('report'), mixer = $('mixer'), play = $('play'), time = $('time'), seek = $('seek'), rows = $('stems')
+  const fmt = $('fmt'), saveMix = $('saveMix'), mixNote = $('mixNote')
+  const LABEL = { vocals: 'Vocals', drums: 'Drums', bass: 'Bass', other: 'Other' }
+
+  // ONNX Runtime Web ships SIMD builds only: no WebAssembly SIMD, no model
+  const simd = WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]))
+  let gpu = false
+  const ready = (async () => {
+    const a = await navigator.gpu?.requestAdapter().catch(() => null)
+    gpu = !!a && !a.info?.isFallbackAdapter && a.info?.architecture !== 'swiftshader'
+    hint.textContent = !simd ? 'This browser cannot run the model: it lacks WebAssembly SIMD, which Chrome 91, Firefox 89 and Safari 16.4 and later have.'
+      : gpu ? 'This browser has WebGPU: the model runs on the graphics card.'
+      : 'This browser has no WebGPU: the model runs on the CPU, several times slower.'
+  })()
+  for (const k of ['wav', 'flac', 'mp3']) fmt.append(el('option', { value: k }, FORMATS[k].label))
+
+  let file = null, audio = null, job = null, runs = 0, done = null, bufs = null, peak = 1
+  const zone = dropzone($('drop'), $('file'), load)
+  const model = () => select.value
+  const mb = n => (n / 1e6).toFixed(n < 1e8 ? 1 : 0) + ' MB'
+  const about = s => s < 90 ? Math.round(s) + ' s' : Math.round(s / 60) + ' min'
+
+  // the hosted file's URL as @audio/neural-separate builds it, and whether the browser's cache holds it
+  async function cached(m) {
+    try {
+      const { models, REVISIONS } = await import(SEPARATE), p = models[m]
+      const store = await caches.open('audio-neural')
+      return !!await store.match(`https://huggingface.co/${p.repo}/resolve/${REVISIONS[m]}/${p.file}`)
+    } catch { return false }
+  }
+
+  async function showPlan(prefix = '') {
+    await ready
+    const m = MODELS[model()], dur = audio.duration, pace = gpu ? m.gpu : m.cpu
+    const lo = 5 + pace * dur, have = await cached(model())
+    planText.textContent = (prefix ? prefix + ' ' : '') + m.name + ': ' + (have ? 'downloaded already. About ' : mb(m.bytes) + ' to download, once, then about ') +
+      about(lo) + ' to ' + about(3 * lo) + ' on the ' + (gpu ? 'GPU' : 'CPU') + ' for ' + fmtTime(dur) + ' of audio.' +
+      (dur > 600 ? ' A file this long takes several GB of memory: if the tab runs out, split it into parts.' : '')
+    start.textContent = done ? 'Split again with ' + m.name : 'Split into stems'
+    start.disabled = !simd
+    plan.hidden = false
+  }
+
+  async function load(f) {
+    stopJob(); pause(); release(); file = f; audio = null; runs++
+    zone.hide(); panel.hidden = false; plan.hidden = report.hidden = mixer.hidden = true
+    name.textContent = f.name; meta.textContent = fmtSize(f.size)
+    say('Decoding…')
+    const id = runs
+    try {
+      const d = await decodeFile(f)
+      if (id !== runs) return
+      audio = { ...d, duration: d.channelData[0].length / d.sampleRate }
+      meta.textContent = fmtSize(f.size) + ' · ' + fmtTime(audio.duration) + ' · ' + chLabel(d.channelData.length) + ' · ' + d.sampleRate / 1000 + ' kHz' + (d.channelData.length > 2 ? ' · its first two channels are split' : '')
+      progress.hidden = true
+      showPlan()
+    } catch (e) {
+      if (id !== runs) return
+      console.error(e)
+      fail("Can't read this file: no decoder for this format. Try a different container.")
+    }
+  }
+
+  function say(msg, p) {
+    progress.hidden = false; status.textContent = msg; status.classList.remove('err')
+    bar.hidden = p == null
+    if (p != null) { bar.firstElementChild.style.width = (p * 100).toFixed(1) + '%'; bar.setAttribute('aria-valuenow', Math.round(p * 100)) }
+  }
+  function fail(msg) { progress.hidden = false; status.textContent = msg; status.classList.add('err'); bar.hidden = true; cancel.hidden = true }
+
+  function split() {
+    stopJob(); pause()
+    const id = ++runs, m = model()
+    plan.hidden = true; cancel.hidden = false; select.disabled = true
+    say('Starting…', 0)
+    job = new Worker(worker, { type: 'module' })
+    job.onmessage = e => {
+      const d = e.data
+      if (id !== runs) return
+      if (d.type === 'status') status.textContent = d.msg
+      else if (d.type === 'progress') say(status.textContent, d.p)
+      else if (d.type === 'error') { stopJob(); fail(d.message); showPlan() }
+      else if (d.type === 'done') { stopJob(); finish(d, m) }
+    }
+    job.onerror = e => { e.preventDefault(); if (id !== runs) return; stopJob(); fail('The separation code did not load (' + (e.message || 'network error') + '). Check the connection and try again.'); showPlan() }
+    // the worker gets a copy: the song stays here for the mix
+    job.postMessage({ audio: { channelData: audio.channelData, sampleRate: audio.sampleRate }, model: m })
+  }
+  function stopJob() { job?.terminate(); job = null; select.disabled = false; cancel.hidden = true }
+
+  function finish({ stems, device, seconds }, m) {
+    progress.hidden = true
+    pause(); release(true)
+    // the stems live in AudioBuffers from here: played from there, saved from getChannelData()
+    bufs = Object.fromEntries(STEMS.map(s => {
+      const chs = stems[s], b = new AudioBuffer({ length: chs[0].length, numberOfChannels: chs.length, sampleRate: audio.sampleRate })
+      chs.forEach((c, i) => b.copyToChannel(c, i))
+      return [s, b]
+    }))
+    peak = 1e-9
+    for (const c of audio.channelData) for (let i = 0; i < c.length; i++) { const v = Math.abs(c[i]); if (v > peak) peak = v }
+    done = { model: m, device, seconds }
+    report.replaceChildren(
+      el('div', {}, el('div', { class: 'k' }, 'Model'), el('div', { class: 'v', html: MODELS[m].name })),
+      el('div', {}, el('div', { class: 'k' }, 'Separated in'), el('div', { class: 'v', html: fmtTime(seconds) + '<small>on the ' + (device === 'wasm' ? 'CPU' : 'GPU') + '</small>' })))
+    report.hidden = false
+    state = Object.fromEntries(STEMS.map(s => [s, { db: 0, mute: false, solo: false }]))
+    rows.replaceChildren(...STEMS.map(row))
+    mixer.hidden = false
+    at = 0; tick(); draw(); gains()
+  }
+
+  // ── the mixer: one row per stem, its waveform at the song's scale ──
+  let state = {}, ctx = null, nodes = null, srcs = null, t0 = 0, at = 0, raf = 0, dragging = false
+  const dur = () => bufs.vocals.duration
+  const gain = s => state[s].mute || (STEMS.some(k => state[k].solo) && !state[s].solo) ? 0 : 10 ** (state[s].db / 20)
+  const dbText = db => (db > 0 ? '+' : db < 0 ? '−' : '') + Math.abs(db).toFixed(1) + ' dB'
+
+  function row(s) {
+    const tog = (act, text, label) => {
+      const b = el('button', { type: 'button', class: 'tog', 'aria-pressed': 'false', 'aria-label': label + ' ' + LABEL[s].toLowerCase(), title: label }, text)
+      b.addEventListener('click', () => { state[s][act] = !state[s][act]; b.setAttribute('aria-pressed', state[s][act]); gains() })
+      return b
+    }
+    const level = el('input', { type: 'range', min: '-30', max: '6', step: '0.5', value: '0', 'aria-label': LABEL[s] + ' level' })
+    const out = el('output', {}, dbText(0))
+    level.addEventListener('input', () => { state[s].db = +level.value; out.value = dbText(state[s].db); gains() })
+    level.addEventListener('dblclick', () => { level.value = 0; level.dispatchEvent(new Event('input')) })
+    const canvas = el('canvas', { 'aria-hidden': 'true' }), wave = el('div', { class: 'wave' }, canvas, el('i', { class: 'head' }))
+    wave.addEventListener('click', e => { const r = wave.getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * dur()) })
+    const save = el('a', { class: 'btn ghost save', href: '#', 'data-stem': s }, 'Save')
+    save.addEventListener('click', e => saveAs(e, save, s))
+    return el('div', { class: 'stem', 'data-stem': s }, el('span', { class: 'name' }, LABEL[s]), wave, tog('mute', 'M', 'Mute'), tog('solo', 'S', 'Solo'), level, out, save)
+  }
+
+  function draw() {
+    if (!bufs || mixer.hidden) return
+    const ink = getComputedStyle(document.body).getPropertyValue('--c-ink').trim() || '#0d1014'
+    for (const r of rows.children) {
+      const c = r.querySelector('canvas'), b = bufs[r.dataset.stem], W = Math.max(1, Math.round(c.clientWidth * devicePixelRatio)), H = Math.max(1, Math.round(c.clientHeight * devicePixelRatio))
+      c.width = W; c.height = H
+      const g = c.getContext('2d'), chs = Array.from({ length: b.numberOfChannels }, (_, i) => b.getChannelData(i)), n = b.length, step = n / W
+      g.fillStyle = ink
+      for (let x = 0; x < W; x++) {
+        let m = 0
+        for (let i = Math.floor(x * step), e = Math.min(n, Math.floor((x + 1) * step)); i < e; i++) for (const ch of chs) { const v = Math.abs(ch[i]); if (v > m) m = v }
+        const h = Math.max(1, Math.min(1, m / peak) * H)
+        g.fillRect(x, (H - h) / 2, 1, h)
+      }
+    }
+  }
+  new ResizeObserver(() => draw()).observe(rows)
+
+  function gains() {
+    for (const r of rows.children) r.classList.toggle('silent', gain(r.dataset.stem) === 0)
+    if (nodes) for (const s of STEMS) nodes[s].gain.setTargetAtTime(gain(s), ctx.currentTime, 0.015)
+    mixNote.textContent = ''
+  }
+
+  // playback: one source per stem into its gain, all started at the same instant
+  const pos = () => srcs ? Math.min(dur(), ctx.currentTime - t0) : at
+  function resume() {
+    ctx ??= new AudioContext()
+    nodes ??= Object.fromEntries(STEMS.map(s => { const g = ctx.createGain(); g.connect(ctx.destination); return [s, g] }))
+    for (const s of STEMS) { nodes[s].gain.cancelScheduledValues(0); nodes[s].gain.value = gain(s) }
+    ctx.resume()
+    if (at >= dur() - 0.05) at = 0
+    const when = ctx.currentTime + 0.03, mine = srcs = STEMS.map(s => { const n = ctx.createBufferSource(); n.buffer = bufs[s]; n.connect(nodes[s]); n.start(when, at); return n })
+    t0 = when - at
+    mine[0].onended = () => { if (srcs === mine) { at = dur(); pause(); at = 0; tick() } }
+    play.textContent = 'Pause'; play.setAttribute('aria-label', 'Pause')
+    raf = requestAnimationFrame(loop)
+  }
+  function pause() {
+    if (!srcs) return
+    at = pos()
+    const old = srcs; srcs = null
+    for (const n of old) n.stop()
+    cancelAnimationFrame(raf)
+    play.textContent = 'Play'; play.setAttribute('aria-label', 'Play')
+    tick()
+  }
+  function seekTo(t) { const was = !!srcs; pause(); at = Math.max(0, Math.min(dur(), t)); tick(); if (was) resume() }
+  function loop() { tick(); if (srcs) raf = requestAnimationFrame(loop) }
+  function tick() {
+    if (!bufs) return
+    const t = pos(), p = (t / dur() * 100).toFixed(3) + '%'
+    time.textContent = fmtTime(t) + ' / ' + fmtTime(dur())
+    if (!dragging) { seek.max = dur(); seek.value = t }
+    for (const h of rows.querySelectorAll('.head')) h.style.left = p
+  }
+  play.addEventListener('click', () => srcs ? pause() : resume())
+  seek.addEventListener('pointerdown', () => { dragging = true })
+  seek.addEventListener('change', () => { dragging = false; seekTo(+seek.value) })
+  seek.addEventListener('input', () => { time.textContent = fmtTime(+seek.value) + ' / ' + fmtTime(dur()) })
+
+  // ── saving: a stem as it is, or the mix, the song plus each stem's change, Σ (g − 1)·stem ──
+  const base = () => file.name.replace(/\.[^.]+$/, '')
+  function mixed() {
+    const K = bufs.vocals.numberOfChannels, d = STEMS.map(s => [s, gain(s) - 1]).filter(([, g]) => g)
+    return audio.channelData.map((x, c) => {
+      if (c >= K || !d.length) return x
+      const out = Float32Array.from(x)
+      for (const [s, g] of d) { const v = bufs[s].getChannelData(c); for (let i = 0; i < out.length; i++) out[i] += g * v[i] }
+      return out
+    })
+  }
+  const mixName = () => STEMS.filter(s => gain(s) !== 1).map(s => gain(s) === 0 ? s + '-off' : s + (state[s].db > 0 ? '+' : '') + state[s].db + 'dB').join('-') || 'mix'
+  async function saveAs(e, a, s) {
+    const f = fmt.value, key = f + ':' + (s ? '' : STEMS.map(gain).join())
+    if (a.dataset.key === key) return   // encoded already: the browser saves the href
+    e.preventDefault()
+    if (a.classList.contains('busy')) return
+    const label = a.textContent
+    a.classList.add('busy'); a.textContent = 'Encoding…'
+    try {
+      const channelData = s ? Array.from({ length: bufs[s].numberOfChannels }, (_, i) => bufs[s].getChannelData(i)) : mixed()
+      if (!s) {
+        let p = 0
+        for (const c of channelData) for (let i = 0; i < c.length; i++) { const v = Math.abs(c[i]); if (v > p) p = v }
+        mixNote.textContent = p > 1 ? 'The mix peaks ' + (20 * Math.log10(p)).toFixed(1) + ' dB over full scale and clips: lower a stem.' : ''
+      }
+      const blob = await encodeAudio(f, { channelData, sampleRate: audio.sampleRate, meta: s ? null : audio.meta })
+      if (a.href.startsWith('blob:')) URL.revokeObjectURL(a.href)
+      a.href = URL.createObjectURL(blob)
+      a.download = base() + '-' + (s || mixName()) + '.' + FORMATS[f].ext
+      a.dataset.key = key
+      a.textContent = label
+      a.title = a.download + ' · ' + fmtSize(blob.size)
+      a.classList.remove('busy')
+      a.click()
+    } catch (err) {
+      console.error(err)
+      a.textContent = label; a.classList.remove('busy')
+      mixNote.textContent = FORMATS[f].ext.toUpperCase() + ' encoding failed in this browser: pick another format.'
+    }
+  }
+  saveMix.addEventListener('click', e => saveAs(e, saveMix, null))
+
+  // ── controls ──
+  start.addEventListener('click', split)
+  cancel.addEventListener('click', () => { runs++; stopJob(); progress.hidden = true; showPlan('Stopped.') })
+  select.addEventListener('change', () => { if (audio && !job) showPlan() })
+  reset.addEventListener('click', () => { runs++; stopJob(); pause(); release(); panel.hidden = true; zone.show() })
+  function unlink() { for (const a of [...rows.querySelectorAll('a'), saveMix]) { if (a.href.startsWith('blob:')) URL.revokeObjectURL(a.href); a.href = '#'; delete a.dataset.key } }
+  function release(keep) { unlink(); bufs = null; if (!keep) { done = null; mixer.hidden = report.hidden = true } }
+})('/util/stem-splitter/process.js?v=14241d2d', {"UTIL":"/util/util.js?v=a1dc8e25","SEPARATE":"/util/vendor/neural-separate.js?v=01f863b5","MODELS":{"scnet":{"name":"SCNet","bytes":12900277,"gpu":0.3,"cpu":1.7},"scnet-large":{"name":"SCNet-large","bytes":45082486,"gpu":2.1,"cpu":9.6},"mel-roformer":{"name":"Mel-Band RoFormer","bytes":466082640,"gpu":0.3}},"STEMS":["vocals","drums","bass","other"]})
+  </script>
+</body>
+</html>

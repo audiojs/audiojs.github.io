@@ -3,9 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vocal remover: make a karaoke track or isolate the vocal, free, in your browser · audiojs</title>
-  <meta name="description" content="Remove vocals from a song to make a karaoke or instrumental track, or isolate the center vocal. Runs in your browser on the stereo mix; nothing is uploaded.">
+  <title>Vocal remover: make a karaoke track or isolate the vocals, free, in your browser · audiojs</title>
+  <meta name="description" content="Remove the vocals from a song to make a karaoke track, or keep only the vocals, with a trained separation model running in your browser. MP3, WAV, FLAC and more. No upload; the 13 MB model downloads once.">
   <meta name="theme-color" content="#0d1014">
+  <!-- cross-origin isolated (util/isolate.js), so the model runs on threads: the first visit reloads once the worker is in
+       control, unless the reader has reached for the page already (a file dropped or chosen is never lost to a reload:
+       threads from the next visit); a browser without COEP credentialless stays on one thread -->
+  <script>
+    if (!crossOriginIsolated && isSecureContext && navigator.serviceWorker && !navigator.serviceWorker.controller) {
+      let touched = false
+      for (const type of ['pointerdown', 'keydown', 'drop', 'paste']) addEventListener(type, () => touched = true, { capture: true, once: true })
+      navigator.serviceWorker.addEventListener('controllerchange', () => touched || location.reload(), { once: true })
+      navigator.serviceWorker.register('/util/isolate.js', { scope: './' }).catch(() => {})
+    }
+  </script>
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://audiojs.dev/util/vocal-remover/">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -13,8 +24,8 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://audiojs.dev/util/vocal-remover/">
-  <meta property="og:title" content="Vocal remover: make a karaoke track or isolate the vocal, free, in your browser">
-  <meta property="og:description" content="Remove vocals from a song to make a karaoke or instrumental track, or isolate the center vocal. Runs in your browser on the stereo mix; nothing is uploaded.">
+  <meta property="og:title" content="Vocal remover: make a karaoke track or isolate the vocals, free, in your browser">
+  <meta property="og:description" content="Remove the vocals from a song to make a karaoke track, or keep only the vocals, with a trained separation model running in your browser. MP3, WAV, FLAC and more. No upload; the 13 MB model downloads once.">
   <meta property="og:site_name" content="audiojs">
   <meta property="og:image" content="https://audiojs.dev/icon-512.png">
   <meta property="og:image:width" content="512">
@@ -40,7 +51,7 @@
           "price": "0",
           "priceCurrency": "USD"
         },
-        "description": "Remove vocals from a song to make a karaoke or instrumental track, or isolate the center vocal. Runs in your browser on the stereo mix; nothing is uploaded.",
+        "description": "Remove the vocals from a song to make a karaoke track, or keep only the vocals, with a trained separation model running in your browser. MP3, WAV, FLAC and more. No upload; the 13 MB model downloads once.",
         "author": {
           "@type": "Organization",
           "name": "audiojs",
@@ -49,7 +60,7 @@
         },
         "softwareHelp": {
           "@type": "CreativeWork",
-          "url": "https://github.com/audiojs/vocals"
+          "url": "https://github.com/audiojs/neural"
         }
       },
       {
@@ -80,18 +91,26 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "How does it remove the vocal?",
+            "name": "How does it remove the vocals?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Mid/side processing. In most mixes the lead vocal is panned dead center, so subtracting the right channel from the left cancels it while side-panned instruments remain. The isolate mode keeps the center instead."
+              "text": "A trained source separation model listens to the song and estimates the voice in it; the karaoke track is the song less that voice, so the instruments are left as they were. Two models run in the page: SCNet, a 13 MB download, and Mel-Band RoFormer, 466 MB, the cleanest. The third method, mid/side, cancels whatever is panned to the center: instant and download-free, but it takes centered bass and kick with the voice and leaves wide reverb behind."
             }
           },
           {
             "@type": "Question",
-            "name": "Why can I still hear some vocal?",
+            "name": "Which method should I pick?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Reverb, delays and doubled harmonies are usually panned wide and survive cancellation. Bass and kick, also centered, are reduced along with the vocal. AI separation handles these better; this method is instant, private and works on any device."
+              "text": "SCNet for most songs: a small download, and with WebGPU on an Apple M4 Max about a third of the song's length. Mel-Band RoFormer when the vocals must be as clean as possible and the computer has a capable graphics card: on the 50 MUSDB18 test previews its vocals score 12.08 dB SDR against SCNet's 9.88. Mid/side when you need a result instantly or cannot download."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How long does it take?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "In Chromium on an Apple M4 Max, SCNet took 73 seconds for a 4-minute song on the GPU (WebGPU) and 1.7 times the song's length on one CPU thread; Mel-Band RoFormer took 9 seconds for 30 seconds of audio on the GPU. The status line shows the time left once the first part is done. Remove and isolate reuse one separation, so switching between them is instant."
             }
           },
           {
@@ -99,7 +118,15 @@
             "name": "Does it work on mono files?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. Center extraction needs a stereo image. A mono file has no sides to keep."
+              "text": "With a trained model, yes: it hears mono as stereo and gives mono back. Mid/side needs a stereo image; a mono file has no sides to keep."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why can I still hear some vocal?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No model separates perfectly. Reverb tails, harmonies and doubled backing vocals can stay in the karaoke track, and a sung note that sounds like an instrument can go either way. Mel-Band RoFormer leaves the least. With mid/side, everything panned off center stays."
             }
           },
           {
@@ -107,7 +134,7 @@
             "name": "Is my song uploaded?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No. The processing runs in your browser with @audio/vocals, an open-source library. Nothing leaves your device."
+              "text": "No. The song is decoded, separated and encoded in this tab. The model's weights download from huggingface.co once and stay in the browser's cache (a private window does not keep Mel-Band RoFormer's 466 MB: there it downloads each time); ONNX Runtime loads from jsDelivr."
             }
           }
         ]
@@ -118,51 +145,70 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/util/util.css?v=0cef0e67">
-  <link rel="modulepreload" href="/util/util.js?v=8cf51a4e">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/bar.css?v=4e6dabc4">
+  <link rel="stylesheet" href="/util/util.css?v=a794f8f2">
+  <link rel="modulepreload" href="/util/util.js?v=a1dc8e25">
 </head>
 <body>
-  <header class="top">
-    <div class="inner">
-      <a class="brand" href="/" aria-label="audiojs home"><span class="name">audio</span><span class="js">JS</span></a>
-      <nav><a href="/util/">All utilities</a> · <a href="https://github.com/audiojs/vocals" target="_blank" rel="noopener">Source</a></nav>
-    </div>
+  <header class="site-bar">
+    <a class="site-brand" href="/" aria-label="audiojs home"><svg aria-hidden="true" viewBox="0 5 90.4 17" fill="currentColor"><path d="M4.2 22Q3.3 22 2.7 21.6Q2 21.2 1.6 20.5Q1.1 19.8 1.1 19V14.2H11.2V12.4Q11.2 12.3 11.1 12.2Q11.1 12.1 10.9 12.1H1.1V9.2H11.1Q11.9 9.2 12.6 9.7Q13.3 10.1 13.7 10.8Q14.1 11.4 14.1 12.3V22ZM4.3 19.1H11.2V16.8H4V18.9Q4 19 4.1 19Q4.2 19.1 4.3 19.1ZM19 22Q18.2 22 17.5 21.6Q16.8 21.2 16.4 20.5Q16 19.8 16 19V9.2H18.9V18.9Q18.9 19 19 19Q19 19.1 19.1 19.1H25.8Q25.9 19.1 26 19Q26.1 19 26.1 18.9V9.2H29V19Q29 19.8 28.5 20.5Q28.1 21.2 27.4 21.6Q26.8 22 25.9 22H19ZM33.2 22Q32.4 22 31.7 21.6Q31 21.2 30.6 20.5Q30.2 19.8 30.2 19V12.3Q30.2 11.4 30.6 10.8Q31 10.1 31.7 9.7Q32.4 9.2 33.2 9.2H40.3V5.1H43.2V22H33.2ZM33.4 19.1H40Q40.1 19.1 40.2 19Q40.3 19 40.3 18.9V12.4Q40.3 12.3 40.2 12.2Q40.1 12.1 40 12.1H33.4Q33.2 12.1 33.2 12.2Q33.1 12.3 33.1 12.4V18.9Q33.1 19 33.2 19Q33.2 19.1 33.4 19.1ZM45.1 22V9.2H47.9V22ZM45.1 8V5.1H47.9V8ZM52.5 22Q51.7 22 51 21.6Q50.3 21.2 49.9 20.5Q49.5 19.8 49.5 19V12.3Q49.5 11.4 49.9 10.8Q50.3 10.1 51 9.7Q51.7 9.2 52.5 9.2H59.4Q60.2 9.2 60.9 9.7Q61.6 10.1 62 10.8Q62.4 11.4 62.4 12.3V19Q62.4 19.8 62 20.5Q61.6 21.2 60.9 21.6Q60.2 22 59.4 22H52.5ZM52.6 19.1H59.3Q59.4 19.1 59.5 19Q59.5 19 59.5 18.9V12.4Q59.5 12.3 59.5 12.2Q59.4 12.1 59.3 12.1H52.6Q52.5 12.1 52.4 12.2Q52.4 12.3 52.4 12.4V18.9Q52.4 19 52.4 19Q52.5 19.1 52.6 19.1Z"/><path d="M75.1 18.4Q74.1 18.4 73.4 17.8Q72.7 17.3 72.4 16.4L73.8 16Q73.9 16.5 74.3 16.8Q74.6 17.1 75.1 17.1Q75.4 17.1 75.7 16.9Q76.1 16.8 76.2 16.4Q76.3 16.2 76.4 15.9Q76.4 15.6 76.4 15.2V8.8H77.7V15.2Q77.7 15.6 77.7 15.9Q77.7 16.2 77.7 16.5Q77.6 16.8 77.4 17.1Q77.1 17.8 76.5 18.1Q75.9 18.4 75.1 18.4ZM82.8 18.4Q81.8 18.4 81 18Q80.2 17.7 79.7 17Q79.2 16.4 79 15.5L80.4 15.3Q80.6 16.1 81.3 16.6Q82 17.1 82.9 17.1Q83.5 17.1 84 16.9Q84.4 16.7 84.7 16.4Q85 16.1 85 15.6Q85 15.3 84.9 15.1Q84.8 14.9 84.7 14.8Q84.5 14.7 84.3 14.6Q84.1 14.4 83.8 14.4L81.4 13.7Q81.1 13.6 80.7 13.4Q80.4 13.2 80.1 13Q79.7 12.7 79.6 12.3Q79.4 11.9 79.4 11.3Q79.4 10.4 79.8 9.8Q80.3 9.2 81 8.9Q81.8 8.6 82.7 8.6Q83.7 8.6 84.4 9Q85.2 9.3 85.7 9.9Q86.2 10.5 86.4 11.4L84.9 11.6Q84.8 11.1 84.5 10.7Q84.2 10.3 83.7 10.1Q83.2 9.9 82.7 9.9Q82.2 9.9 81.8 10.1Q81.3 10.2 81.1 10.5Q80.8 10.8 80.8 11.2Q80.8 11.6 81 11.9Q81.3 12.1 81.6 12.3Q81.9 12.4 82.3 12.5L84 13Q84.3 13.1 84.7 13.2Q85.1 13.4 85.5 13.6Q85.9 13.9 86.2 14.4Q86.4 14.8 86.4 15.5Q86.4 16.2 86.1 16.7Q85.9 17.3 85.4 17.6Q84.9 18 84.2 18.2Q83.6 18.4 82.8 18.4Z" fill="none" stroke="currentColor" stroke-width=".8"/><rect x="68.9" y="5.5" width="21" height="16" fill="none" stroke="currentColor"/></svg></a>
+    <nav aria-label="audiojs"><a href="/util/" aria-current="true">Utilities</a><a href="/lab/">Lab</a><a href="/audio/">audio</a><a href="/audio/playground.html">Playground</a><a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a></nav>
   </header>
   <main class="inner">
     <section class="hero">
       <h1>Vocal remover</h1>
-      <p>Drop a stereo song. Remove the center vocal for karaoke, or keep only the vocal.</p>
+      <p>Drop a song. A trained model (13 MB, downloaded once) takes the voice out: save the karaoke track or the vocals alone.</p>
     </section>
 
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="23.5" stroke="#0d1014"/><path d="M3.73 24.42c5.39 0 6.26-.12 9-6.15 3.54-7.78 6.18-8.6 10.08 6.15 3.9 14.74 7.04 12.71 9.84 3.95 4.07-12.77 5.14-3.95 9.91-3.95h1.7" stroke="#0d1014" fill="none"/></svg>
-      <div class="t">Drop a stereo song here</div>
+      <div class="t">Drop a song here</div>
       <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
       <input type="file" id="file" accept="audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,.dts">
     </div>
     <form class="opts" id="opts">
+      <label>Method <select name="method">
+        <option value="scnet" selected>SCNet model · 13 MB</option>
+        <option value="mel-roformer">Mel-Band RoFormer model · 466 MB · cleanest, needs WebGPU</option>
+        <option value="midside">Mid/side · instant, no download, stereo only</option>
+      </select></label>
       <label><input type="radio" name="mode" value="remove" checked> Remove vocals (karaoke)</label>
       <label><input type="radio" name="mode" value="isolate"> Isolate vocals</label>
     </form>
-    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://npmjs.com/package/@audio/vocals" target="_blank" rel="noopener"><code>@audio/vocals</code></a>.</p>
+    <style>#opts label { min-width: 0; max-width: 100% } #opts select { min-width: 0; max-width: 100%; text-overflow: ellipsis }</style>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://www.npmjs.com/package/@audio/neural-separate" target="_blank" rel="noopener"><code>@audio/neural-separate</code></a> and <a href="https://www.npmjs.com/package/@audio/vocals" target="_blank" rel="noopener"><code>@audio/vocals</code></a>.</p>
     <section class="seo">
       <h2>Karaoke tracks without uploading your music</h2>
-      <p>Drop a stereo song and the page cancels the center channel with <code>@audio/vocals</code>, the mid/side complement to SoX's classic <code>oops</code> effect. Save the result as MP3, WAV, FLAC, OGG, Opus or AAC. Flip the mode to keep only the center for an a cappella reference.</p>
-      <h3>What to expect</h3>
-      <p>Center cancellation is honest about its limits: it removes what is panned center and leaves the rest. On a typical pop mix the lead vocal drops by 20 dB or more while guitars, keys and wide backing vocals stay. Bass and kick lose level too, because they sit in the center as well. For studio-grade separation you need a neural model; for a quick karaoke version, a sing-along practice track or checking a vocal's timing, this is the tool.</p>
+      <p>Drop a song and a trained separation model, run by <code>@audio/neural-separate</code> on <a href="https://onnxruntime.ai/docs/tutorials/web/" target="_blank" rel="noopener">ONNX Runtime Web</a>, estimates the voice in it. Save the song without it as a karaoke or instrumental track, or the voice alone as an a cappella, as MP3, WAV, FLAC, OGG, Opus or AAC. The model runs on the graphics card where the browser has WebGPU and on the CPU where not. For drums, bass and the rest as separate tracks, use the <a href="/util/stem-splitter/">stem splitter</a>.</p>
+      <h3>Two models and a classic</h3>
+      <ul>
+        <li><strong>SCNet</strong> (Tong et al., ICASSP 2024; MIT weights), 13 MB: splits the spectrum into bands and models the low ones in more detail. Vocals 9.88 dB SDR.</li>
+        <li><strong>Mel-Band RoFormer</strong> (Wang, Lu, Won, 2023), Kimberley Jensen's vocals model (MIT weights), 466 MB: transformers across time and mel-spaced bands. Vocals 12.08 dB SDR, the best of the hosted models. It needs WebGPU and about 4 GB of memory.</li>
+        <li><strong>Mid/side</strong>: <code>@audio/vocals</code>, the complement to SoX's classic <code>oops</code> effect. It cancels what is panned dead center and keeps the rest: a pop mix's lead vocal drops, and so do the centered bass and kick.</li>
+      </ul>
+      <p>The SDR figures are medians over the 50 MUSDB18 test previews, by BSSEval v4: the higher, the less of the music in the vocals and of the vocals in the music.</p>
       <h3>Tips</h3>
       <ul>
-        <li>Use the original stereo release, not a mono or YouTube rip with collapsed stereo.</li>
-        <li>Older recordings with hard-panned instruments separate the cleanest.</li>
+        <li>Start from the best source you have: a lossless file or a high-bitrate MP3 separates cleaner than a low-bitrate rip.</li>
+        <li>Switching between remove and isolate reuses the separation; changing the model runs it again.</li>
         <li>Save as WAV or FLAC if you plan to process further.</li>
+      </ul>
+      <h3>References</h3>
+      <ul>
+        <li>W. Tong et al., <a href="https://arxiv.org/abs/2401.13276" target="_blank" rel="noopener">SCNet: Sparse Compression Network for Music Source Separation</a>, ICASSP 2024; weights from <a href="https://github.com/starrytong/SCNet" target="_blank" rel="noopener">starrytong/SCNet</a> (MIT, <a href="https://github.com/starrytong/SCNet/issues/35" target="_blank" rel="noopener">issue #35</a>).</li>
+        <li>J.-C. Wang, W.-T. Lu, M. Won, <a href="https://arxiv.org/abs/2310.01809" target="_blank" rel="noopener">Mel-Band RoFormer for Music Source Separation</a>, 2023; the vocals checkpoint by Kimberley Jensen, <a href="https://huggingface.co/KimberleyJSN/melbandroformer" target="_blank" rel="noopener">KimberleyJSN/melbandroformer</a> (MIT), its code in <a href="https://github.com/ZFTurbo/Music-Source-Separation-Training" target="_blank" rel="noopener">ZFTurbo/Music-Source-Separation-Training</a>.</li>
+        <li>Z. Rafii et al., <a href="https://sigsep.github.io/datasets/musdb.html" target="_blank" rel="noopener">The MUSDB18 corpus for music separation</a>, 2017; F.-R. Stöter, A. Liutkus, N. Ito, <a href="https://arxiv.org/abs/1804.06267" target="_blank" rel="noopener">The 2018 Signal Separation Evaluation Campaign</a> (BSSEval v4).</li>
+        <li>The scores and the hosted weights: <a href="https://github.com/audiojs/neural/tree/main/packages/neural-separate" target="_blank" rel="noopener">@audio/neural-separate's README</a>.</li>
       </ul>
       <section class="faq" aria-label="Questions">
         <h3>Questions</h3>
-        <details><summary>How does it remove the vocal?</summary><p>Mid/side processing. In most mixes the lead vocal is panned dead center, so subtracting the right channel from the left cancels it while side-panned instruments remain. The isolate mode keeps the center instead.</p></details>
-        <details><summary>Why can I still hear some vocal?</summary><p>Reverb, delays and doubled harmonies are usually panned wide and survive cancellation. Bass and kick, also centered, are reduced along with the vocal. AI separation handles these better; this method is instant, private and works on any device.</p></details>
-        <details><summary>Does it work on mono files?</summary><p>No. Center extraction needs a stereo image. A mono file has no sides to keep.</p></details>
-        <details><summary>Is my song uploaded?</summary><p>No. The processing runs in your browser with @audio/vocals, an open-source library. Nothing leaves your device.</p></details>
+        <details><summary>How does it remove the vocals?</summary><p>A trained source separation model listens to the song and estimates the voice in it; the karaoke track is the song less that voice, so the instruments are left as they were. Two models run in the page: SCNet, a 13 MB download, and Mel-Band RoFormer, 466 MB, the cleanest. The third method, mid/side, cancels whatever is panned to the center: instant and download-free, but it takes centered bass and kick with the voice and leaves wide reverb behind.</p></details>
+        <details><summary>Which method should I pick?</summary><p>SCNet for most songs: a small download, and with WebGPU on an Apple M4 Max about a third of the song's length. Mel-Band RoFormer when the vocals must be as clean as possible and the computer has a capable graphics card: on the 50 MUSDB18 test previews its vocals score 12.08 dB SDR against SCNet's 9.88. Mid/side when you need a result instantly or cannot download.</p></details>
+        <details><summary>How long does it take?</summary><p>In Chromium on an Apple M4 Max, SCNet took 73 seconds for a 4-minute song on the GPU (WebGPU) and 1.7 times the song's length on one CPU thread; Mel-Band RoFormer took 9 seconds for 30 seconds of audio on the GPU. The status line shows the time left once the first part is done. Remove and isolate reuse one separation, so switching between them is instant.</p></details>
+        <details><summary>Does it work on mono files?</summary><p>With a trained model, yes: it hears mono as stereo and gives mono back. Mid/side needs a stereo image; a mono file has no sides to keep.</p></details>
+        <details><summary>Why can I still hear some vocal?</summary><p>No model separates perfectly. Reverb tails, harmonies and doubled backing vocals can stay in the karaoke track, and a sung note that sounds like an instrument can go either way. Mel-Band RoFormer leaves the least. With mid/side, everything panned off center stays.</p></details>
+        <details><summary>Is my song uploaded?</summary><p>No. The song is decoded, separated and encoded in this tab. The model's weights download from huggingface.co once and stay in the browser's cache (a private window does not keep Mel-Band RoFormer's 466 MB: there it downloads each time); ONNX Runtime loads from jsDelivr.</p></details>
       </section>
       <div class="more">
         <h3>More audio utilities</h3>
@@ -176,23 +222,34 @@
           <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
           <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
           <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/stem-splitter/">Stem splitter</a></li>
           <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
           <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
-          <li><a href="/util/audio-to-midi/">Audio to MIDI and sheet music</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI converter</a></li>
           <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/tone-generator/">Tone generator</a></li>
           <li><a href="/util/prosody/">Speech prosody editor</a></li>
           <li><a href="/util/recorder/">Audio recorder</a></li>
           <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
           <li><a href="/util/spectrogram/">Spectrogram</a></li>
           <li><a href="/util/measure/">Room and speaker measurement</a></li>
+          <li><a href="/util/latency/">Audio latency test</a></li>
         </ul>
       </div>
     </section>
   </main>
-  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/audiojs/neural" target="_blank" rel="noopener">source</a> · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
   <script type="module">
-    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=8cf51a4e'
-    tool({ process: '/util/vocal-remover/process.js?v=84229ba0', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Separating center and sides…"} })
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a1dc8e25'
+    const method = $('opts').elements.method, mel = method.querySelector('[value="mel-roformer"]')
+    // ONNX Runtime Web ships SIMD builds only: without WebAssembly SIMD, or on a device that reports under 4 GB of
+    // memory, mid/side is the default; Mel-Band RoFormer is offered where there is a GPU adapter, not a fallback one
+    const simd = WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]))
+    if (!simd) for (const o of method.options) o.disabled = o.value !== 'midside'
+    if (!simd || navigator.deviceMemory < 4) method.value = 'midside'
+    mel.disabled = true
+    if (simd) navigator.gpu?.requestAdapter().then(a => { mel.disabled = !a || a.info?.isFallbackAdapter || a.info?.architecture === 'swiftshader' }, () => {})
+    tool({ process: '/util/vocal-remover/process.js?v=b9485b0f', ...{"formats":["mp3","wav","flac","ogg","opus","aac"],"busy":"Separating the vocals…"} })
   </script>
 </body>
 </html>

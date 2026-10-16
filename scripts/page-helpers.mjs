@@ -15,7 +15,9 @@ export const drop = (text, accept = 'audio/*,video/*,.mkv,.m4a,.flac,.opus,.ac3,
       <div class="s">or click to choose, or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
       <input type="file" id="file${id}" accept="${accept}">
     </div>`
-export const pkg = n => `<a href="https://npmjs.com/package/${n}" target="_blank" rel="noopener"><code>${n}</code></a>`
+// a package's page: npm's (www., which npmjs.com redirects to); one not on npm yet, its source
+const SOURCE = { '@audio/neural-asr': 'https://github.com/audiojs/neural/tree/main/packages/neural-asr' }
+export const pkg = n => `<a href="${SOURCE[n] ?? `https://www.npmjs.com/package/${n}`}" target="_blank" rel="noopener"><code>${n}</code></a>`
 // foldable FAQ: native <details>, answers stay in the document for search engines (the FAQPage JSON-LD is emitted separately)
 export const faq = (items, title = 'Questions') => items.length ? `
       <section class="faq" aria-label="${title}">

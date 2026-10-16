@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recording audio in the browser: getUserMedia, MediaRecorder, WAV · audiojs lab</title>
+  <meta name="description" content="How a web page records the microphone: getUserMedia and its constraints, the formats MediaRecorder gives in your browser, every sample to a WAV file, latency, takes that survive a crash. Each part runs live on your mic.">
+  <link rel="canonical" href="https://audiojs.dev/lab/recording/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://audiojs.dev/lab/recording/">
+  <meta property="og:title" content="Recording audio in the browser">
+  <meta property="og:site_name" content="audiojs">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/bar.css?v=4e6dabc4">
+  <link rel="stylesheet" href="/lab/lab.css">
+  <style>
+    main [hidden] { display: none !important; }
+    pre { margin: 14px 0; padding: 12px 14px; overflow-x: auto; border-radius: 8px; background: oklch(92.5% .004 80); font: 13px/1.55 var(--mono); }
+    pre code { font: inherit; }
+    #bar .readout { min-width: 0; overflow-wrap: anywhere; }
+    #bar select { max-width: min(220px, 40vw); font: inherit; }
+    .plate dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; font: 13px var(--mono); }
+    .plate dt { color: var(--panel-ink-3); }
+    .plate dd { margin: 0; color: var(--panel-ink); overflow-wrap: anywhere; }
+    .table th, .table.words td { white-space: normal; }
+    .table th, .table td { vertical-align: top; }
+    .table code { white-space: nowrap; }
+    .table tr.current > * { color: var(--accent); }
+    .table .empty, .table .what { color: var(--mute); }
+    .table.words :is(td, th) { text-align: left; }
+    .props { margin-bottom: 14px; }
+    .props b { min-width: 172px; }
+    @media (max-width: 520px) { .try li { flex-direction: column; gap: 0; } }
+    .caption { margin: 6px 0 0; font-size: 13px; color: var(--mute); }
+    .out { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 10px; }
+    .out audio { max-width: 100%; height: 36px; }
+    a.action { display: inline-block; text-decoration: none; }
+    .controls button:disabled { opacity: .45; cursor: default; }
+    .controls .readout { flex-basis: 100%; }
+    .log { margin: 10px 0 0; padding: 0; list-style: none; font: 12px/1.6 var(--mono); color: var(--mute); }
+    .log .at { display: inline-block; min-width: 64px; color: var(--ink); }
+    .kept { display: grid; gap: 12px; margin: 10px 0 0; padding: 12px 14px; border-radius: 8px; background: oklch(92.5% .004 80); list-style: none; font-size: 13px; }
+    .kept li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+    .kept li > span { flex-basis: 100%; }
+    #release .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    #release .acts button { padding: 5px 10px; border: 1px solid var(--panel-rule); border-radius: 6px; background: none; color: var(--panel-ink); font: 12px var(--mono); cursor: pointer; }
+    #release .acts button[aria-pressed="true"] { border-color: var(--panel-accent); color: var(--panel-accent); }
+    #release .acts button:disabled { opacity: .4; cursor: default; }
+    #release .acts button:focus-visible { outline: 2px solid var(--panel-accent); outline-offset: 2px; }
+    @media (max-width: 520px) { .plate dl { grid-template-columns: 1fr; gap: 0; } .plate dd { margin-bottom: 6px; } }
+  </style>
+</head>
+<body>
+  <header class="site-bar">
+    <a class="site-brand" href="/" aria-label="audiojs home"><svg aria-hidden="true" viewBox="0 5 90.4 17" fill="currentColor"><path d="M4.2 22Q3.3 22 2.7 21.6Q2 21.2 1.6 20.5Q1.1 19.8 1.1 19V14.2H11.2V12.4Q11.2 12.3 11.1 12.2Q11.1 12.1 10.9 12.1H1.1V9.2H11.1Q11.9 9.2 12.6 9.7Q13.3 10.1 13.7 10.8Q14.1 11.4 14.1 12.3V22ZM4.3 19.1H11.2V16.8H4V18.9Q4 19 4.1 19Q4.2 19.1 4.3 19.1ZM19 22Q18.2 22 17.5 21.6Q16.8 21.2 16.4 20.5Q16 19.8 16 19V9.2H18.9V18.9Q18.9 19 19 19Q19 19.1 19.1 19.1H25.8Q25.9 19.1 26 19Q26.1 19 26.1 18.9V9.2H29V19Q29 19.8 28.5 20.5Q28.1 21.2 27.4 21.6Q26.8 22 25.9 22H19ZM33.2 22Q32.4 22 31.7 21.6Q31 21.2 30.6 20.5Q30.2 19.8 30.2 19V12.3Q30.2 11.4 30.6 10.8Q31 10.1 31.7 9.7Q32.4 9.2 33.2 9.2H40.3V5.1H43.2V22H33.2ZM33.4 19.1H40Q40.1 19.1 40.2 19Q40.3 19 40.3 18.9V12.4Q40.3 12.3 40.2 12.2Q40.1 12.1 40 12.1H33.4Q33.2 12.1 33.2 12.2Q33.1 12.3 33.1 12.4V18.9Q33.1 19 33.2 19Q33.2 19.1 33.4 19.1ZM45.1 22V9.2H47.9V22ZM45.1 8V5.1H47.9V8ZM52.5 22Q51.7 22 51 21.6Q50.3 21.2 49.9 20.5Q49.5 19.8 49.5 19V12.3Q49.5 11.4 49.9 10.8Q50.3 10.1 51 9.7Q51.7 9.2 52.5 9.2H59.4Q60.2 9.2 60.9 9.7Q61.6 10.1 62 10.8Q62.4 11.4 62.4 12.3V19Q62.4 19.8 62 20.5Q61.6 21.2 60.9 21.6Q60.2 22 59.4 22H52.5ZM52.6 19.1H59.3Q59.4 19.1 59.5 19Q59.5 19 59.5 18.9V12.4Q59.5 12.3 59.5 12.2Q59.4 12.1 59.3 12.1H52.6Q52.5 12.1 52.4 12.2Q52.4 12.3 52.4 12.4V18.9Q52.4 19 52.4 19Q52.5 19.1 52.6 19.1Z"/><path d="M75.1 18.4Q74.1 18.4 73.4 17.8Q72.7 17.3 72.4 16.4L73.8 16Q73.9 16.5 74.3 16.8Q74.6 17.1 75.1 17.1Q75.4 17.1 75.7 16.9Q76.1 16.8 76.2 16.4Q76.3 16.2 76.4 15.9Q76.4 15.6 76.4 15.2V8.8H77.7V15.2Q77.7 15.6 77.7 15.9Q77.7 16.2 77.7 16.5Q77.6 16.8 77.4 17.1Q77.1 17.8 76.5 18.1Q75.9 18.4 75.1 18.4ZM82.8 18.4Q81.8 18.4 81 18Q80.2 17.7 79.7 17Q79.2 16.4 79 15.5L80.4 15.3Q80.6 16.1 81.3 16.6Q82 17.1 82.9 17.1Q83.5 17.1 84 16.9Q84.4 16.7 84.7 16.4Q85 16.1 85 15.6Q85 15.3 84.9 15.1Q84.8 14.9 84.7 14.8Q84.5 14.7 84.3 14.6Q84.1 14.4 83.8 14.4L81.4 13.7Q81.1 13.6 80.7 13.4Q80.4 13.2 80.1 13Q79.7 12.7 79.6 12.3Q79.4 11.9 79.4 11.3Q79.4 10.4 79.8 9.8Q80.3 9.2 81 8.9Q81.8 8.6 82.7 8.6Q83.7 8.6 84.4 9Q85.2 9.3 85.7 9.9Q86.2 10.5 86.4 11.4L84.9 11.6Q84.8 11.1 84.5 10.7Q84.2 10.3 83.7 10.1Q83.2 9.9 82.7 9.9Q82.2 9.9 81.8 10.1Q81.3 10.2 81.1 10.5Q80.8 10.8 80.8 11.2Q80.8 11.6 81 11.9Q81.3 12.1 81.6 12.3Q81.9 12.4 82.3 12.5L84 13Q84.3 13.1 84.7 13.2Q85.1 13.4 85.5 13.6Q85.9 13.9 86.2 14.4Q86.4 14.8 86.4 15.5Q86.4 16.2 86.1 16.7Q85.9 17.3 85.4 17.6Q84.9 18 84.2 18.2Q83.6 18.4 82.8 18.4Z" fill="none" stroke="currentColor" stroke-width=".8"/><rect x="68.9" y="5.5" width="21" height="16" fill="none" stroke="currentColor"/></svg></a>
+    <nav aria-label="audiojs"><a href="/util/">Utilities</a><a href="/lab/" aria-current="true">Lab</a><a href="/audio/">audio</a><a href="/audio/playground.html">Playground</a><a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a></nav>
+  </header>
+<main>
+  <nav class="top"><span class="crumb"><a href="/lab/">Lab</a></span><a href="https://github.com/audiojs/audiojs.github.io/tree/main/lab/recording">Source</a></nav>
+  <h1>Recording audio in the browser</h1>
+  <p class="lead">A page asks for the microphone, gets a stream, and makes a file of it. Two APIs do the work, and they give different files. Every figure here runs in your browser, the recordings on your own microphone; nothing is sent anywhere.</p>
+
+  <div class="sound controls" id="bar">
+    <button class="action" id="allow" type="button" aria-pressed="false">Allow the microphone</button>
+    <label hidden><span class="hidden">Microphone</span><select id="device"></select></label>
+    <span class="readout" id="state" role="status">not in use</span>
+  </div>
+
+  <h2><small>1</small>Asking</h2>
+  <p><code>getUserMedia</code> asks. The browser shows its prompt, and the promise waits for the answer: a <code>MediaStream</code> with an audio track, or an error.<sup><a href="#r1">1</a></sup> Ask from a press, once the reader knows why. A prompt the moment a page opens has no context, and is often blocked.<sup><a href="#r2">2</a></sup></p>
+  <pre><code>const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+const [track] = stream.getAudioTracks()</code></pre>
+  <p>Only a secure context may ask: a page served over HTTPS, or from localhost. Anywhere else <code>navigator.mediaDevices</code> is undefined.<sup><a href="#r1">1</a>,<a href="#r3">3</a></sup> A page in an iframe may ask only if the frame allows it, <code>&lt;iframe allow="microphone"&gt;</code>; without that the reader is never asked.<sup><a href="#r1">1</a>,<a href="#r3">3</a></sup></p>
+  <p>The error names the cause. <code>NotAllowedError</code>: the reader, a setting or a policy said no. <code>NotFoundError</code>: no input meets the request. <code>NotReadableError</code>: permission was given, but the system, the browser or the hardware could not open the device. <code>OverconstrainedError</code>: no input meets an exact constraint, and its <code>constraint</code> says which.<sup><a href="#r3">3</a></sup></p>
+  <figure id="ask">
+    <div class="plate">
+      <dl>
+        <dt>Secure context</dt><dd id="secure">–</dd>
+        <dt>getUserMedia</dt><dd id="api">–</dd>
+        <dt>In a frame</dt><dd id="framed">–</dd>
+        <dt>Permission</dt><dd id="permission">–</dd>
+        <dt>The answer</dt><dd id="answer">not asked yet</dd>
+      </dl>
+    </div>
+    <figcaption>This page, as your browser sees it. The permission is <code>navigator.permissions.query({ name: 'microphone' })</code>; <i>Allow the microphone</i>, above, asks.</figcaption>
+  </figure>
+
+  <h2><small>2</small>What the browser does to the sound</h2>
+  <p>Between the microphone and the page a browser may run three processors, each a constraint the page can switch:<sup><a href="#r1">1</a></sup></p>
+  <ul class="try props">
+    <li><b><code>echoCancellation</code></b><span>removes the sound the computer plays from what the microphone hears, so the other end of a call does not hear itself.</span></li>
+    <li><b><code>noiseSuppression</code></b><span>takes down background noise.</span></li>
+    <li><b><code>autoGainControl</code></b><span>evens the level: up when the input is quiet, down when it is loud.</span></li>
+  </ul>
+  <p>Chrome turns all three on unless asked otherwise, and <code>echoCancellation: false</code> alone turns the other two off with it; name all three.<sup><a href="#r4">4</a></sup> They help a voice on a call. A take for editing or for music wants the sound as the microphone heard it: the level you sang at, the room around a note. Switch them here, speak, then go quiet: noise suppression lowers the floor between words, gain control brings a whisper and a shout closer than you made them. The table reads back what the track did.</p>
+  <figure id="meter">
+    <canvas role="img" aria-label="The microphone's level over the last 10 seconds, in dBFS; the readout below gives the numbers"></canvas>
+    <div class="controls">
+      <label><input type="checkbox" name="echoCancellation"> echo cancellation</label>
+      <label><input type="checkbox" name="noiseSuppression"> noise suppression</label>
+      <label><input type="checkbox" name="autoGainControl"> automatic gain</label>
+    </div>
+    <div class="controls">
+      <span class="group">Ask for <span data-name="rate" role="group" aria-label="Sample rate to ask for"><button data-value="any" aria-pressed="true">any rate</button><button data-value="16000" aria-pressed="false">16 kHz</button><button data-value="44100" aria-pressed="false">44.1 kHz</button><button data-value="48000" aria-pressed="false">48 kHz</button></span></span>
+      <span data-name="channels" role="group" aria-label="Channels to ask for"><button data-value="any" aria-pressed="true">any channels</button><button data-value="1" aria-pressed="false">1</button><button data-value="2" aria-pressed="false">2</button></span>
+      <span class="readout" id="level" role="status"></span>
+    </div>
+  </figure>
+  <div class="table">
+    <table>
+      <thead><tr><th scope="col">Property</th><th scope="col">Known</th><th scope="col">Asked</th><th scope="col">Got</th></tr></thead>
+      <tbody id="settings"></tbody>
+    </table>
+  </div>
+  <p>Every value here is a request. A bare value, or <code>{ ideal }</code>, is a wish, met as nearly as the device can. <code>min</code>, <code>max</code> and <code>exact</code> are demands: a device that cannot meet one fails the call with <code>OverconstrainedError</code>. A property the browser does not know is ignored, even an exact one.<sup><a href="#r1">1</a></sup> Firefox 153 knows no <code>sampleRate</code>, so <code>{ exact: 16000 }</code> passes there without a word. Check <code>getSupportedConstraints()</code>, and read back <code>track.getSettings()</code>. Whatever rate the track has, an <code>AudioContext</code> resamples it to its own.<sup><a href="#r5">5</a></sup></p>
+  <pre><code>const stream = await navigator.mediaDevices.getUserMedia({ audio: {
+  echoCancellation: false, noiseSuppression: false, autoGainControl: false,
+  channelCount: 1, sampleRate: 48000   // wishes: read back getSettings()
+} })</code></pre>
+
+  <h2><small>3</small>Which microphone</h2>
+  <p><code>enumerateDevices()</code> lists the inputs and outputs. Until the page has opened a microphone it shows at most one device of each kind, with no name and no id, so a page cannot read the hardware before asking.<sup><a href="#r1">1</a></sup> After, it lists every input by name. Ask for one with <code>deviceId: { exact: id }</code>; <code>devicechange</code> fires when one is plugged in or out; an input and an output of the same device share a <code>groupId</code>. Once allowed, the picker above reopens the stream from the input you choose.</p>
+  <div class="table words">
+    <table>
+      <thead><tr><th scope="col">Kind</th><th scope="col">Label</th><th scope="col">deviceId</th><th scope="col">groupId</th></tr></thead>
+      <tbody id="devices"></tbody>
+    </table>
+  </div>
+  <p class="caption">Your devices, as this page may see them now. The input in use is marked.</p>
+
+  <h2><small>4</small>MediaRecorder: the browser's own file</h2>
+  <p><code>new MediaRecorder(stream)</code> encodes the stream as it comes and hands the file over in blobs.<sup><a href="#r6">6</a></sup> It is the shortest way to a recording, and the format is the browser's choice: Chromium writes WebM with Opus, Firefox Ogg with Opus, Safari MP4 with AAC.<sup><a href="#r7">7</a>,<a href="#r8">8</a>,<a href="#r9">9</a></sup> Ask for another with <code>{ mimeType }</code>; <code>MediaRecorder.isTypeSupported()</code> says whether this browser can make it. Yours says:</p>
+  <div class="table words">
+    <table>
+      <thead><tr><th scope="col">Type</th><th scope="col">Recordable here</th></tr></thead>
+      <tbody id="formats"></tbody>
+    </table>
+  </div>
+  <p>None of the three records WAV, MP3 or FLAC. Their recorders write WebM, Ogg, MP4 and Matroska, nothing else,<sup><a href="#r7">7</a>,<a href="#r8">8</a>,<a href="#r9">9</a></sup> and on 14 October 2026 Chromium 151, Firefox 153 and WebKit 26.5 all said no to <code>audio/wav</code>, <code>audio/mpeg</code> and <code>audio/flac</code>. Lossless comes only inside those containers: PCM in WebM from Chromium, PCM or ALAC in MP4 from Safari 18.4 on.<sup><a href="#r9">9</a></sup> Chromium has also written MP4 since Chrome 126, its AAC only in builds with proprietary codecs.<sup><a href="#r7">7</a></sup> For a WAV, an MP3 or a FLAC, take the samples yourself (<a href="#pcm">5</a>) and write or encode them.</p>
+  <pre><code>const recorder = new MediaRecorder(stream), parts = []
+recorder.ondataavailable = e =&gt; parts.push(e.data)
+recorder.onstop = () =&gt; save(new Blob(parts, { type: parts[0].type }))
+recorder.start()
+setTimeout(() =&gt; recorder.stop(), 3000)</code></pre>
+  <figure id="take">
+    <canvas role="img" aria-label="The 3-second take's waveform, decoded"></canvas>
+    <div class="controls">
+      <label>Type <select name="type"><option value="">the browser’s choice</option></select></label>
+      <span class="group">Bitrate <span data-name="bitrate" role="group" aria-label="audioBitsPerSecond to ask for"><button data-value="default" aria-pressed="true">default</button><button data-value="32000" aria-pressed="false">32k</button><button data-value="64000" aria-pressed="false">64k</button><button data-value="128000" aria-pressed="false">128k</button></span></span>
+      <button class="action record" type="button">Record 3 s</button>
+      <span class="readout" role="status"></span>
+      <span class="readout element"></span>
+    </div>
+    <div class="out" hidden><audio controls preload="metadata"></audio><a class="action" download>Save</a></div>
+  </figure>
+  <p>The size over the time is the bitrate you got, beside the one <code>audioBitsPerSecond</code> reports; they need not agree. The last line is what an <code>&lt;audio&gt;</code> element makes of the file's length. Decoding the blob gives the true one, and the waveform is drawn from it.</p>
+
+  <h2><small>5</small>Every sample: an AudioWorklet</h2>
+  <p>For WAV, FLAC or MP3, or for samples to measure, take them yourself. Route the stream into an <code>AudioContext</code> and on to an <code>AudioWorkletNode</code>. Its processor runs on the audio thread, once for every block of 128 frames, and copies each one out.<sup><a href="#r5">5</a></sup> A busy page delays the messages; it does not lose them. <code>ScriptProcessorNode</code> did this on the main thread; it is deprecated in favour of the worklet.<sup><a href="#r5">5</a></sup></p>
+  <pre><code>// tap.js, on the audio thread
+registerProcessor('tap', class extends AudioWorkletProcessor {
+  process([input]) {
+    if (input[0]) this.port.postMessage(input[0].slice())
+    return true
+  }
+})
+
+// the page
+await context.audioWorklet.addModule('tap.js')
+const tap = new AudioWorkletNode(context, 'tap', { numberOfOutputs: 0, channelCount: 1, channelCountMode: 'explicit' })
+tap.port.onmessage = e =&gt; blocks.push(e.data)
+context.createMediaStreamSource(stream).connect(tap)</code></pre>
+  <p>Posting every block is 375 messages a second at 48 kHz; the figure's processor gathers 4,096 frames and hands the buffer over without copying it. The cost is memory, since you keep what you record: <span id="minute">48,000 Hz mono, a minute: 11.5 MB as float in memory, 5.8 MB as 16-bit WAV, 8.6 MB as 24-bit</span>. The <a href="/util/recorder/">audio recorder</a> works this way, and hands the samples to an encoder for MP3, FLAC or Opus.</p>
+  <figure id="pcm">
+    <canvas role="img" aria-label="The take's waveform as its blocks arrive"></canvas>
+    <div class="controls">
+      <span class="group">WAV <span data-name="depth" role="group" aria-label="Bits per sample"><button data-value="16" aria-pressed="true">16-bit</button><button data-value="24" aria-pressed="false">24-bit</button><button data-value="32" aria-pressed="false">32-bit float</button></span></span>
+      <button class="action record" type="button">Record</button>
+      <span class="readout" role="status"></span>
+    </div>
+    <div class="out" hidden><audio controls preload="metadata"></audio><a class="action" download>Save</a></div>
+  </figure>
+
+  <h2><small>6</small>The bytes in front</h2>
+  <p>A WAV file is a RIFF header and then the samples, little-endian, channels interleaved.<sup><a href="#r10">10</a>,<a href="#r11">11</a></sup> For integer PCM the header is 44 bytes, every field worked out from four numbers: rate, channels, bits and frames.<sup><a href="#r12">12</a></sup></p>
+  <div class="table">
+    <table>
+      <thead><tr><th scope="col">Byte</th><th scope="col">Field</th><th scope="col">Value</th><th scope="col">As stored</th></tr></thead>
+      <tbody id="header"></tbody>
+    </table>
+  </div>
+  <p class="caption" id="header-of"></p>
+  <pre><code>function wavHeader(rate, channels, bits, frames) {
+  const bytes = bits / 8, data = frames * channels * bytes
+  const h = new DataView(new ArrayBuffer(44))
+  const text = (at, s) =&gt; [...s].forEach((c, i) =&gt; h.setUint8(at + i, c.charCodeAt(0)))
+  text(0, 'RIFF'); h.setUint32(4, 36 + data, true); text(8, 'WAVE')
+  text(12, 'fmt '); h.setUint32(16, 16, true); h.setUint16(20, 1, true)
+  h.setUint16(22, channels, true); h.setUint32(24, rate, true)
+  h.setUint32(28, rate * channels * bytes, true); h.setUint16(32, channels * bytes, true)
+  h.setUint16(34, bits, true); text(36, 'data'); h.setUint32(40, data, true)
+  return h.buffer
+}</code></pre>
+  <p>The two sizes are known only at the end, so a recorder that writes as it goes leaves them zero and fills them in on stop; a file cut off before that still holds every sample, and its length gives the sizes back. A reader should walk the chunks rather than skip 44 bytes: other files carry more before the samples.<sup><a href="#r11">11</a></sup> Float is not PCM in the format's sense: tag 3, an fmt chunk two bytes longer for its <code>cbSize</code>, and a <code>fact</code> chunk with the length in frames, 58 bytes in all.<sup><a href="#r10">10</a>,<a href="#r11">11</a></sup> The sizes are 32-bit, so a WAV holds at most 4 GiB, about 6.2 hours of 48 kHz 16-bit stereo; RF64 makes them 64-bit.<sup><a href="#r13">13</a></sup></p>
+
+  <h2><small>7</small>Latency</h2>
+  <p>Sound reaches a recording late and leaves the speakers late. Web Audio reports the output side. <code>baseLatency</code> is the context's own buffering on the way to the audio system; <code>outputLatency</code> estimates the rest of the way, until the speaker makes the sound. The <code>latencyHint</code> a context is made with sets the first: <code>'interactive'</code>, the default, asks for the lowest that does not glitch, <code>'playback'</code> for the least power.<sup><a href="#r5">5</a></sup></p>
+  <div class="table" id="latency">
+    <table>
+      <thead><tr><th scope="col">latencyHint</th><th scope="col">baseLatency · frames</th><th scope="col">outputLatency · frames</th></tr></thead>
+      <tbody id="latencies"><tr><th scope="row" colspan="3" class="empty">Press <i>Read the latencies</i>: three contexts are made, run for 0.4 s in silence, and closed.</th></tr></tbody>
+    </table>
+  </div>
+  <div class="controls"><button class="action" id="measure" type="button">Read the latencies</button><span class="readout" id="input-latency"></span></div>
+  <p>Web Audio has nothing for the input side: from the microphone through the converter, the driver and the system's buffers to your processor. A track's <code>latency</code> setting is the target its configuration aims at, not a measurement.<sup><a href="#r1">1</a></sup> The Media Capture Extensions draft adds <code>track.stats.latency</code>, the input latency as measured, in milliseconds;<sup><a href="#r14">14</a></sup> Chromium 151 reports it.</p>
+  <p>To place a take against what was playing, for an overdub or a measurement, measure the whole round trip: play a click, record it back, and find how far it moved by cross-correlation.<sup><a href="#r15">15</a></sup> A loopback cable from output to input measures the device. A speaker and the microphone add the air between them, and need echo cancellation off, since it is made to remove exactly that sound.<sup><a href="#r1">1</a></sup> The <a href="/util/latency/">latency test</a> does this on your device; <a href="/util/measure/">room measurement</a> does it with a sweep and reports the latency beside the room's response.</p>
+
+  <h2><small>8</small>Surviving a crash</h2>
+  <p>A recorder that keeps the take in memory loses all of it when the tab goes: a crash, a reload, a phone reclaiming memory. Give <code>start()</code> a timeslice and MediaRecorder hands over a chunk that often;<sup><a href="#r6">6</a></sup> write each one to storage as it comes. The chunks end to end are the file, the first carrying its header.</p>
+  <pre><code>recorder.ondataavailable = async e =&gt; save(take, n++, await e.data.arrayBuffer())
+recorder.start(1000)   // a chunk every second
+document.addEventListener('visibilitychange', () =&gt; document.hidden &amp;&amp; recorder.requestData())</code></pre>
+  <p>IndexedDB takes each chunk in a transaction, and a reload keeps every one that completed. With <code>{ durability: 'strict' }</code> the browser may wait for the disk itself before it reports one complete, against a power cut or a system crash.<sup><a href="#r16">16</a></sup> The origin private file system's <code>createWritable()</code> is no safer: until <code>close()</code> the file keeps its old contents, so a take cut off mid-way never reaches it. A sync access handle, in a worker, writes in place.<sup><a href="#r17">17</a></sup></p>
+  <p>When the page is hidden, <code>requestData()</code> hands over what has come so far: on a phone, hidden is often the last event a page sees before it is frozen, discarded or closed.<sup><a href="#r18">18</a></sup> A track also goes <code>muted</code> while its source cannot give it data, and <code>ended</code> when it is gone;<sup><a href="#r1">1</a></sup> the log shows each as it comes.</p>
+  <figure id="safe">
+    <ul class="kept" hidden></ul>
+    <canvas role="img" aria-label="Each stored chunk as a bar, its height its size; the log below lists them"></canvas>
+    <div class="controls">
+      <button class="action record" type="button">Record</button>
+      <span class="readout" id="quota"></span>
+      <span class="readout element"></span>
+    </div>
+    <ol class="log" aria-live="polite"></ol>
+    <div class="out" hidden><audio controls preload="metadata"></audio><a class="action" download>Save</a></div>
+  </figure>
+  <p class="hint">Record, switch to another tab and back, then reload this page while it still records. The take comes back here, above the chunks, from IndexedDB. A take stopped normally is read back from storage into one file, and the storage cleared.</p>
+  <p>Chunks cost Chromium's WebM its length. Written live, its header goes out before the length is known, so the joined file has no duration and no cues. Since Chrome 140 a recording without a timeslice is written seekable; one in timeslices still is not.<sup><a href="#r19">19</a></sup> An <code>&lt;audio&gt;</code> element then reports <code>Infinity</code> until it has read to the end, as the line above may show; decoding the file gives its length.</p>
+
+  <h2><small>9</small>Letting go</h2>
+  <p>While a page may use the microphone, and while a track is live, the browser must show it, each time either starts or stops: look at this tab.<sup><a href="#r1">1</a></sup> Stopping the MediaRecorder does not end capture, nor does closing the AudioContext. Stopping the track does, and every clone of it.</p>
+  <pre><code>stream.getTracks().forEach(track =&gt; track.stop())</code></pre>
+  <figure id="release">
+    <div class="plate">
+      <dl>
+        <dt>Track</dt><dd data-show="track">none</dd>
+        <dt>MediaRecorder</dt><dd data-show="recorder">none</dd>
+        <dt>AudioContext</dt><dd data-show="context">none</dd>
+      </dl>
+      <div class="acts">
+        <button type="button" data-act="open">open all three</button>
+        <button type="button" data-act="recorder">recorder.stop()</button>
+        <button type="button" data-act="context">context.close()</button>
+        <button type="button" data-act="enabled" aria-pressed="false">track.enabled = false</button>
+        <button type="button" data-act="stop">track.stop()</button>
+      </div>
+    </div>
+    <figcaption>Open all three, then end them one at a time and watch this tab's microphone mark. A disabled track sends silence; once every track on the device is disabled, muted or stopped, the browser should let the device go within 3 seconds, and take it back when one is enabled.<sup><a href="#r1">1</a></sup></figcaption>
+  </figure>
+
+  <h2><small>10</small>With audio</h2>
+  <p>The <a href="https://github.com/audiojs/audio">audio</a> library takes the AudioWorklet's path in one call. <code>record()</code> opens the microphone with the three processors off and keeps every block, as 16-bit samples, until <code>stop()</code>;<sup><a href="#r20">20</a></sup> the take is then a sound like any other, to edit and encode.</p>
+  <pre><code>let take = audio()
+take.record()                        // { device, sampleRate, channels, monitor }
+// …
+take.stop()
+take.trim().highpass(80).normalize(-1)
+let bytes = await take.encode('wav') // or 'flac', 'mp3', 'opus'</code></pre>
+  <p>The playground below runs in a frame of its own and cannot take this page's recordings, so the same steps run on a built-in sample. Change them and listen.</p>
+  <figure class="repl">
+    <audio-repl panel="edits" display="wave" height="320">
+<pre><code>audio('handpan.wav')
+  .trim()
+  .highpass(80)
+  .normalize(-1)</code></pre>
+    </audio-repl>
+    <figcaption>After a take: silence trimmed from the ends, rumble under 80 Hz taken out, the peak brought to −1 dBFS.</figcaption>
+  </figure>
+  <ul class="try">
+    <li><b><a href="/util/recorder/">audio recorder</a></b><span>record and save MP3, WAV, FLAC, Opus or AAC, every block kept</span></li>
+    <li><b><a href="https://github.com/audiojs/mic">@audio/mic</a></b><span>the capture underneath: getUserMedia and an AudioWorklet in a page, the system's input in Node</span></li>
+    <li><b><a href="https://github.com/audiojs/encode">@audio/encode</a></b><span>samples to WAV, MP3, FLAC, Opus, OGG or AIFF, in the page</span></li>
+    <li><b><a href="/util/latency/">latency test</a></b><span>the round trip on your device</span></li>
+  </ul>
+
+  <ol class="refs">
+    <li id="r1">W3C, <a href="https://www.w3.org/TR/mediacapture-streams/">Media Capture and Streams</a>: <code>mediaDevices</code> only in a secure context; the <code>microphone</code> policy, allowed to the page itself by default (§14); constraints, ideal and required, and unknown ones ignored (§11); the processing, rate, channel and latency properties (§4.3.8); devices before capture, at most one of each kind with empty ids and labels (§9.2.1); muted and disabled tracks, and the device let go within 3 s (§4.3.1); indicators the user agent must show (§15).</li>
+    <li id="r2">M. Gaunt, <a href="https://web.dev/articles/push-notifications-permissions-ux">Permission UX</a>, web.dev: not to ask as a site opens; asked with no context, users block.</li>
+    <li id="r3">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia">MediaDevices: getUserMedia()</a>: exceptions, secure contexts, permissions policy for iframes.</li>
+    <li id="r4">Chromium, <a href="https://chromium.googlesource.com/chromium/src/+/main/media/base/audio_processing.h">audio_processing.h</a> (echo cancellation, noise suppression and gain control on by default) and <a href="https://chromium.googlesource.com/chromium/src/+/main/third_party/blink/renderer/modules/mediastream/media_stream_constraints_util_audio.cc">media_stream_constraints_util_audio.cc</a> (with echo cancellation off, the others default off); seen in Chromium 151.</li>
+    <li id="r5">W3C, <a href="https://webaudio.github.io/web-audio-api/">Web Audio API</a>: a MediaStream resampled to the context's rate; the render quantum, 128 frames by default; <code>ScriptProcessorNode</code> deprecated for <code>AudioWorkletNode</code>; <code>baseLatency</code>, <code>outputLatency</code>, <code>latencyHint</code>.</li>
+    <li id="r6">W3C, <a href="https://www.w3.org/TR/mediastream-recording/">MediaStream Recording</a>: <code>start(timeslice)</code>, <code>requestData()</code>, <code>isTypeSupported()</code>; the container and codecs left to the user agent.</li>
+    <li id="r7">Chromium, <a href="https://chromium.googlesource.com/chromium/src/+/main/third_party/blink/renderer/modules/mediarecorder/media_recorder_handler.cc">media_recorder_handler.cc</a>: WebM with Opus by default, PCM in WebM, Matroska, MP4; <a href="https://chromestatus.com/feature/5163469011943424">MP4 container support for MediaRecorder</a>, Chrome 126.</li>
+    <li id="r8">Mozilla, <a href="https://github.com/mozilla-firefox/firefox/blob/main/dom/media/MediaRecorder.cpp">MediaRecorder.cpp</a>: <code>audio/ogg; codecs=opus</code> by default, Ogg or WebM, Opus only.</li>
+    <li id="r9">WebKit, <a href="https://webkit.org/blog/11353/mediarecorder-api/">MediaRecorder API</a> (2020): MP4 with AAC; <a href="https://webkit.org/blog/16574/webkit-features-in-safari-18-4/">WebKit features in Safari 18.4</a> (2025): WebM with Opus, and lossless ALAC or PCM in MP4.</li>
+    <li id="r10">IBM &amp; Microsoft, <a href="https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf">Multimedia Programming Interface and Data Specifications 1.0</a> (1991): RIFF, the WAVE form, Intel byte order, the fact chunk.</li>
+    <li id="r11">P. Kabal, <a href="https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html">Audio File Format Specifications: WAVE</a>, McGill University: format codes, the extended fmt chunk of non-PCM formats, the fact chunk of float files, the unsafe 44-byte assumption.</li>
+    <li id="r12">Microsoft, <a href="https://learn.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatex">WAVEFORMATEX structure</a>: the fields' names and how block align and bytes a second follow from the rest.</li>
+    <li id="r13">EBU, <a href="https://tech.ebu.ch/publications/tech3306">Tech 3306, RF64: an extended file format for audio</a> (2007, 2018).</li>
+    <li id="r14">W3C, <a href="https://w3c.github.io/mediacapture-extensions/">Media Capture Extensions</a> (draft): <code>MediaStreamTrackAudioStats</code>, input latency in milliseconds.</li>
+    <li id="r15">Android Open Source Project, <a href="https://source.android.com/docs/core/audio/latency/measure">Measure audio latency</a>: round-trip latency through a loopback, found by correlation.</li>
+    <li id="r16">W3C, <a href="https://www.w3.org/TR/IndexedDB/">Indexed Database API 3.0</a>: transactions and their durability hint.</li>
+    <li id="r17">WHATWG, <a href="https://fs.spec.whatwg.org/">File System</a>: <code>createWritable()</code> applied on close; <code>createSyncAccessHandle()</code>, in place, in dedicated workers.</li>
+    <li id="r18">P. Walton, <a href="https://developer.chrome.com/docs/web-platform/page-lifecycle-api">Page Lifecycle API</a>, Chrome for Developers: hidden, frozen, discarded; MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event">visibilitychange</a>.</li>
+    <li id="r19">Chromium, <a href="https://issues.chromium.org/issues/40482588">issue 40482588</a> (formerly 642012), “MediaRecorder: consider producing seekable WebM files”: fixed for recordings without a timeslice in <a href="https://chromium.googlesource.com/chromium/src/+/742e276678eb">742e276678eb</a>, Chrome 140.</li>
+    <li id="r20"><a href="https://github.com/audiojs/audio#playback--recording">audio</a>, Playback / Recording; <a href="https://github.com/audiojs/mic/blob/main/browser.js">@audio/mic</a>, browser.js: getUserMedia with the three processors off, an AudioWorklet taking every block.</li>
+  </ol>
+  <footer><a href="/lab/">Audio Lab</a> · experiments from <a href="/">audiojs</a></footer>
+</main>
+<script type="module" src="demo.js"></script>
+<script type="module" src="https://audio.js.org/embed.js"></script>
+</body>
+</html>

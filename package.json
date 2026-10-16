@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/util-pages.mjs",
+    "build": "node scripts/util-pages.mjs && node scripts/bar.mjs",
     "vendor": "node scripts/vendor.mjs",
     "test": "node scripts/util-test.mjs",
     "test:e2e": "node scripts/util-e2e.mjs",

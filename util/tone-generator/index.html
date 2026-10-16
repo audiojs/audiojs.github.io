@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online tone generator: sine, square, sweep, noise and binaural beats · audiojs</title>
+  <meta name="description" content="Play a test tone at any frequency from 20 Hz to 20 kHz: sine, square, sawtooth, triangle or your own harmonics. Binaural beats, white, pink and brown noise, log and linear sweeps. Save as WAV, FLAC or MP3. Runs in your browser.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audiojs.dev/util/tone-generator/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audiojs.dev/util/tone-generator/">
+  <meta property="og:title" content="Online tone generator: sine, square, sweep, noise and binaural beats">
+  <meta property="og:description" content="Play a test tone at any frequency from 20 Hz to 20 kHz: sine, square, sawtooth, triangle or your own harmonics. Binaural beats, white, pink and brown noise, log and linear sweeps. Save as WAV, FLAC or MP3. Runs in your browser.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audiojs.dev/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audiojs.dev/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audiojs.dev/util/tone-generator/#app",
+        "name": "Tone generator",
+        "url": "https://audiojs.dev/util/tone-generator/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Play a test tone at any frequency from 20 Hz to 20 kHz: sine, square, sawtooth, triangle or your own harmonics. Binaural beats, white, pink and brown noise, log and linear sweeps. Save as WAV, FLAC or MP3. Runs in your browser.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audiojs.dev/",
+          "logo": "https://audiojs.dev/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/audiojs.github.io/blob/main/scripts/pages/tone-generator.mjs"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audiojs.dev/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audiojs.dev/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Tone generator",
+            "item": "https://audiojs.dev/util/tone-generator/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Which browser supports binaural beats?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Every current browser: Chrome, Edge, Firefox and Safari, on computers and phones, can send a separate tone to each ear through the Web Audio API this page uses. What stops binaural beats is the output: a mono audio setting, one earbud, a laptop or phone speaker, or a Bluetooth speaker. Press Check stereo in the Binaural tab; you should hear the left ear, then the right."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do binaural beats work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You do hear the beat. Whether it does more is not settled. A 2019 meta-analysis of 22 studies found a medium overall effect on memory, attention, anxiety and pain, and a 2023 systematic review of 14 EEG studies found the evidence that brain waves follow the beat inconsistent. This page makes no health claim."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I play an exact frequency?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Type it into the big number: decimals are fine, from 1 Hz to 20 kHz. Or type a note name such as A4 or C♯3 and press Enter. Up and down arrows in the frequency field move 1 Hz, left and right on the slider move 1 cent, and ÷2 and ×2 jump an octave."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the difference between white, pink and brown noise?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "White noise has equal power at every frequency, so it sounds bright. Pink noise falls 3 dB per octave, giving every octave equal power; it is the usual signal for speaker and room tuning. Brown noise falls 6 dB per octave and sounds like a low rumble."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Log or linear sweep?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A logarithmic sweep spends the same time on every octave, so 20 to 40 Hz takes as long as 10 to 20 kHz; it is the sweep used to measure speakers and rooms. A linear sweep spends the same time on every hertz and passes the bass in a blink."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I download the tone?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Save file renders the current sound to WAV (16 or 24-bit), FLAC or MP3 at 44.1 or 48 kHz, up to 10 minutes, with a 10 ms fade at each end so it starts and stops without a click. A sweep is saved at its own length. Nothing is uploaded."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does the level in dBFS mean?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The peak of the waveform in decibels below digital full scale: −6 dBFS is half of full scale. The default, −18 dBFS, is the EBU alignment level. It sets the signal, not how loud it is in the room. A sine wave's RMS level is 3 dB below its peak; square, sawtooth and triangle can peak up to 2 dB off the level at high frequencies, where the browser drops harmonics to prevent aliasing."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why can I not hear a high tone?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The highest frequency you can hear falls with age, from the top down, and small speakers may not play it at all. Do not raise the level to find a tone you cannot hear: your ears and speakers still get all of it."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://esm.sh">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/bar.css?v=4e6dabc4">
+  <link rel="stylesheet" href="/util/util.css?v=a794f8f2">
+  <link rel="modulepreload" href="/util/util.js?v=a1dc8e25">
+</head>
+<body>
+  <header class="site-bar">
+    <a class="site-brand" href="/" aria-label="audiojs home"><svg aria-hidden="true" viewBox="0 5 90.4 17" fill="currentColor"><path d="M4.2 22Q3.3 22 2.7 21.6Q2 21.2 1.6 20.5Q1.1 19.8 1.1 19V14.2H11.2V12.4Q11.2 12.3 11.1 12.2Q11.1 12.1 10.9 12.1H1.1V9.2H11.1Q11.9 9.2 12.6 9.7Q13.3 10.1 13.7 10.8Q14.1 11.4 14.1 12.3V22ZM4.3 19.1H11.2V16.8H4V18.9Q4 19 4.1 19Q4.2 19.1 4.3 19.1ZM19 22Q18.2 22 17.5 21.6Q16.8 21.2 16.4 20.5Q16 19.8 16 19V9.2H18.9V18.9Q18.9 19 19 19Q19 19.1 19.1 19.1H25.8Q25.9 19.1 26 19Q26.1 19 26.1 18.9V9.2H29V19Q29 19.8 28.5 20.5Q28.1 21.2 27.4 21.6Q26.8 22 25.9 22H19ZM33.2 22Q32.4 22 31.7 21.6Q31 21.2 30.6 20.5Q30.2 19.8 30.2 19V12.3Q30.2 11.4 30.6 10.8Q31 10.1 31.7 9.7Q32.4 9.2 33.2 9.2H40.3V5.1H43.2V22H33.2ZM33.4 19.1H40Q40.1 19.1 40.2 19Q40.3 19 40.3 18.9V12.4Q40.3 12.3 40.2 12.2Q40.1 12.1 40 12.1H33.4Q33.2 12.1 33.2 12.2Q33.1 12.3 33.1 12.4V18.9Q33.1 19 33.2 19Q33.2 19.1 33.4 19.1ZM45.1 22V9.2H47.9V22ZM45.1 8V5.1H47.9V8ZM52.5 22Q51.7 22 51 21.6Q50.3 21.2 49.9 20.5Q49.5 19.8 49.5 19V12.3Q49.5 11.4 49.9 10.8Q50.3 10.1 51 9.7Q51.7 9.2 52.5 9.2H59.4Q60.2 9.2 60.9 9.7Q61.6 10.1 62 10.8Q62.4 11.4 62.4 12.3V19Q62.4 19.8 62 20.5Q61.6 21.2 60.9 21.6Q60.2 22 59.4 22H52.5ZM52.6 19.1H59.3Q59.4 19.1 59.5 19Q59.5 19 59.5 18.9V12.4Q59.5 12.3 59.5 12.2Q59.4 12.1 59.3 12.1H52.6Q52.5 12.1 52.4 12.2Q52.4 12.3 52.4 12.4V18.9Q52.4 19 52.4 19Q52.5 19.1 52.6 19.1Z"/><path d="M75.1 18.4Q74.1 18.4 73.4 17.8Q72.7 17.3 72.4 16.4L73.8 16Q73.9 16.5 74.3 16.8Q74.6 17.1 75.1 17.1Q75.4 17.1 75.7 16.9Q76.1 16.8 76.2 16.4Q76.3 16.2 76.4 15.9Q76.4 15.6 76.4 15.2V8.8H77.7V15.2Q77.7 15.6 77.7 15.9Q77.7 16.2 77.7 16.5Q77.6 16.8 77.4 17.1Q77.1 17.8 76.5 18.1Q75.9 18.4 75.1 18.4ZM82.8 18.4Q81.8 18.4 81 18Q80.2 17.7 79.7 17Q79.2 16.4 79 15.5L80.4 15.3Q80.6 16.1 81.3 16.6Q82 17.1 82.9 17.1Q83.5 17.1 84 16.9Q84.4 16.7 84.7 16.4Q85 16.1 85 15.6Q85 15.3 84.9 15.1Q84.8 14.9 84.7 14.8Q84.5 14.7 84.3 14.6Q84.1 14.4 83.8 14.4L81.4 13.7Q81.1 13.6 80.7 13.4Q80.4 13.2 80.1 13Q79.7 12.7 79.6 12.3Q79.4 11.9 79.4 11.3Q79.4 10.4 79.8 9.8Q80.3 9.2 81 8.9Q81.8 8.6 82.7 8.6Q83.7 8.6 84.4 9Q85.2 9.3 85.7 9.9Q86.2 10.5 86.4 11.4L84.9 11.6Q84.8 11.1 84.5 10.7Q84.2 10.3 83.7 10.1Q83.2 9.9 82.7 9.9Q82.2 9.9 81.8 10.1Q81.3 10.2 81.1 10.5Q80.8 10.8 80.8 11.2Q80.8 11.6 81 11.9Q81.3 12.1 81.6 12.3Q81.9 12.4 82.3 12.5L84 13Q84.3 13.1 84.7 13.2Q85.1 13.4 85.5 13.6Q85.9 13.9 86.2 14.4Q86.4 14.8 86.4 15.5Q86.4 16.2 86.1 16.7Q85.9 17.3 85.4 17.6Q84.9 18 84.2 18.2Q83.6 18.4 82.8 18.4Z" fill="none" stroke="currentColor" stroke-width=".8"/><rect x="68.9" y="5.5" width="21" height="16" fill="none" stroke="currentColor"/></svg></a>
+    <nav aria-label="audiojs"><a href="/util/" aria-current="true">Utilities</a><a href="/lab/">Lab</a><a href="/audio/">audio</a><a href="/audio/playground.html">Playground</a><a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a></nav>
+  </header>
+  <main class="inner">
+    <section class="hero">
+      <h1>Tone generator</h1>
+      <p>Pick a frequency and press play. Tones, binaural beats, harmonics, noise and sweeps; save any of them as a file.</p>
+    </section>
+
+    <style>
+      #tg { text-align: left; padding: 20px; }
+      #tg :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+      #tg input[type=text], #tg input[type=number] { font: inherit; font-size: var(--fs-sm); padding: 6px 8px; border: 1px solid var(--c-rule); border-radius: 6px; background: #fff; color: var(--c-ink); font-variant-numeric: tabular-nums; min-width: 0; }
+      #tg input[type=range] { accent-color: var(--c-accent); }
+      #tg [aria-invalid=true] { border-color: var(--c-err) !important; color: var(--c-err); }
+      #tg .tabs { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--c-rule); border-radius: 8px; background: var(--c-bg); }
+      #tg [role=tab] { flex: 1 1 auto; min-width: 0; padding: 8px 6px; border: 0; border-radius: 5px; background: transparent; font-weight: 600; cursor: pointer; white-space: nowrap; }
+      #tg [role=tab]:hover { background: var(--c-paper); }
+      #tg [role=tab][aria-selected=true] { background: var(--c-ink); color: var(--c-paper); }
+      #tg .read { position: relative; display: flex; align-items: baseline; justify-content: center; gap: 6px; margin-top: 20px; }
+      #tg .read input { width: 5ch; padding: 0; border: 0; border-bottom: 2px dashed var(--c-rule); border-radius: 0; background: transparent; font-size: clamp(48px, 13vw, 96px); font-weight: 800; letter-spacing: -.04em; line-height: 1.05; text-align: center; }
+      #tg .read input:focus { border-bottom-color: var(--c-accent); outline: none; }
+      #tg .read span { font-size: var(--fs-lg); font-weight: 700; color: var(--c-mute); }
+      #tg .read .mirror { position: absolute; visibility: hidden; white-space: pre; font-size: clamp(48px, 13vw, 96px); font-weight: 800; letter-spacing: -.04em; }
+      #tg .line { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: center; margin-top: 14px; font-size: var(--fs-sm); font-weight: 500; }
+      #tg .line label { display: inline-flex; align-items: center; gap: 6px; }
+      #tg #note { width: 5.5ch; text-align: center; font-weight: 700; }
+      #tg #carrier, #tg #f0, #tg #f1 { width: 5.6em; }
+      #tg #a4, #tg #beat, #tg #dur, #tg #len { width: 4.6em; }
+      #tg #cents { min-width: 4.5ch; color: var(--c-mute); font-variant-numeric: tabular-nums; }
+      #tg .slide { margin-top: 16px; }
+      #tg .slide input { display: block; width: 100%; margin: 0; }
+      #tg .ticks { position: relative; height: 16px; margin: 2px 8px 0; font-size: 11px; font-weight: 600; color: var(--c-mute); }
+      #tg .ticks span { position: absolute; transform: translateX(-50%); }
+      #tg .ticks span:first-child { transform: none; } #tg .ticks span:last-child { transform: translateX(-100%); }
+      #tg .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+      #tg .seg { display: inline-flex; flex-wrap: wrap; justify-content: center; border: 1px solid var(--c-rule); border-radius: 6px; overflow: hidden; background: #fff; }
+      #tg .seg button, #tg .nudge button, #tg .mini { padding: 7px 10px; border: 0; background: transparent; font-weight: 600; cursor: pointer; font-variant-numeric: tabular-nums; }
+      #tg .seg button + button { border-left: 1px solid var(--c-rule); }
+      #tg .seg button[aria-pressed=true] { background: var(--c-ink); color: var(--c-paper); }
+      #tg .nudge { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 12px; }
+      #tg .nudge button, #tg .mini { border: 1px solid var(--c-rule); border-radius: 6px; background: #fff; }
+      #tg .nudge button:hover, #tg .mini:hover, #tg .seg button:hover:not([aria-pressed=true]) { background: var(--c-bg); }
+      #tg .panel-in { margin-top: 18px; }
+      #tg .note { margin-top: 12px; font-size: var(--fs-xs); font-weight: 500; color: var(--c-mute); line-height: 1.5; text-align: center; }
+      #tg .wave { display: block; width: 100%; height: 120px; margin-top: 16px; border-radius: 6px; background: var(--c-bg); }
+      #tg .bars { display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; height: 140px; margin-top: 10px; touch-action: none; user-select: none; -webkit-user-select: none; cursor: ns-resize; }
+      #tg .harm { position: relative; border-radius: 3px; background: #fff; border: 1px solid var(--c-rule); }
+      #tg .harm i { position: absolute; left: -1px; right: -1px; bottom: 0; border-radius: 2px; background: var(--c-accent); pointer-events: none; }
+      #tg .harm.off i { background: var(--c-rule); }
+      #tg .harm b { position: absolute; left: 0; right: 0; bottom: -20px; font-size: 10px; font-weight: 600; color: var(--c-mute); text-align: center; pointer-events: none; }
+      #tg .bars.ph .harm::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--c-mute); }
+      #tg .bars-gap { height: 18px; }
+      #tg .big { font-size: clamp(40px, 11vw, 72px); font-weight: 800; letter-spacing: -.03em; line-height: 1.1; text-align: center; font-variant-numeric: tabular-nums; }
+      #tg .big small { font-size: .4em; font-weight: 700; color: var(--c-mute); letter-spacing: 0; }
+      #tg .ears { display: flex; justify-content: center; gap: 10px; }
+      #tg .ears span { padding: 4px 10px; border-radius: 6px; font-weight: 700; color: var(--c-mute); background: var(--c-bg); }
+      #tg .ears span.on { background: var(--c-accent); color: #fff; }
+      #tg .common { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--c-rule); }
+      #tg #level { width: 180px; max-width: 100%; }
+      #tg #levelOut { min-width: 7ch; font-variant-numeric: tabular-nums; }
+      #tg .actions { margin-top: 18px; display: flex; justify-content: center; }
+      #tg #play { min-width: 140px; justify-content: center; font-size: var(--fs-md); padding: 12px 22px; }
+      #tg #play[aria-pressed=true] { background: var(--c-err); }
+      #tg .save { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--c-rule); }
+      #tg #fileLink { font-weight: 600; word-break: break-all; }
+      #tg .safety { margin-top: 14px; }
+      #tg #playMsg:empty { display: none; }
+      @media (max-width: 480px) { #tg { padding: 16px 12px; } #tg [role=tab] { padding: 8px 2px; font-size: var(--fs-xs); } #tg .seg button, #tg .nudge button { padding: 7px 8px; } }
+      .seo ol.refs { margin-top: 12px; padding-left: 1.4em; font-size: var(--fs-xs); color: var(--c-mute); }
+      .seo sup a { text-decoration: none; color: var(--c-accent); font-weight: 600; }
+      .seo figure.repl { margin: 16px 0 0; }
+      .seo figure.repl figcaption { margin-top: 8px; font-size: var(--fs-xs); color: var(--c-mute); line-height: 1.5; }
+      .seo pre { overflow-x: auto; }
+    </style>
+    <div class="live" id="tg">
+      <div class="tabs" role="tablist" aria-label="Sound">
+        <button type="button" role="tab" id="t-tone" data-mode="tone" aria-controls="p-tone" aria-selected="true">Tone</button>
+        <button type="button" role="tab" id="t-bin" data-mode="bin" aria-controls="p-bin" aria-selected="false" tabindex="-1">Binaural</button>
+        <button type="button" role="tab" id="t-add" data-mode="add" aria-controls="p-add" aria-selected="false" tabindex="-1">Additive</button>
+        <button type="button" role="tab" id="t-noise" data-mode="noise" aria-controls="p-noise" aria-selected="false" tabindex="-1">Noise</button>
+        <button type="button" role="tab" id="t-sweep" data-mode="sweep" aria-controls="p-sweep" aria-selected="false" tabindex="-1">Sweep</button>
+      </div>
+
+      <div id="fq">
+        <div class="read"><span class="mirror" id="mirror" aria-hidden="true"></span><input type="text" id="hz" value="440" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="Frequency in hertz" aria-describedby="hzKeys"><span>Hz</span></div>
+        <div class="line">
+          <label>Note <input type="text" id="note" value="A4" autocomplete="off" spellcheck="false" title="A note name such as A4, C#3 or Eb5; Enter sets it exactly" aria-describedby="hzKeys"></label>
+          <output id="cents" aria-label="Offset from the note">+0 ¢</output>
+          <label>A4 = <input type="number" id="a4" value="440" min="400" max="480" step="1"> Hz</label>
+        </div>
+        <div class="slide">
+          <input type="range" id="slider" min="0" max="11959" step="1" value="5351" aria-label="Frequency, 20 Hz to 20 kHz, one cent per step">
+          <div class="ticks" aria-hidden="true"><span style="left:0.00%">20</span><span style="left:13.26%">50</span><span style="left:23.30%">100</span><span style="left:33.33%">200</span><span style="left:46.60%">500</span><span style="left:56.63%">1k</span><span style="left:66.67%">2k</span><span style="left:79.93%">5k</span><span style="left:89.97%">10k</span><span style="left:100.00%">20k</span></div>
+        </div>
+        <div class="nudge" role="group" aria-label="Adjust frequency">
+          <button type="button" data-nudge="oct-" title="Octave down">÷2</button>
+          <button type="button" data-nudge="hz-" title="1 Hz down (↓ in the frequency field)">−1 Hz</button>
+          <button type="button" data-nudge="ct-" title="1 cent down (← on the slider)">−1 ¢</button>
+          <button type="button" data-nudge="ct+" title="1 cent up (→ on the slider)">+1 ¢</button>
+          <button type="button" data-nudge="hz+" title="1 Hz up (↑ in the frequency field)">+1 Hz</button>
+          <button type="button" data-nudge="oct+" title="Octave up">×2</button>
+        </div>
+        <p class="note" id="hzKeys">Type a frequency or a note. In the frequency field ↑ ↓ move 1 Hz (Shift: 10 Hz, Alt: 0.1 Hz); on the slider ← → move 1 cent.</p>
+      </div>
+
+      <div class="panel-in" role="tabpanel" id="p-tone" aria-labelledby="t-tone">
+        <div class="line">Waveform <span class="seg" role="group" aria-label="Waveform" data-name="wave"><button type="button" data-value="sine" aria-pressed="true">Sine</button><button type="button" data-value="square" aria-pressed="false">Square</button><button type="button" data-value="sawtooth" aria-pressed="false">Sawtooth</button><button type="button" data-value="triangle" aria-pressed="false">Triangle</button></span></div>
+      </div>
+
+      <div class="panel-in" role="tabpanel" id="p-bin" aria-labelledby="t-bin" hidden>
+        <div class="big" id="binBig">10<small> Hz beat</small></div>
+        <div class="line">
+          <label>Carrier <input type="number" id="carrier" value="250" min="40" max="1000" step="any"> Hz</label>
+          <label>Beat <input type="number" id="beat" value="10" min="0.5" max="30" step="any"> Hz</label>
+        </div>
+        <div class="line" id="binLR" aria-live="polite">Left ear 245 Hz · Right ear 255 Hz</div>
+        <div class="line">
+          <button type="button" class="mini" id="check">Check stereo: left, then right</button>
+          <span class="ears"><span id="earL" aria-hidden="true">L</span><span id="earR" aria-hidden="true">R</span><span class="vh" id="earMsg" role="status"></span></span>
+        </div>
+        <p class="note">Headphones only, at a low volume. Each ear gets its own steady tone, and the beat is made by your hearing combining the two<sup><a href="#r1">1</a></sup>: a speaker or a mono output mixes them in the air into an ordinary wobble. If the check plays in both ears at once, turn off mono audio in your device's accessibility settings<sup><a href="#r2">2</a></sup>.</p>
+      </div>
+
+      <div class="panel-in" role="tabpanel" id="p-add" aria-labelledby="t-add" hidden>
+        <canvas class="wave" id="wave" aria-label="One cycle of the summed waveform, drawn twice" role="img"></canvas>
+        <div class="line"><span class="seg" role="group" aria-label="Bars edit" data-name="edit"><button type="button" data-value="amp" aria-pressed="true">Amplitude</button><button type="button" data-value="ph" aria-pressed="false">Phase</button></span>
+          <span>Preset <button type="button" class="mini" data-preset="sine">Sine</button> <button type="button" class="mini" data-preset="square">Square</button> <button type="button" class="mini" data-preset="sawtooth">Sawtooth</button> <button type="button" class="mini" data-preset="triangle">Triangle</button> <button type="button" class="mini" data-preset="organ">Organ</button></span>
+        </div>
+        <div class="bars" id="bars" role="group" aria-label="Harmonics 1 to 16"></div>
+        <div class="bars-gap"></div>
+        <div class="line"><button type="button" class="mini" id="phRand">Random phases</button><button type="button" class="mini" id="phZero">Zero phases</button></div>
+        <p class="note">Drag across the bars to draw harmonic amplitudes, or switch to Phase. Random phases redraw the wave and leave the sound almost unchanged: the ear hears amplitudes far more than phases<sup><a href="#r3">3</a></sup>. Greyed bars sit above 20 kHz.</p>
+      </div>
+
+      <div class="panel-in" role="tabpanel" id="p-noise" aria-labelledby="t-noise" hidden>
+        <div class="line"><span class="seg" role="group" aria-label="Noise colour" data-name="color"><button type="button" data-value="white" aria-pressed="false">White</button><button type="button" data-value="pink" aria-pressed="true">Pink</button><button type="button" data-value="brown" aria-pressed="false">Brown</button></span></div>
+        <p class="note" id="colorNote"></p>
+      </div>
+
+      <div class="panel-in" role="tabpanel" id="p-sweep" aria-labelledby="t-sweep" hidden>
+        <div class="big" id="sweepBig" aria-live="off">20<small> Hz</small></div>
+        <div class="line">
+          <label>From <input type="number" id="f0" value="20" min="1" max="20000" step="any"> Hz</label>
+          <label>to <input type="number" id="f1" value="20000" min="1" max="20000" step="any"> Hz</label>
+          <label>in <input type="number" id="dur" value="10" min="0.5" max="600" step="any"> s</label>
+        </div>
+        <div class="line"><span class="seg" role="group" aria-label="Sweep scale" data-name="scale"><button type="button" data-value="log" aria-pressed="true">Logarithmic</button><button type="button" data-value="linear" aria-pressed="false">Linear</button></span></div>
+        <p class="note">Logarithmic spends equal time on every octave; linear spends equal time on every hertz, so it rushes through the bass. Stop it when you hear a rattle or a peak: the number above is the frequency.</p>
+      </div>
+
+      <div class="common">
+        <div class="line">
+          <span id="chRow">Channel <span class="seg" role="group" aria-label="Channel" data-name="ch"><button type="button" data-value="both" aria-pressed="true">Both</button><button type="button" data-value="left" aria-pressed="false">Left</button><button type="button" data-value="right" aria-pressed="false">Right</button></span></span>
+          <label>Level <input type="range" id="level" min="-60" max="-6" step="1" value="-18" aria-describedby="safety"> <output id="levelOut">−18 dBFS</output></label>
+        </div>
+        <div class="actions"><button type="button" class="btn" id="play" aria-pressed="false">▶ Play</button></div>
+        <p class="note" id="playMsg" role="status"></p>
+        <p class="note safety" id="safety">Start with your device volume low and raise it slowly. The level is relative to digital full scale, not loudness: at the same level a tone between 2 and 5 kHz sounds far louder than a bass tone<sup><a href="#r4">4</a></sup>, and a tone too high for you to hear still reaches your ears and speakers.</p>
+      </div>
+
+      <div class="save">
+        <div class="line">
+          <label id="lenRow">Length <input type="number" id="len" value="10" min="1" max="600" step="any"> s</label>
+          <label>Rate <select id="rate"><option value="44100">44.1 kHz</option><option value="48000" selected>48 kHz</option></select></label>
+          <label>Format <select id="fmt"><option value="wav16">WAV · 16-bit</option><option value="wav24">WAV · 24-bit</option><option value="flac">FLAC</option><option value="mp3">MP3</option></select></label>
+          <button type="button" class="btn ghost" id="save">Save file</button>
+        </div>
+        <p class="note" id="saveMsg" role="status" aria-live="polite">The file is the sound as set now, with a 10 ms fade at each end.</p>
+        <p class="note"><a id="fileLink" hidden></a></p>
+      </div>
+    </div>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="https://www.npmjs.com/package/@audio/encode" target="_blank" rel="noopener"><code>@audio/encode</code></a>.</p>
+    <section class="seo">
+    <h2>A tone generator for tuning, testing and listening</h2>
+    <p>Play a sine to tune by ear or check your hearing, a square or sawtooth for a buzzier test signal, a sweep to find what rattles in a speaker, pink noise to level a room. The sound is made live by the browser's Web Audio API<sup><a href="#r5">5</a></sup>. The saved file is the same sound rendered offline and written by <code>@audio/encode</code>. Nothing is uploaded.</p>
+    <h3>Notes and hertz</h3>
+    <p>Notes follow twelve-tone equal temperament: a semitone is a frequency ratio of 2<sup>1/12</sup>, a cent 2<sup>1/1200</sup>. A4 is 440 Hz by ISO 16<sup><a href="#r6">6</a></sup> and MIDI note 69, middle C is note 60<sup><a href="#r7">7</a></sup>, so C4 is 440 × 2<sup>−9/12</sup> = 261.63 Hz. Set A4 to 415, 432 or 442 Hz and the names follow; the frequency stays as typed. The field shows hundredths of a hertz, and that is exactly what plays.</p>
+    <h3>Additive synthesis</h3>
+    <p>A periodic sound is a sum of sine waves at whole multiples of its frequency. The Additive tab sets the first sixteen. Odd harmonics at 1/n make a square wave, every harmonic at 1/n a sawtooth, odd harmonics at 1/n² with alternating sign a triangle<sup><a href="#r5">5</a></sup>. The organ preset pulls out all nine drawbars of a Hammond organ. They are named in feet after organ pipes, and a drawbar of f feet sounds 16/f times the 16′ pitch: 16′, 5⅓′, 8′, 4′, 2⅔′, 2′, 1⅗′, 1⅓′ and 1′ are harmonics 1, 3, 2, 4, 6, 8, 10, 12 and 16<sup><a href="#r8">8</a></sup>. The browser plays the sum as one oscillator from a PeriodicWave, scaled to a peak of 1 before the level<sup><a href="#r5">5</a></sup>.</p>
+    <h3>Binaural beats</h3>
+    <p>Two tones a few hertz apart, one in each ear, are heard as one tone pulsing at the difference: 245 Hz on the left and 255 Hz on the right beat at 10 Hz. The pulse is not in the air. It comes from the hearing system combining the two ears' signals, first in the superior olivary complex, and it is heard with carriers below about 1000 Hz, best around a few hundred, for differences up to about 30 Hz<sup><a href="#r1">1</a></sup>. Every current browser can play it: separate channels through the Web Audio API work in Chrome, Edge, Firefox and Safari<sup><a href="#r15">15</a></sup>. The output decides. A mono setting, one earbud or a speaker mixes both tones into both ears, and the binaural beat becomes an ordinary one<sup><a href="#r2">2</a></sup>.</p>
+    <p>What binaural beats do beyond being heard is not settled. A meta-analysis of 22 studies found a medium overall effect (g = 0.45) on memory, attention, anxiety and pain, depending on the beat frequency, the exposure time and whether it came before or during the task<sup><a href="#r9">9</a></sup>. A systematic review of 14 studies that recorded EEG asked whether brain rhythms follow the beat: five found they did, eight found they did not, one was mixed<sup><a href="#r1">1</a></sup>. This page makes no health claim.</p>
+    <h3>Noise and sweeps</h3>
+    <p>White noise has equal power at every frequency. Pink noise falls 3 dB per octave, so every octave carries the same power; here it is white noise through Paul Kellet's filter, accurate to ±0.05 dB above 9.2 Hz at 44.1 kHz<sup><a href="#r11">11</a></sup>. Brown noise falls 6 dB per octave; here a leaky integrator, flat below 20 Hz instead of rising further, so less of the speaker's travel goes to rumble you cannot hear. Measured on 22 seconds of each from 125 Hz to 8 kHz: 0.0, −3.0 and −6.0 dB per octave.</p>
+    <p>A logarithmic sweep gives every octave the same time: f(t) = f<sub>0</sub> (f<sub>1</sub>/f<sub>0</sub>)<sup>t/T</sup>, a curve the browser follows sample by sample<sup><a href="#r5">5</a></sup>. It is the swept sine used to measure the impulse response and distortion of speakers and rooms<sup><a href="#r14">14</a></sup>. A linear sweep gives every hertz the same time.</p>
+    <h3>Levels and safe listening</h3>
+    <p>The level is the peak in dBFS, decibels below digital full scale. The default, −18 dBFS, is the EBU alignment level, 18 dB below the maximum coding level<sup><a href="#r13">13</a></sup>. A sine's RMS sits 3 dB below its peak. Square, sawtooth and triangle come from the browser's own oscillator, which may drop harmonics to prevent aliasing<sup><a href="#r5">5</a></sup>; measured in Chromium, Firefox and WebKit, their peak then sits up to 2 dB off the level at high frequencies.</p>
+    <p>dBFS is not loudness: that depends on your volume and your speakers or headphones. The WHO's safe-listening standard allows adults 80 dB for 40 hours a week<sup><a href="#r10">10</a></sup>, and a test tone at full volume in headphones can be far above it. The ear is most sensitive between about 2 and 5 kHz<sup><a href="#r4">4</a></sup>, so a sweep at a steady level swells there. The upper limit of hearing falls with age, from the highest frequencies down<sup><a href="#r12">12</a></sup>; a tone you no longer hear still reaches your ears and your speakers.</p>
+    <h3>The same sounds in code</h3>
+    <p>The <a href="https://github.com/audiojs/audio" target="_blank" rel="noopener"><code>audio</code></a> library makes these in a line. A tone is a function of time, <code>audio.from(t =&gt; 0.25 * Math.sin(2 * Math.PI * 440 * t), { duration: 2 })</code>; a sweep is a generator. Edit the numbers below and play.</p>
+    <figure class="repl">
+      <audio-repl panel="code" display="spec" height="320">
+<pre><code>audio.from(8).chirp({
+  f0: 20,
+  f1: 20000,
+  amp: 0.25,
+})</code></pre>
+      </audio-repl>
+      <figcaption>A logarithmic sweep from 20 Hz to 20 kHz over 8 seconds, peak 0.25 (−12 dBFS). Add a line <code>method: 'linear',</code> to hear the difference.</figcaption>
+    </figure>
+    <h3>References</h3>
+    <ol class="refs">
+      <li id="r1">H. Ingendoh, E. S. Posny &amp; A. Heine, “Binaural beats to entrain the brain? A systematic review of the effects of binaural beat stimulation on brain oscillatory activity,” <i>PLOS ONE</i> 18(5) (2023): e0286023, <a href="https://doi.org/10.1371/journal.pone.0286023">doi:10.1371/journal.pone.0286023</a>. Perception limits after J. C. R. Licklider et al., <i>JASA</i> 22 (1950) and D. R. Perrott &amp; M. A. Nelson, <i>JASA</i> 46 (1969).</li>
+      <li id="r2">Mono audio settings: Apple, <a href="https://support.apple.com/guide/mac-help/change-audio-settings-for-accessibility-unac611/mac">Mac: Play stereo audio as mono</a> and <a href="https://support.apple.com/en-ge/guide/beats/dev2a460376c/1.0/web/1.0">iPhone: Settings › Accessibility › Audio &amp; Visual › Mono Audio</a>; Microsoft, <a href="https://support.microsoft.com/en-us/accessibility/windows/make-windows-easier-to-hear">Windows: Mono audio</a>.</li>
+      <li id="r3">R. Plomp &amp; H. J. M. Steeneken, “Effect of phase on the timbre of complex tones,” <i>JASA</i> 46 (1969): 409–421, <a href="https://doi.org/10.1121/1.1911705">doi:10.1121/1.1911705</a>: the largest effect of phase on timbre is smaller than tilting the amplitudes by 2 dB per octave.</li>
+      <li id="r4">ISO 226:2023, <a href="https://www.iso.org/standard/83117.html">Acoustics – Normal equal-loudness-level contours</a>; R. Nave, <a href="https://hyperphysics.gsu.edu/hbase/Sound/eqloud.html">Equal loudness curves</a>, HyperPhysics: sensitivity peaks between about 2000 and 5000 Hz, the ear canal resonance.</li>
+      <li id="r5">W3C, <a href="https://www.w3.org/TR/webaudio/">Web Audio API</a>: OscillatorNode basic waveforms and their Fourier series, PeriodicWave normalization, <code>exponentialRampToValueAtTime</code>.</li>
+      <li id="r6">ISO 16:1975, <a href="https://www.iso.org/standard/3601.html">Acoustics – Standard tuning frequency (Standard musical pitch)</a>: A4 = 440 Hz.</li>
+      <li id="r7">MIDI Association, <a href="https://midi.org/community/midi-specifications/the-midi-tuning-standard">The MIDI Tuning Standard</a>: middle C is note 60, A440 note 69; J. Wolfe, <a href="https://newt.phys.unsw.edu.au/jw/notes.html">Note names, MIDI numbers and frequencies</a>, UNSW.</li>
+      <li id="r8">Hammond, <a href="https://hammondorganco.com/wp-content/uploads/2022/09/03-DRAWBARS-PERCUSSION-corrected.pdf">SK series manual: Drawbars</a>; Electric Druid, <a href="https://electricdruid.net/?p=316">drawbar footages and harmonics</a>.</li>
+      <li id="r9">M. Garcia-Argibay, M. A. Santed &amp; J. M. Reales, “Efficacy of binaural auditory beats in cognition, anxiety, and pain perception: a meta-analysis,” <i>Psychological Research</i> 83 (2019): 357–372, <a href="https://doi.org/10.1007/s00426-018-1066-8">doi:10.1007/s00426-018-1066-8</a>.</li>
+      <li id="r10">WHO, <a href="https://www.who.int/news-room/questions-and-answers/item/deafness-and-hearing-loss-safe-listening">Deafness and hearing loss: safe listening</a>; WHO–ITU, <a href="https://www.who.int/publications/i/item/9789241515276">Safe listening devices and systems</a> (ITU-T H.870): 80 dB for 40 hours a week for adults, 75 dB for children.</li>
+      <li id="r11">P. Kellet, <a href="https://www.musicdsp.org/en/latest/Filters/76-pink-noise-filter.html">Filter to make pink noise from white</a>, musicdsp.org (2000).</li>
+      <li id="r12">M. N. Kunchur, “The human auditory system and audio,” <i>Applied Acoustics</i> 211 (2023): 109507, <a href="https://doi.org/10.1016/j.apacoust.2023.109507">doi:10.1016/j.apacoust.2023.109507</a>: age-related loss starts from the high frequencies.</li>
+      <li id="r13">EBU, <a href="https://tech.ebu.ch/docs/r/r068.pdf">R 68-2000: Alignment level in digital audio production equipment</a>: 18 dB below the maximum coding level.</li>
+      <li id="r14">A. Farina, “Simultaneous measurement of impulse response and distortion with a swept-sine technique,” AES 108th Convention (2000), preprint 5093.</li>
+      <li id="r15">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/ChannelMergerNode">ChannelMergerNode</a> and <a href="https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode">OscillatorNode</a>: Baseline, widely available.</li>
+    </ol>
+    <script type="module" src="https://audio.js.org/embed.js"></script>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>Which browser supports binaural beats?</summary><p>Every current browser: Chrome, Edge, Firefox and Safari, on computers and phones, can send a separate tone to each ear through the Web Audio API this page uses. What stops binaural beats is the output: a mono audio setting, one earbud, a laptop or phone speaker, or a Bluetooth speaker. Press Check stereo in the Binaural tab; you should hear the left ear, then the right.</p></details>
+        <details><summary>Do binaural beats work?</summary><p>You do hear the beat. Whether it does more is not settled. A 2019 meta-analysis of 22 studies found a medium overall effect on memory, attention, anxiety and pain, and a 2023 systematic review of 14 EEG studies found the evidence that brain waves follow the beat inconsistent. This page makes no health claim.</p></details>
+        <details><summary>How do I play an exact frequency?</summary><p>Type it into the big number: decimals are fine, from 1 Hz to 20 kHz. Or type a note name such as A4 or C♯3 and press Enter. Up and down arrows in the frequency field move 1 Hz, left and right on the slider move 1 cent, and ÷2 and ×2 jump an octave.</p></details>
+        <details><summary>What is the difference between white, pink and brown noise?</summary><p>White noise has equal power at every frequency, so it sounds bright. Pink noise falls 3 dB per octave, giving every octave equal power; it is the usual signal for speaker and room tuning. Brown noise falls 6 dB per octave and sounds like a low rumble.</p></details>
+        <details><summary>Log or linear sweep?</summary><p>A logarithmic sweep spends the same time on every octave, so 20 to 40 Hz takes as long as 10 to 20 kHz; it is the sweep used to measure speakers and rooms. A linear sweep spends the same time on every hertz and passes the bass in a blink.</p></details>
+        <details><summary>Can I download the tone?</summary><p>Yes. Save file renders the current sound to WAV (16 or 24-bit), FLAC or MP3 at 44.1 or 48 kHz, up to 10 minutes, with a 10 ms fade at each end so it starts and stops without a click. A sweep is saved at its own length. Nothing is uploaded.</p></details>
+        <details><summary>What does the level in dBFS mean?</summary><p>The peak of the waveform in decibels below digital full scale: −6 dBFS is half of full scale. The default, −18 dBFS, is the EBU alignment level. It sets the signal, not how loud it is in the room. A sine wave's RMS level is 3 dB below its peak; square, sawtooth and triangle can peak up to 2 dB off the level at high frequencies, where the browser drops harmonics to prevent aliasing.</p></details>
+        <details><summary>Why can I not hear a high tone?</summary><p>The highest frequency you can hear falls with age, from the top down, and small speakers may not play it at all. Do not raise the level to find a tone you cannot hear: your ears and speakers still get all of it.</p></details>
+      </section>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/stem-splitter/">Stem splitter</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI converter</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/prosody/">Speech prosody editor</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+          <li><a href="/util/latency/">Audio latency test</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="https://github.com/audiojs/audiojs.github.io/blob/main/scripts/pages/tone-generator.mjs" target="_blank" rel="noopener">source</a> · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=a1dc8e25'
+    function midiOf(hz, a4 = 440) { return 69 + 12 * Math.log2(hz / a4) }
+function hzOf(midi, a4 = 440) { return a4 * 2 ** ((midi - 69) / 12) }
+function noteOf(hz, a4 = 440) {
+  const m = midiOf(hz, a4), n = Math.round(m)
+  return { midi: n, name: ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'][((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1), cents: 100 * (m - n) }
+}
+function parseNote(s) {
+  const m = /^\s*([a-g])\s*([#♯b♭]?)\s*(-?\d{1,2})\s*$/i.exec(s)
+  if (!m) return NaN
+  return 12 * (+m[3] + 1) + { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[m[1].toLowerCase()] + (m[2] === '#' || m[2] === '♯' ? 1 : m[2] ? -1 : 0)
+}
+function hzOfSlider(v) { return Math.min(20000, 20 * 2 ** (v / 1200)) }
+function sliderOf(hz) { return Math.round(1200 * Math.log2(hz / 20)) }
+function binaural(carrier, beat) { return [carrier - beat / 2, carrier + beat / 2] }
+function sweepHz(f0, f1, dur, t, scale = 'log') {
+  const x = Math.min(1, Math.max(0, t / dur))
+  return scale === 'linear' ? f0 + (f1 - f0) * x : f0 * (f1 / f0) ** x
+}
+function preset(name, n = 16) {
+  const amp = [], ph = []
+  for (let k = 1; k <= n; k++) {
+    let a = 0, p = 0
+    if (name === 'sine') a = k === 1 ? 1 : 0
+    else if (name === 'square') a = k % 2 ? 1 / k : 0                                       // odd harmonics, 1/k
+    else if (name === 'sawtooth') a = 1 / k                                                  // every harmonic, 1/k
+    else if (name === 'triangle') { a = k % 2 ? 1 / (k * k) : 0; p = k % 4 === 3 ? 180 : 0 } // odd, 1/k², alternating sign
+    else if (name === 'organ') a = [1, 2, 3, 4, 6, 8, 10, 12, 16].includes(k) ? 1 : 0         // all nine drawbars out, 16′ as harmonic 1
+    amp.push(a); ph.push(p)
+  }
+  return { amp, ph }
+}
+function coeffs(amp, ph) {
+  const real = new Float32Array(amp.length + 1), imag = new Float32Array(amp.length + 1)
+  for (let k = 0; k < amp.length; k++) { const p = ph[k] * Math.PI / 180; real[k + 1] = amp[k] * Math.sin(p); imag[k + 1] = amp[k] * Math.cos(p) }
+  return { real, imag }
+}
+function waveform(amp, ph, n = 256) {
+  const y = new Float32Array(n)
+  let peak = 0
+  for (let i = 0; i < n; i++) {
+    let s = 0
+    for (let k = 0; k < amp.length; k++) if (amp[k]) s += amp[k] * Math.sin(2 * Math.PI * (k + 1) * i / n + ph[k] * Math.PI / 180)
+    y[i] = s; peak = Math.max(peak, Math.abs(s))
+  }
+  if (peak) for (let i = 0; i < n; i++) y[i] /= peak
+  return y
+}
+function noise(color, n, fs = 48000, seed = 1) {
+  let s = seed >>> 0
+  const rnd = () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 2147483648 - 1 }
+  const y = new Float32Array(n), leak = Math.exp(-2 * Math.PI * 20 / fs)
+  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, z = 0, peak = 0
+  for (let i = 0; i < n; i++) {
+    const w = rnd()
+    if (color === 'pink') {
+      b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.96900 * b2 + w * 0.1538520
+      b3 = 0.86650 * b3 + w * 0.3104856; b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980
+      y[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362; b6 = w * 0.115926
+    } else if (color === 'brown') y[i] = z = leak * z + w
+    else y[i] = w
+  }
+  for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(y[i]))
+  for (let i = 0; i < n; i++) y[i] /= peak
+  return y
+}
+function loop(x, m) {
+  const n = x.length - m, y = x.slice(0, n)
+  for (let i = 0; i < m; i++) { const a = Math.PI / 2 * i / m; y[i] = x[i] * Math.sin(a) + x[n + i] * Math.cos(a) }
+  let peak = 0
+  for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(y[i]))
+  for (let i = 0; i < n; i++) y[i] /= peak
+  return y
+}
+function fileName(s, secs, ext) {
+  const hz = f => +f.toFixed(2) + 'hz'
+  const what = s.mode === 'bin' ? 'binaural-' + hz(s.carrier) + '-beat-' + hz(s.beat)
+    : s.mode === 'noise' ? s.color + '-noise'
+    : s.mode === 'sweep' ? s.scale + '-sweep-' + +s.f0.toFixed(2) + '-' + hz(s.f1)
+    : (s.mode === 'add' ? 'harmonics' : s.wave) + '-' + hz(s.hz)
+  return what + (s.mode !== 'bin' && s.ch !== 'both' ? '-' + s.ch : '') + '-' + +secs.toFixed(2) + 's.' + ext
+}
+    const FADE = 0.01, $$ = s => [...document.querySelectorAll(s)]
+    const S = { mode: 'tone', hz: 440, a4: 440, wave: 'sine', carrier: 250, beat: 10, color: 'pink', f0: 20, f1: 20000, dur: 10, scale: 'log', ch: 'both', db: -18, edit: 'amp', ...preset('square') }
+    const hzEl = $('hz'), noteEl = $('note'), centsEl = $('cents'), a4El = $('a4'), slider = $('slider'), play = $('play'), level = $('level'), levelOut = $('levelOut')
+    const fmtHz = f => String(+f.toFixed(2))
+    const dbText = db => (db < 0 ? '−' : '') + Math.abs(db) + ' dBFS'
+    let ctx = null, cur = null, raf = 0, idle = 0
+
+    // ── sound: one graph builder for the speakers (AudioContext) and for the file (OfflineAudioContext) ──
+    const NOISE = {}
+    function noiseBuffer(c, color, secs) {
+      const fs = c.sampleRate, live = !secs, k = color + fs
+      if (live && NOISE[k]) return NOISE[k]
+      const data = live ? loop(noise(color, 20 * fs + fs / 10, fs), fs / 10) : noise(color, Math.round(secs * fs), fs)
+      const b = c.createBuffer(1, data.length, fs); b.getChannelData(0).set(data)
+      return live ? (NOISE[k] = b) : b
+    }
+    function periodic(c, s) {
+      const { real, imag } = coeffs(s.amp, s.ph)
+      return c.createPeriodicWave(real, imag, { disableNormalization: !s.amp.some(a => a > 0) })
+    }
+    // what cannot change while it plays: a change here rebuilds the sound, anything else glides
+    const shape = s => [s.mode, s.mode === 'bin' ? 'stereo' : s.ch, s.mode === 'noise' && s.color, s.mode === 'sweep' && [s.f0, s.f1, s.dur, s.scale]].join()
+    function build(c, s, secs) {
+      const env = c.createGain(), gain = c.createGain(), srcs = []
+      env.gain.value = 0; gain.gain.value = 10 ** (s.db / 20)
+      env.connect(gain).connect(c.destination)
+      const merger = s.mode === 'bin' || s.ch !== 'both' ? c.createChannelMerger(2) : null
+      if (merger) merger.connect(env)
+      const add = (node, side) => { node.connect(merger || env, 0, merger ? side : 0); srcs.push(node); return node }
+      const side = s.ch === 'right' ? 1 : 0
+      const osc = f => { const o = c.createOscillator(); o.frequency.value = f; return o }
+      if (s.mode === 'tone') { const o = add(osc(s.hz), side); o.type = s.wave }
+      else if (s.mode === 'add') add(osc(s.hz), side).setPeriodicWave(periodic(c, s))
+      else if (s.mode === 'bin') { const [l, r] = binaural(s.carrier, s.beat); add(osc(l), 0); add(osc(r), 1) }
+      else if (s.mode === 'noise') { const b = c.createBufferSource(); b.buffer = noiseBuffer(c, s.color, secs); b.loop = !secs; add(b, side) }
+      else add(osc(s.f0), side)
+      const v = { shape: shape(s), t0: 0, srcs, gain, s,
+        start(t, until) {
+          v.t0 = t
+          if (s.mode === 'sweep') {
+            const f = srcs[0].frequency
+            f.setValueAtTime(s.f0, t)
+            s.scale === 'linear' ? f.linearRampToValueAtTime(s.f1, t + s.dur) : f.exponentialRampToValueAtTime(s.f1, t + s.dur)
+            until = t + s.dur
+          }
+          env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(1, t + FADE)
+          for (const n of srcs) n.start(t)
+          if (until) { env.gain.setValueAtTime(1, until - FADE); env.gain.linearRampToValueAtTime(0, until); for (const n of srcs) n.stop(until) }
+        },
+        stop(t) { env.gain.cancelScheduledValues(t); env.gain.setTargetAtTime(0, t, FADE / 3); for (const n of srcs) n.stop(t + FADE * 4) },
+        update(n) {
+          const t = c.currentTime
+          gain.gain.setTargetAtTime(10 ** (n.db / 20), t, 0.02)
+          if (n.mode === 'tone') { srcs[0].frequency.setTargetAtTime(n.hz, t, 0.01); if (srcs[0].type !== n.wave) srcs[0].type = n.wave }
+          if (n.mode === 'add') { srcs[0].frequency.setTargetAtTime(n.hz, t, 0.01); srcs[0].setPeriodicWave(periodic(c, n)) }
+          if (n.mode === 'bin') binaural(n.carrier, n.beat).forEach((f, i) => srcs[i].frequency.setTargetAtTime(f, t, 0.01))
+        },
+      }
+      return v
+    }
+    async function render(s, secs, fs) {
+      const c = new OfflineAudioContext(s.mode === 'bin' || s.ch !== 'both' ? 2 : 1, Math.round(secs * fs), fs)
+      build(c, s, secs).start(0, secs)
+      const b = await c.startRendering()
+      return { channelData: Array.from({ length: b.numberOfChannels }, (_, i) => b.getChannelData(i)), sampleRate: fs }
+    }
+
+    // ── live playback ──
+    function start() {
+      cur = build(ctx, { ...S, amp: S.amp.slice(), ph: S.ph.slice() })
+      cur.start(ctx.currentTime + 0.02)
+      if (S.mode === 'sweep') { const v = cur; v.srcs[0].onended = () => cur === v && stop(); tick() }
+    }
+    function stop() {
+      if (cur) cur.stop(ctx.currentTime)
+      cur = null; cancelAnimationFrame(raf)
+      play.textContent = '▶ Play'; play.setAttribute('aria-pressed', 'false')
+      clearTimeout(idle); idle = setTimeout(() => !cur && ctx.state === 'running' && ctx.suspend(), 200)
+    }
+    // a source started on a suspended context waits for it: no await, so a double click cannot start two
+    const wake = () => { ctx ??= new AudioContext(); clearTimeout(idle); return ctx.resume() }
+    play.addEventListener('click', () => {
+      if (cur) return stop()
+      $('playMsg').textContent = ''
+      wake().catch(e => { stop(); $('playMsg').textContent = 'The browser did not start audio: ' + e.message })
+      start()
+      play.textContent = '■ Stop'; play.setAttribute('aria-pressed', 'true')
+    })
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && cur) stop() })
+    function changed() {
+      show()
+      if (!cur) return
+      if (cur.shape !== shape(S)) { cur.stop(ctx.currentTime); start() }
+      else cur.update(S)
+    }
+    function tick() {
+      const v = cur
+      if (!v || v.s.mode !== 'sweep') return
+      const t = ctx.currentTime - (ctx.outputLatency || 0) - v.t0
+      $('sweepBig').innerHTML = fmtHz(sweepHz(v.s.f0, v.s.f1, v.s.dur, t, v.s.scale)) + '<small> Hz</small>'
+      raf = requestAnimationFrame(tick)
+    }
+
+    // ── controls ──
+    function show() {
+      if (document.activeElement !== hzEl) hzEl.value = fmtHz(S.hz)
+      fit()
+      const n = noteOf(S.hz, S.a4), c = Math.round(n.cents)
+      if (document.activeElement !== noteEl) { noteEl.value = n.name; noteEl.removeAttribute('aria-invalid') }
+      centsEl.textContent = (c > 0 ? '+' : c < 0 ? '−' : '±') + Math.abs(c) + ' ¢'
+      slider.value = sliderOf(S.hz)
+      slider.setAttribute('aria-valuetext', fmtHz(S.hz) + ' Hz, ' + n.name + ' ' + centsEl.textContent)
+      const [l, r] = binaural(S.carrier, S.beat)
+      $('binBig').innerHTML = fmtHz(S.beat) + '<small> Hz beat</small>'
+      $('binLR').textContent = 'Left ear ' + fmtHz(l) + ' Hz · Right ear ' + fmtHz(r) + ' Hz'
+      if (!cur || S.mode !== 'sweep') $('sweepBig').innerHTML = fmtHz(S.f0) + '<small> Hz</small>'
+      $('colorNote').textContent = { white: 'Equal energy per hertz: flat, bright hiss.', pink: 'Equal energy per octave, −3 dB per octave: the usual signal for tuning speakers and rooms.', brown: '−6 dB per octave above 20 Hz: a deep rumble.' }[S.color]
+      levelOut.textContent = dbText(S.db); level.setAttribute('aria-valuetext', dbText(S.db))
+      if (S.mode === 'add') drawAdd()
+    }
+    // the frequency field is as wide as its text, so the unit sits right after the number
+    const fit = () => { $('mirror').textContent = hzEl.value || '0'; hzEl.style.width = $('mirror').offsetWidth + 6 + 'px' }
+    const setHz = f => { if (f >= 1 && f <= 20000) { S.hz = f; changed() } }
+    hzEl.addEventListener('input', () => {
+      const f = parseFloat(hzEl.value.replace(',', '.'))
+      const okay = f >= 1 && f <= 20000
+      hzEl.setAttribute('aria-invalid', !okay)
+      if (okay) setHz(f)
+      fit()
+    })
+    hzEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') return hzEl.blur()
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+      e.preventDefault()
+      const step = (e.shiftKey ? 10 : e.altKey ? 0.1 : 1) * (e.key === 'ArrowUp' ? 1 : -1)
+      setHz(Math.min(20000, Math.max(1, Math.round((S.hz + step) * 100) / 100)))
+      hzEl.value = fmtHz(S.hz); hzEl.setAttribute('aria-invalid', 'false'); show()
+    })
+    hzEl.addEventListener('blur', () => { hzEl.setAttribute('aria-invalid', 'false'); show() })
+    noteEl.addEventListener('input', () => noteEl.setAttribute('aria-invalid', isNaN(parseNote(noteEl.value))))
+    const takeNote = () => { const m = parseNote(noteEl.value); if (!isNaN(m)) setHz(Math.min(20000, Math.max(1, Math.round(hzOf(m, S.a4) * 100) / 100))); noteEl.value = noteOf(S.hz, S.a4).name; noteEl.removeAttribute('aria-invalid') }
+    noteEl.addEventListener('keydown', e => { if (e.key === 'Enter') { takeNote(); noteEl.select() } })
+    noteEl.addEventListener('blur', takeNote)
+    a4El.addEventListener('input', () => { const a = +a4El.value; if (a >= 400 && a <= 480) { S.a4 = a; show() } })
+    slider.addEventListener('input', () => { S.hz = Math.round(hzOfSlider(+slider.value) * 100) / 100; changed() })
+    // nudges land on the 0.01 Hz the field shows: what is shown is what plays
+    const nudge = op => { const f = S.hz; setHz(Math.min(20000, Math.max(1, Math.round((op === 'oct-' ? f / 2 : op === 'oct+' ? f * 2 : op === 'hz-' ? f - 1 : op === 'hz+' ? f + 1 : f * 2 ** ((op === 'ct+' ? 1 : -1) / 1200)) * 100) / 100))) }
+    $$('#tg [data-nudge]').forEach(b => b.addEventListener('click', () => nudge(b.dataset.nudge)))
+    // arrows on the slider: exactly a cent from where it is, not the next whole cent above 20 Hz
+    slider.addEventListener('keydown', e => { const d = { ArrowRight: 'ct+', ArrowUp: 'ct+', ArrowLeft: 'ct-', ArrowDown: 'ct-' }[e.key]; if (d) { e.preventDefault(); nudge(d) } })
+    // segmented buttons: data-name is the state key, data-value its value
+    $$('#tg .seg').forEach(g => g.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return
+      for (const x of g.children) x.setAttribute('aria-pressed', x === b)
+      S[g.dataset.name] = b.dataset.value
+      if (g.dataset.name === 'edit') return drawAdd()
+      changed()
+    }))
+    level.addEventListener('input', () => { S.db = +level.value; changed() })
+    const num = (id, key, lo, hi) => $(id).addEventListener('input', () => { const v = +$(id).value, okay = $(id).value !== '' && v >= lo && v <= hi; $(id).setAttribute('aria-invalid', !okay); if (okay) { S[key] = v; changed() } })
+    num('carrier', 'carrier', 40, 1000); num('beat', 'beat', 0.5, 30); num('f0', 'f0', 1, 20000); num('f1', 'f1', 1, 20000); num('dur', 'dur', 0.5, 600)
+
+    // tabs: arrows move between them (WAI-ARIA tabs pattern)
+    const tabs = $$('#tg [role=tab]')
+    function setMode(m) {
+      S.mode = m
+      for (const t of tabs) { const on = t.dataset.mode === m; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; $(t.getAttribute('aria-controls')).hidden = !on }
+      $('fq').hidden = m !== 'tone' && m !== 'add'
+      $('chRow').hidden = m === 'bin'
+      $('lenRow').hidden = m === 'sweep'
+      changed()
+    }
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => setMode(t.dataset.mode))
+      t.addEventListener('keydown', e => {
+        const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key]
+        if (j === undefined) return
+        e.preventDefault(); const n = tabs[(j + tabs.length) % tabs.length]; n.focus(); setMode(n.dataset.mode)
+      })
+    })
+
+    // ── additive: 16 bars, drawn by dragging, each a slider for the keyboard ──
+    const bars = $('bars'), wave = $('wave')
+    const barEls = S.amp.map((_, k) => {
+      const b = el('div', { class: 'harm', role: 'slider', tabindex: '0', 'aria-valuemin': '0', 'aria-valuemax': '1' }, el('i'), el('b', {}, String(k + 1)))
+      b.addEventListener('keydown', e => {
+        const amp = S.edit === 'amp', d = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 4, PageDown: -4 }[e.key]
+        if (d === undefined && e.key !== 'Home' && e.key !== 'End') return
+        e.preventDefault()
+        if (amp) S.amp[k] = e.key === 'Home' ? 0 : e.key === 'End' ? 1 : Math.min(1, Math.max(0, Math.round((S.amp[k] + d * 0.05) * 100) / 100))
+        else S.ph[k] = e.key === 'Home' ? -180 : e.key === 'End' ? 180 : Math.min(180, Math.max(-180, S.ph[k] + d * 15))
+        changed()
+      })
+      bars.append(b)
+      return b
+    })
+    let painting = false
+    const paint = e => {
+      const r = bars.getBoundingClientRect(), k = Math.min(15, Math.max(0, Math.floor((e.clientX - r.left) / r.width * 16)))
+      const v = Math.min(1, Math.max(0, 1 - (e.clientY - r.top) / r.height))
+      if (S.edit === 'amp') S.amp[k] = Math.round(v * 100) / 100
+      else S.ph[k] = Math.round(v * 360 - 180)
+      changed()
+    }
+    bars.addEventListener('pointerdown', e => { painting = true; bars.setPointerCapture(e.pointerId); paint(e) })
+    bars.addEventListener('pointermove', e => painting && paint(e))
+    bars.addEventListener('pointerup', () => painting = false)
+    bars.addEventListener('pointercancel', () => painting = false)
+    $$('#tg [data-preset]').forEach(b => b.addEventListener('click', () => { Object.assign(S, preset(b.dataset.preset)); changed() }))
+    $('phRand').addEventListener('click', () => { S.ph = S.ph.map(() => Math.round(Math.random() * 360 - 180)); changed() })
+    $('phZero').addEventListener('click', () => { S.ph = S.ph.map(() => 0); changed() })
+    function drawAdd() {
+      const amp = S.edit === 'amp'
+      bars.classList.toggle('ph', !amp)
+      barEls.forEach((b, k) => {
+        const f = S.hz * (k + 1), i = b.firstChild
+        b.classList.toggle('off', f > 20000)
+        if (amp) { i.style.bottom = '0'; i.style.height = S.amp[k] * 100 + '%' }
+        else { const p = S.ph[k] / 360; i.style.bottom = (p < 0 ? 50 + p * 100 : 50) + '%'; i.style.height = Math.max(1, Math.abs(p) * 100) + '%' }
+        b.setAttribute('aria-valuemin', amp ? 0 : -180); b.setAttribute('aria-valuemax', amp ? 1 : 180)
+        b.setAttribute('aria-valuenow', amp ? S.amp[k] : S.ph[k])
+        b.setAttribute('aria-valuetext', 'Harmonic ' + (k + 1) + ', ' + fmtHz(f) + ' Hz: ' + (amp ? 'amplitude ' + S.amp[k] : 'phase ' + S.ph[k] + '°'))
+        b.title = 'Harmonic ' + (k + 1) + ' · ' + fmtHz(f) + ' Hz'
+      })
+      const dpr = devicePixelRatio || 1, w = wave.clientWidth * dpr, h = wave.clientHeight * dpr
+      if (!w) return
+      wave.width = w; wave.height = h
+      const g = wave.getContext('2d'), y = waveform(S.amp, S.ph, 512), css = getComputedStyle(document.documentElement)
+      g.strokeStyle = css.getPropertyValue('--c-rule').trim(); g.lineWidth = dpr
+      g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.stroke()
+      g.strokeStyle = css.getPropertyValue('--c-accent').trim(); g.lineWidth = 2 * dpr; g.lineJoin = 'round'
+      g.beginPath()
+      for (let x = 0; x <= w; x++) { const v = y[Math.floor(x / w * 2 * 512) % 512], py = h / 2 - v * (h / 2 - 6 * dpr); x ? g.lineTo(x, py) : g.moveTo(x, py) }
+      g.stroke()
+    }
+    new ResizeObserver(() => S.mode === 'add' && drawAdd()).observe(wave)
+
+    // ── stereo check: pink noise in the left ear, then the right ──
+    $('check').addEventListener('click', async () => {
+      if (cur) stop()
+      await wake()
+      const btn = $('check'); btn.disabled = true
+      const t = ctx.currentTime + 0.05
+      for (const [i, side] of [[0, 'left'], [1, 'right']]) {
+        build(ctx, { ...S, mode: 'noise', color: 'pink', ch: side }).start(t + i * 0.8, t + i * 0.8 + 0.6)
+        setTimeout(() => { $('earL').classList.toggle('on', !i); $('earR').classList.toggle('on', !!i); $('earMsg').textContent = side === 'left' ? 'Left ear' : 'Right ear' }, (0.05 + i * 0.8) * 1000)
+      }
+      setTimeout(() => { $('earL').classList.remove('on'); $('earR').classList.remove('on'); btn.disabled = false; $('earMsg').textContent = '' }, 1700)
+    })
+
+    // ── save: the same graph rendered offline, encoded by @audio/encode ──
+    const KIND = { wav16: ['wav', { bitDepth: 16 }], wav24: ['wav', { bitDepth: 24 }], flac: ['flac', {}], mp3: ['mp3', {}] }
+    $('save').addEventListener('click', async () => {
+      const btn = $('save'), msg = $('saveMsg'), link = $('fileLink'), len = +$('len').value
+      const secs = S.mode === 'sweep' ? S.dur : Math.min(600, Math.max(1, len || 10))
+      const [fmt, opts] = KIND[$('fmt').value], fs = +$('rate').value
+      btn.disabled = true; msg.textContent = 'Rendering ' + secs + ' s…'
+      try {
+        const audio = await render({ ...S, amp: S.amp.slice(), ph: S.ph.slice() }, secs, fs)
+        msg.textContent = 'Encoding ' + FORMATS[fmt].ext.toUpperCase() + '…'
+        const blob = await encodeAudio(fmt, audio, opts), name = fileName(S, secs, FORMATS[fmt].ext)
+        saveBlob(link, blob, name)
+        link.textContent = name + ' · ' + fmtSize(blob.size); link.hidden = false
+        link.click()
+        msg.textContent = 'Saved. Click the name to save it again.'
+      } catch (e) { msg.textContent = 'Could not make the file: ' + e.message }
+      btn.disabled = false
+    })
+
+    show()
+  </script>
+</body>
+</html>

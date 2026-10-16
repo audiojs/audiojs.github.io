@@ -106,8 +106,12 @@ function toCanvas({ width, height, data }) {
 export const audioBuffer = ({ channelData, sampleRate, meta = null }) => ({ channelData, sampleRate, meta, duration: channelData[0].length / sampleRate, channels: channelData.length })
 
 // ── off-thread processing: cfg.process may be a module URL whose default export is process(audio, opts, ui) ──
+// A page cross-origin isolated (util/isolate.js) starts a worker only if its script carries the page's COEP, which
+// the isolating service worker gives what is in the page's folder alone: there the worker comes from a blob, which
+// takes the page's own, and imports the shared one (its imports resolve against its own URL)
+const spawn = () => new Worker(crossOriginIsolated ? URL.createObjectURL(new Blob([`import ${JSON.stringify(WORKER.href)}`], { type: 'text/javascript' })) : WORKER, { type: 'module' })
 function workerRunner(url) {
-  const worker = new Worker(WORKER, { type: 'module' })
+  const worker = spawn()
   let seq = 0, pending = null
   worker.onmessage = e => {
     const { id, type } = e.data
@@ -196,7 +200,7 @@ export function tool(cfg) {
     error(msg) { progress.hidden = false; status.textContent = msg; status.classList.add('err'); bar.hidden = true },
     opts: () => opts ? Object.fromEntries(new FormData(opts)) : {},
   }
-  const release = () => { if (url) URL.revokeObjectURL(url); url = null; if (player.src.startsWith('blob:')) URL.revokeObjectURL(player.src); player.removeAttribute('src'); previewNote.hidden = true; for (const a of files.querySelectorAll('a')) URL.revokeObjectURL(a.href); files.replaceChildren(); files.hidden = true; audio = result = null }
+  const release = () => { if (url) URL.revokeObjectURL(url); url = null; const was = player.src; player.removeAttribute('src'); player.load(); if (was.startsWith('blob:')) URL.revokeObjectURL(was); previewNote.hidden = true; for (const a of files.querySelectorAll('a')) URL.revokeObjectURL(a.href); files.replaceChildren(); files.hidden = true; audio = result = null }
   const yieldUI = () => new Promise(r => setTimeout(r, 30))
 
   async function load(f) {

@@ -55,7 +55,9 @@ const FILE_TOOLS = {
   'loudness': { report: r => Math.abs(parseFloat(r['Integrated loudness']) + 10.6) < 1, opts: { target: '-14' }, after: r => /-14\.0/.test(r['Result loudness']) },
   'denoise': { report: r => /wiener|omlsa|specsub/.test(r['Method chosen by the classifier']), opts: { method: 'dehum' }, after: r => r['Method'] === 'dehum' },
   'key-bpm': { report: r => /A minor/.test(r['Key']) && r['Camelot'] === '8A' && /12[01]|60/.test(r['Tempo']) },
-  'vocal-remover': { save: /-karaoke\.mp3$/, opts: { mode: 'isolate' }, afterSave: /-vocals\.mp3$/ },
+  // Playwright's Firefox build runs the model's wasm some 25 times slower than release Firefox: there, the instant
+  // mid/side method (the model has its own tests, scripts/pages/vocal-remover.test.mjs)
+  'vocal-remover': { save: /-karaoke\.mp3$/, opts: { mode: 'isolate' }, afterSave: /-vocals\.mp3$/, firefox: { method: 'midside' } },
   'pitch-tempo': { report: r => /Unchanged/.test(Object.keys(r)[0]), opts: { semitones: '3', tempo: '150' }, afterSave: /\+3st-150pct\.mp3$/, after: r => /0:02/.test(r['New length']) },
   'spectrogram': { viz: true, report: r => /Hz/.test(r['Strongest frequency']) },
 }
@@ -73,6 +75,13 @@ for (const name of engines) {
 
   for (const [slug, t] of Object.entries(FILE_TOOLS)) {
     await page.goto(`${base}/util/${slug}/`)
+    // a page that isolates itself (util/isolate.js) reloads once its service worker takes control: once it has, the
+    // page opened again starts controlled, and stays
+    if (await page.evaluate(() => document.head.innerHTML.includes('/util/isolate.js'))) {
+      await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 15000 }).catch(() => {})
+      await page.goto(`${base}/util/${slug}/`)
+    }
+    if (t[name]) await page.evaluate(pre => { for (const [k, v] of Object.entries(pre)) document.querySelector(`#opts [name="${k}"]`).value = v }, t[name])
     await page.evaluate(() => window.__drop(window.__wav()))
     let r = await page.evaluate(() => window.__done())
     ok(!r.err, `${slug}: decoded and processed` + (r.err ? ' — ' + r.err : ''))
@@ -107,8 +116,6 @@ for (const name of engines) {
     return out
   })
   for (const [f, r] of Object.entries(conv)) {
-    // AAC rides on WebCodecs: Firefox has no encoder, and the page must say so instead of failing silently
-    if ((f === 'aac' || f === 'm4a') && name === 'firefox') { ok(/isn't available/.test(String(r)), `convert-audio → ${f} on firefox: explains the missing encoder`); continue }
     ok(typeof r === 'object' && r.ch === 2 && r.sec > 2.9 && r.sec < 3.2, `convert-audio → ${f}: ${JSON.stringify(r)}`)
   }
   const params = await page.evaluate(async () => {

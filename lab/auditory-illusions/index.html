@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hearing what isn't there: auditory illusions, live · audiojs lab</title>
+  <meta name="description" content="Shepard tone, Risset rhythm, Deutsch's scale illusion, binaural beats, the missing fundamental: hear each live, see how it is built, switch the trick off. With an additive synth.">
+  <link rel="canonical" href="https://audiojs.dev/lab/auditory-illusions/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://audiojs.dev/lab/auditory-illusions/">
+  <meta property="og:title" content="Hearing what isn't there">
+  <meta property="og:description" content="Shepard tone, Risset rhythm, Deutsch's scale illusion, binaural beats and the missing fundamental, each built in the page, with the switch that breaks it.">
+  <meta property="og:site_name" content="audiojs">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Hearing what isn't there: auditory illusions, live",
+    "description": "Shepard tone, Risset rhythm, Deutsch's scale illusion, binaural beats and the missing fundamental, each built in the page, with the switch that breaks it.",
+    "datePublished": "2026-10-14",
+    "url": "https://audiojs.dev/lab/auditory-illusions/",
+    "author": { "@type": "Organization", "name": "audiojs", "url": "https://audiojs.dev/" }
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/bar.css?v=4e6dabc4">
+  <link rel="stylesheet" href="/lab/lab.css">
+  <style>
+    .action[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+    .action:disabled { opacity: .45; cursor: default; }
+    .action { white-space: nowrap; }
+    .sound output { min-width: 4.5em; }
+    #bars { cursor: ns-resize; touch-action: none; }
+    .repl audio-repl { margin: 0; }
+    .src-list { margin: 8px 0 0; padding-left: 20px; }
+    .src-list li { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <header class="site-bar">
+    <a class="site-brand" href="/" aria-label="audiojs home"><svg aria-hidden="true" viewBox="0 5 90.4 17" fill="currentColor"><path d="M4.2 22Q3.3 22 2.7 21.6Q2 21.2 1.6 20.5Q1.1 19.8 1.1 19V14.2H11.2V12.4Q11.2 12.3 11.1 12.2Q11.1 12.1 10.9 12.1H1.1V9.2H11.1Q11.9 9.2 12.6 9.7Q13.3 10.1 13.7 10.8Q14.1 11.4 14.1 12.3V22ZM4.3 19.1H11.2V16.8H4V18.9Q4 19 4.1 19Q4.2 19.1 4.3 19.1ZM19 22Q18.2 22 17.5 21.6Q16.8 21.2 16.4 20.5Q16 19.8 16 19V9.2H18.9V18.9Q18.9 19 19 19Q19 19.1 19.1 19.1H25.8Q25.9 19.1 26 19Q26.1 19 26.1 18.9V9.2H29V19Q29 19.8 28.5 20.5Q28.1 21.2 27.4 21.6Q26.8 22 25.9 22H19ZM33.2 22Q32.4 22 31.7 21.6Q31 21.2 30.6 20.5Q30.2 19.8 30.2 19V12.3Q30.2 11.4 30.6 10.8Q31 10.1 31.7 9.7Q32.4 9.2 33.2 9.2H40.3V5.1H43.2V22H33.2ZM33.4 19.1H40Q40.1 19.1 40.2 19Q40.3 19 40.3 18.9V12.4Q40.3 12.3 40.2 12.2Q40.1 12.1 40 12.1H33.4Q33.2 12.1 33.2 12.2Q33.1 12.3 33.1 12.4V18.9Q33.1 19 33.2 19Q33.2 19.1 33.4 19.1ZM45.1 22V9.2H47.9V22ZM45.1 8V5.1H47.9V8ZM52.5 22Q51.7 22 51 21.6Q50.3 21.2 49.9 20.5Q49.5 19.8 49.5 19V12.3Q49.5 11.4 49.9 10.8Q50.3 10.1 51 9.7Q51.7 9.2 52.5 9.2H59.4Q60.2 9.2 60.9 9.7Q61.6 10.1 62 10.8Q62.4 11.4 62.4 12.3V19Q62.4 19.8 62 20.5Q61.6 21.2 60.9 21.6Q60.2 22 59.4 22H52.5ZM52.6 19.1H59.3Q59.4 19.1 59.5 19Q59.5 19 59.5 18.9V12.4Q59.5 12.3 59.5 12.2Q59.4 12.1 59.3 12.1H52.6Q52.5 12.1 52.4 12.2Q52.4 12.3 52.4 12.4V18.9Q52.4 19 52.4 19Q52.5 19.1 52.6 19.1Z"/><path d="M75.1 18.4Q74.1 18.4 73.4 17.8Q72.7 17.3 72.4 16.4L73.8 16Q73.9 16.5 74.3 16.8Q74.6 17.1 75.1 17.1Q75.4 17.1 75.7 16.9Q76.1 16.8 76.2 16.4Q76.3 16.2 76.4 15.9Q76.4 15.6 76.4 15.2V8.8H77.7V15.2Q77.7 15.6 77.7 15.9Q77.7 16.2 77.7 16.5Q77.6 16.8 77.4 17.1Q77.1 17.8 76.5 18.1Q75.9 18.4 75.1 18.4ZM82.8 18.4Q81.8 18.4 81 18Q80.2 17.7 79.7 17Q79.2 16.4 79 15.5L80.4 15.3Q80.6 16.1 81.3 16.6Q82 17.1 82.9 17.1Q83.5 17.1 84 16.9Q84.4 16.7 84.7 16.4Q85 16.1 85 15.6Q85 15.3 84.9 15.1Q84.8 14.9 84.7 14.8Q84.5 14.7 84.3 14.6Q84.1 14.4 83.8 14.4L81.4 13.7Q81.1 13.6 80.7 13.4Q80.4 13.2 80.1 13Q79.7 12.7 79.6 12.3Q79.4 11.9 79.4 11.3Q79.4 10.4 79.8 9.8Q80.3 9.2 81 8.9Q81.8 8.6 82.7 8.6Q83.7 8.6 84.4 9Q85.2 9.3 85.7 9.9Q86.2 10.5 86.4 11.4L84.9 11.6Q84.8 11.1 84.5 10.7Q84.2 10.3 83.7 10.1Q83.2 9.9 82.7 9.9Q82.2 9.9 81.8 10.1Q81.3 10.2 81.1 10.5Q80.8 10.8 80.8 11.2Q80.8 11.6 81 11.9Q81.3 12.1 81.6 12.3Q81.9 12.4 82.3 12.5L84 13Q84.3 13.1 84.7 13.2Q85.1 13.4 85.5 13.6Q85.9 13.9 86.2 14.4Q86.4 14.8 86.4 15.5Q86.4 16.2 86.1 16.7Q85.9 17.3 85.4 17.6Q84.9 18 84.2 18.2Q83.6 18.4 82.8 18.4Z" fill="none" stroke="currentColor" stroke-width=".8"/><rect x="68.9" y="5.5" width="21" height="16" fill="none" stroke="currentColor"/></svg></a>
+    <nav aria-label="audiojs"><a href="/util/">Utilities</a><a href="/lab/" aria-current="true">Lab</a><a href="/audio/">audio</a><a href="/audio/playground.html">Playground</a><a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a></nav>
+  </header>
+<main>
+  <nav class="top"><span class="crumb"><a href="/lab/">Lab</a></span><a href="https://github.com/audiojs/audiojs.github.io/tree/main/lab/auditory-illusions">Source</a></nav>
+  <h1>Hearing what isn't there</h1>
+  <p class="lead">Five sounds that hearing takes for something else. Each is built here from numbers, drawn from the same numbers, and comes with the switch that takes the trick away.</p>
+
+  <div class="sound controls">
+    <label>Volume <input type="range" id="volume" min="-40" max="0" step="1" value="-12"><output id="level">−12 dB</output></label>
+    <button class="action" id="stop" disabled>Stop</button>
+    <span class="readout" id="now" role="status">Nothing playing</span>
+  </div>
+  <p class="hint">Nothing sounds until you press Play. Every sound peaks 6 dB below full scale, before the volume above; Stop or Esc ends it. Sections 3 and 4 need headphones.</p>
+
+  <h2><small>1</small>Shepard tone: a scale that climbs forever</h2>
+  <p>Press Play. Each tone sounds a semitone higher than the one before. After twelve the sound is back where it began, and it keeps climbing. Roger Shepard built it in 1964 from sines an octave apart under a fixed bell over log frequency.<sup><a href="#r1">1</a></sup> A step lifts every sine a semitone. The top one climbs into the quiet edge of the bell as a new one rises out of the quiet at the bottom, so twelve steps up arrive at the same sound.</p>
+  <p>Jean-Claude Risset made the steps a glide:<sup><a href="#r2">2</a></sup> the sines rise together without stopping (here an octave every eight seconds), and the glissando never arrives.</p>
+  <p>The bell is the trick. Make it flat and the seam shows: once an octave the top sine stops, a low one starts, and the pitch falls back. With one octave there is one sine, rising and starting over; each octave added hides the seam better. The picture is a spectrogram of the samples playing, two loops side by side, and at its right the bell.</p>
+  <figure id="shepard">
+    <canvas role="img" aria-label="Spectrogram of the Shepard tone: sines an octave apart rising, fading in at the bottom and out at the top"></canvas>
+    <div class="controls">
+      <button class="action" data-voice aria-pressed="false">Play</button>
+      <span data-name="mode" role="group" aria-label="Motion"><button data-value="steps" aria-pressed="true">steps (Shepard)</button><button data-value="glide" aria-pressed="false">glide (Risset)</button></span>
+      <span data-name="envelope" role="group" aria-label="Levels"><button data-value="bell" aria-pressed="true">bell</button><button data-value="flat" aria-pressed="false">flat</button></span>
+      <label>Octaves <input type="range" name="octaves" min="1" max="10" step="1" value="8"><output for="octaves"></output></label>
+    </div>
+  </figure>
+  <p>The glide in code, with the <a href="/audio/">audio</a> library: one sine per octave, each as loud as the bell says at its place.</p>
+  <figure class="repl">
+    <audio-repl panel="code" display="spec" height="420">
+<pre><code>// Risset's glissando: sines an octave
+// apart, rising an octave every 8 s,
+// each as loud as a bell says
+let octaves = 8, period = 8
+let low = 440 / 2 ** (octaves / 2)
+audio.from(t =&gt; {
+  let s = 0
+  for (let k = 0; k &lt; octaves; k++) {
+    let u = k + t / period % 1  // octaves up
+    let bell = Math.sin(Math.PI * u / octaves) ** 2
+    let phase = 2 * Math.PI * low * period / Math.LN2 * 2 ** u
+    s += bell * Math.sin(phase)
+  }
+  return s
+}, { duration: 24 }).normalize(-6)</code></pre>
+    </audio-repl>
+    <figcaption>Set <code>octaves</code> to 1, or <code>bell</code> to 1, and play again: the seam shows. The phase is the integral of the rising frequency, low · 2<sup>u</sup>, so a sine that reaches the next one's place meets it in phase.</figcaption>
+  </figure>
+
+  <h2><small>2</small>Risset rhythm: a beat that speeds up forever</h2>
+  <p>The same trick in time. One pulse plays in layers, each twice as fast as the one below. All of them speed up together, doubling in about ten seconds. As the fastest grows too fast it fades out, and a new slowest fades in. After a cycle every layer is where the one above it began, so the loop never runs out of speeding up. Risset described rhythmic counterparts of his pitch paradoxes in 1986;<sup><a href="#r3">3</a></sup> Dan Stowell showed how to build such an eternal accelerando from a recorded loop, played at several rates at once.<sup><a href="#r4">4</a></sup></p>
+  <p>Every beat of a layer is also a beat of the layer above, so the layers never flam; the cycle holds a whole number of the slowest layer's beats, so the loop closes on a beat. Flat levels give it away: once a cycle the fastest layer stops dead, a slow one starts, and the tempo you were following halves. With a ratio of 3 each layer is in triplets against the one below. The picture has tempo going up, on a log scale: each dot a beat, as big as it is loud, each layer a rising line; under them, the samples.</p>
+  <figure id="risset">
+    <canvas role="img" aria-label="Beats of each layer by time and tempo, rising lines of dots that fade in at the bottom and out at the top, and the waveform under them"></canvas>
+    <div class="controls">
+      <button class="action" data-voice aria-pressed="false">Play</button>
+      <span class="group">Ratio <span data-name="ratio" role="group" aria-label="Tempo ratio between layers"><button data-value="2" aria-pressed="true">2</button><button data-value="3" aria-pressed="false">3</button></span></span>
+      <label>Layers <input type="range" name="layers" min="2" max="5" step="1" value="4"><output for="layers"></output></label>
+      <span data-name="envelope" role="group" aria-label="Levels"><button data-value="bell" aria-pressed="true">bell</button><button data-value="flat" aria-pressed="false">flat</button></span>
+      <span class="readout" id="cycle"></span>
+    </div>
+  </figure>
+
+  <h2><small>3</small>Deutsch's scale illusion</h2>
+  <div class="note"><b>Headphones</b><p>Each ear gets its own sound in this section and the next. Press “Left, then right” first: the knocks should come from the left, then from the right, and nowhere else.</p></div>
+  <p>In 1975 Diana Deutsch played each ear a melody that jumps: the left C′ D A F F A D C′, the right C B E G G E B C.<sup><a href="#r5">5</a></sup> Together they are the C major scale going up and going down at once, its notes passed from ear to ear. None of her 70 listeners heard a scale, and none heard the notes by ear. All grouped them by pitch: a high melody that falls and rises again, and for some a low one that rises and falls. Right-handers tended to hear the high melody on the right, and to keep hearing it there with the headphones turned round.</p>
+  <p>The sound is the paper's: sines at one level, 250 ms a note with no gaps, C 259, D 290, E 326, F 345, G 388, A 435, B 488 and C′ 517 Hz (equal temperament at A = 435 Hz), the eight notes ten times without a pause, 20 seconds in all. Here each ear is one sine whose frequency steps at every note without breaking phase, so the steps don't click. The paper played it at 75 dB SPL; set the volume to what is comfortable.</p>
+  <p>Hear one ear alone and its jumps are plain. Swap the channels: if the high melody stays where it was, your brain placed it, not the headphones. The picture is each ear's notes as measured from its samples, joined by ear, as they are played, or by pitch, as they are heard.</p>
+  <figure id="scale">
+    <canvas role="img" aria-label="Notes of the scale illusion by time and pitch, each marked with the ear it plays in"></canvas>
+    <div class="controls">
+      <button class="action" data-voice aria-pressed="false">Play</button>
+      <span data-name="ears" role="group" aria-label="Ears"><button data-value="both" aria-pressed="true">both ears</button><button data-value="left" aria-pressed="false">left only</button><button data-value="right" aria-pressed="false">right only</button></span>
+      <label><input type="checkbox" name="swap"> swap left and right</label>
+      <span class="group">Join <span data-name="lines" role="group" aria-label="Join the notes"><button data-value="ear" aria-pressed="true">by ear</button><button data-value="pitch" aria-pressed="false">by pitch</button></span></span>
+      <button class="action" data-check>Left, then right</button>
+    </div>
+  </figure>
+
+  <h2><small>4</small>Binaural beats</h2>
+  <p>Play 250 Hz in the left ear and 254 Hz in the right. Neither ear gets a beat: each wave is steady, as the lanes show. Yet a slow throb, four times a second, sounds inside the head. The beat is made in the brain from the timing of the two ears' waves,<sup><a href="#r6">6</a></sup> whose phase difference turns a full circle four times a second; the lower panel shows the two waves at the playhead sliding past each other. It takes low tones, up to about 1 kHz, and a small difference, up to about 30 Hz; past either limit the throb is gone.<sup><a href="#r7">7</a></sup></p>
+  <p>Set the ears to “both tones in both” and the beat is in the air: the waveform swells and fades four times a second. That is an ordinary beat, and it is what any mono output turns binaural beats into.</p>
+  <figure id="binaural">
+    <canvas role="img" aria-label="Each ear's waveform over two seconds"></canvas>
+    <canvas role="img" aria-label="The two ears' waves at the playhead, overlaid"></canvas>
+    <div class="controls">
+      <button class="action" data-voice aria-pressed="false">Play</button>
+      <span data-name="ears" role="group" aria-label="Ears"><button data-value="own" aria-pressed="true">one tone each</button><button data-value="both" aria-pressed="false">both tones in both</button><button data-value="left" aria-pressed="false">left only</button><button data-value="right" aria-pressed="false">right only</button></span>
+      <label>Left ear <input type="range" name="carrier" min="100" max="1000" step="10" value="250"><output for="carrier"></output> Hz</label>
+      <label>Right ear higher by <input type="range" name="beat" min=".5" max="40" step=".5" value="4"><output for="beat"></output> Hz</label>
+      <button class="action" data-check>Left, then right</button>
+    </div>
+  </figure>
+
+  <h3>Which browser plays binaural beats?</h3>
+  <p>Any browser with the Web Audio API: Chrome, Edge, Firefox and Safari, on computers and phones, all of them since April 2021 at the latest.<sup><a href="#r8">8</a></sup> The browser is not what breaks them; mixing the two channels is. Binaural beats need the left channel in the left ear only and the right in the right only. They become the ordinary beat above when</p>
+  <ul class="src-list">
+    <li>the system plays stereo as mono: on a Mac, Accessibility › Audio › “Play stereo audio as mono”;<sup><a href="#r9">9</a></sup> on iPhone, iPad, Android and Windows, the accessibility setting called Mono audio;</li>
+    <li>the sound comes from one speaker, or from two across a room, where each ear hears both;</li>
+    <li>a Bluetooth headset's microphone is in use, as on a call: the headset then switches to the hands-free profile, which plays one channel.<sup><a href="#r10">10</a></sup></li>
+  </ul>
+  <p>Press “Left, then right”. Knocks on the left, then on the right: the output is stereo. From the middle, or from both sides at once: something on the way is mono. A page can't see the system's mono setting; it can only ask what the browser reports: <output id="channels">press Play or “Left, then right” to ask</output>. One more trap: on an iPhone with the silent switch on, Safari mutes Web Audio unless the page declares itself playback;<sup><a href="#r11">11</a></sup> this page does, where Safari supports it.</p>
+
+  <h3>Do they change brainwaves?</h3>
+  <p>The usual claim is entrainment: that the brain's own rhythm falls in step with the beat, so a 10 Hz beat would bring 10 Hz alpha waves. A 2023 systematic review found fourteen EEG studies of that: five in line with it, eight against, one mixed, their methods too varied to compare.<sup><a href="#r12">12</a></sup> A 2019 meta-analysis of 22 studies of memory, attention, anxiety and pain found a medium average effect (g = 0.45), larger with longer listening and with listening before the task.<sup><a href="#r13">13</a></sup> That measures performance, not whether the brain follows the beat. The beat you hear is certain; that your brainwaves follow it is not established.</p>
+
+  <h2><small>5</small>The missing fundamental</h2>
+  <p>A note at 200 Hz from a voice or a string is a stack of sines at 200, 400, 600, 800 Hz and on: its harmonics. Take away the 200 and the pitch stays at 200. Take away the 400 and the 600 as well: the tone thins, and the pitch holds. Schouten called the pitch heard from harmonics without their fundamental the residue.<sup><a href="#r14">14</a></sup> What the harmonics share is their period: the wave below still repeats every 5 ms, though nothing in it runs at 200 Hz. Whether hearing reads that period or the pattern of the harmonics is still argued.<sup><a href="#r15">15</a></sup></p>
+  <p>Raise the lowest harmonic a step at a time and compare with a plain sine at f₀. The bars are the levels of the harmonics, and an editor: drag them, or focus them and use the arrow keys. Behind the bars, the spectrum measured from the samples; below, the samples, three periods of them.</p>
+  <figure id="additive">
+    <canvas id="bars" tabindex="0" role="group" aria-label="Harmonic levels: left and right arrows pick a harmonic, up and down set its level, 0 silences it" aria-describedby="picked"></canvas>
+    <canvas role="img" aria-label="Three periods of the waveform"></canvas>
+    <div class="controls">
+      <button class="action" data-voice="tone" aria-pressed="false">Play the tone</button>
+      <button class="action" data-voice="sine" aria-pressed="false">Play a sine at f₀</button>
+      <label>Lowest harmonic <input type="range" name="lowest" min="1" max="8" step="1" value="1"><output for="lowest"></output></label>
+      <label>f₀ <input type="range" name="f0" min="50" max="400" step="1" value="200"><output for="f0"></output> Hz</label>
+    </div>
+    <div class="controls">
+      <span>Set the bars</span><button class="action" data-preset="equal">equal</button><button class="action" data-preset="saw">1/n, a sawtooth</button><button class="action" data-preset="square">odd at 1/n, a square</button><button class="action" data-preset="three">only 3, 4 and 5</button>
+      <span class="readout" id="picked" aria-live="polite"></span>
+    </div>
+  </figure>
+
+  <h2><small>6</small>Additive synthesis</h2>
+  <p>The bars above are an additive synthesizer: one sine per harmonic, each as loud as its bar, summed. Any periodic wave is such a sum.<sup><a href="#r16">16</a></sup> Levels of 1/n make a sawtooth; the odd harmonics alone at 1/n, a square. Every sine here starts at phase zero, so the bars are the whole recipe. In code it is one loop; here, the missing fundamental again:</p>
+  <figure class="repl">
+    <audio-repl panel="code" display="spec" height="340">
+<pre><code>// Harmonics 2 to 10 of 200 Hz, none at
+// 200 Hz: the pitch heard is 200 Hz
+let f0 = 200, from = 2, to = 10
+audio.from(t =&gt; {
+  let s = 0
+  for (let k = from; k &lt;= to; k++)
+    s += Math.sin(2 * Math.PI * k * f0 * t)
+  return s
+}, { duration: 3 }).normalize(-6)</code></pre>
+    </audio-repl>
+    <figcaption>Set <code>from</code> to 1, then to 4: the spectrogram loses its lowest lines, the pitch stays. Opened in the playground, its pitch readout says G3 + 36 cents: 200 Hz, a frequency the sound does not contain. Divide each sine by <code>k</code> for a sawtooth.</figcaption>
+  </figure>
+
+  <h2><small>7</small>Where to hear more</h2>
+  <ul class="try">
+    <li><b><a href="https://deutsch.ucsd.edu/psychology/pages.php?i=203">Diana Deutsch</a></b><span>the scale illusion and her other musical illusions, from their source</span></li>
+    <li><b><a href="/audio/playground.html">audio playground</a></b><span>the scripts above and any sound of yours, to edit and hear</span></li>
+  </ul>
+
+  <ol class="refs">
+    <li id="r1">R. N. Shepard, “Circularity in judgments of relative pitch,” <i>JASA</i> 36 (1964), 2346–2353.</li>
+    <li id="r2">J.-C. Risset, “Pitch control and pitch paradoxes demonstrated with computer-synthesized sounds,” <i>JASA</i> 46 (1969), 88 (abstract).</li>
+    <li id="r3">J.-C. Risset, “Pitch and rhythm paradoxes: Comments on ‘Auditory paradox based on fractal waveform’,” <i>JASA</i> 80 (1986), 961–962.</li>
+    <li id="r4">D. Stowell, “Scheduling and composing with Risset eternal accelerando rhythms,” Proc. International Computer Music Conference, Huddersfield (2011).</li>
+    <li id="r5">D. Deutsch, “Two-channel listening to musical scales,” <i>JASA</i> 57 (1975), 1156–1160: the stimulus (Fig. 1a, its frequencies and timing), 41 right- and 29 left-handed listeners, their reports. <a href="https://philomel.com/pdf/JASA-1975_57_1156-1160.pdf">PDF</a>.</li>
+    <li id="r6">G. Oster, “Auditory beats in the brain,” <i>Scientific American</i> 229(4) (1973), 94–102.</li>
+    <li id="r7">J. C. R. Licklider, J. C. Webster &amp; J. M. Hedlun, “On the frequency limits of binaural beats,” <i>JASA</i> 22 (1950); D. R. Perrott &amp; M. A. Nelson, “Limits for the detection of binaural beats,” <i>JASA</i> 46 (1969); the limits as the review in <a href="#r12">12</a> sums them up.</li>
+    <li id="r8">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a>: Baseline, available across browsers since April 2021.</li>
+    <li id="r9">Apple, <a href="https://support.apple.com/guide/mac-help/unac611/mac">Change Audio settings for Accessibility on Mac</a>: “Play stereo audio as mono”.</li>
+    <li id="r10">Microsoft, <a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/bluetooth/bluetooth-classic-audio">Bluetooth Classic Audio</a>: A2DP plays stereo; the Hands-Free Profile plays and records one channel, and is chosen when an application opens the headset's microphone.</li>
+    <li id="r11">J. Noble, WebKit <a href="https://bugs.webkit.org/show_bug.cgi?id=252746">bug 252746</a> (2023): iOS treats Web Audio as ambient sound, which obeys the mute switch; MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Audio_Session_API">Audio Session API</a>.</li>
+    <li id="r12">R. M. Ingendoh, E. S. Posny &amp; A. Heine, “Binaural beats to entrain the brain? A systematic review of the effects of binaural beat stimulation on brain oscillatory activity, and the implications for psychological research and intervention,” <i>PLOS ONE</i> 18 (2023), e0286023.</li>
+    <li id="r13">M. Garcia-Argibay, M. A. Santed &amp; J. M. Reales, “Efficacy of binaural auditory beats in cognition, anxiety, and pain perception: a meta-analysis,” <i>Psychological Research</i> 83 (2019), 357–372.</li>
+    <li id="r14">J. F. Schouten, “The residue and the mechanism of hearing,” <i>Proc. Koninklijke Nederlandse Akademie van Wetenschappen</i> 43 (1940); J. F. Schouten, R. J. Ritsma &amp; B. L. Cardozo, “Pitch of the residue,” <i>JASA</i> 34 (1962), 1418–1424.</li>
+    <li id="r15">A. J. Oxenham, “Questions and controversies surrounding the perception and neural coding of pitch,” <i>Frontiers in Neuroscience</i> 16 (2023).</li>
+    <li id="r16">J. Fourier, <i>Théorie analytique de la chaleur</i> (1822).</li>
+  </ol>
+  <footer><a href="/lab/">Audio Lab</a> · experiments from <a href="/">audiojs</a></footer>
+</main>
+<script type="module" src="demo.js"></script>
+<script type="module" src="https://audio.js.org/embed.js"></script>
+</body>
+</html>
