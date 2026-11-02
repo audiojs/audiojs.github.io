@@ -21,6 +21,7 @@ The audiojs website: home, modules (`modules/`), utilities (`util/`), lab articl
 
 - The playground is audiojs/audio's own Pages, served at `/audio/` (deployed by that repo's CI). Link to it as `/audio/playground/`, embed it with `/audio/playground/embed.js`.
 - The design system's tokens (`/audio/assets/tokens.css`) and the logo's mark (`/audio/logo/mark.js`) come from there too.
+- `lab/logo/` is the logo's lab, any signal through any window: it draws with `/audio/logo/logo.js` and moves with `motion.js`. `lab/logo/logo.test.mjs` tests them in a browser, from the checkout beside this one.
 - GitHub serves the org's other Pages repos under this domain: `/audio/`, `/web-audio-api/`, `/docs/`, `/test/`, `/stretch/`, `/beat/`, `/shift/`, `/web-audio-write/`. Never create folders with those names here.
 
 ## Keep
