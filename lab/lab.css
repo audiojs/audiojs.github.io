@@ -42,7 +42,7 @@ figure canvas + canvas { margin-top: 10px; }
 figcaption { margin-top: 8px; font-size: 13px; color: var(--mute); }
 figcaption b { margin-right: 8px; font: 500 12px var(--mono); color: var(--accent); }
 @media (max-width: 800px) { figure { margin-inline: 0; } }
-/* the audio playground in a figure (audio.js.org/audio/embed.js): its slab as wide as the panels */
+/* the audio playground in a figure (audio.js.org/audio/playground/embed.js): its slab as wide as the panels */
 figure.repl audio-repl { margin: 0; }
 @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
 /* a plate: a panel set in HTML, in the panel's colours */

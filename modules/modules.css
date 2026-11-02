@@ -1,0 +1,50 @@
+/* audiojs modules: a reference on paper, one row a module: its call, what it does, its package. Its colours and type
+ * are the audio design system's tokens (/audio/assets/tokens.css), as the home's are. */
+:root {
+  --paper: var(--color-paper); --ink: var(--color-ink); --mute: var(--color-muted); --rule: var(--color-rule);
+  --body: var(--font-display); --mono: var(--font-mono);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+/* what the search leaves out, gone, whatever display a rule gives it */
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+code { font: .9em var(--mono); }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+main { max-width: 1120px; margin: 0 auto; padding: 48px 24px 120px; }
+h1 { margin: 0 0 10px; font-size: clamp(36px, 6vw, 56px); font-weight: 800; line-height: 1; letter-spacing: -.04em; }
+.lead { max-width: 46em; margin: 0; font-size: 18px; color: var(--mute); }
+.lead b { color: var(--ink); }
+
+/* the search stays in reach while the list scrolls under it */
+.find { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 16px; margin: 32px -24px 0; padding: 14px 24px; background: var(--paper); border-bottom: 1px solid var(--rule); }
+.find input { flex: 1; min-width: 0; padding: 12px 14px; border: 1px solid var(--ink); border-radius: 0; background: #fff; color: var(--ink); font: 500 17px/1.2 var(--body); }
+.find input:focus-visible { outline-offset: 0; }
+.find output { flex: none; font-size: 14px; color: var(--mute); font-variant-numeric: tabular-nums; }
+.none { margin: 24px 0 0; color: var(--mute); }
+
+h2 { margin: 56px 0 8px; font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--mute); }
+.toc a { text-decoration: none; }
+.toc a:hover { color: var(--ink); }
+.group { margin-top: 36px; scroll-margin-top: 80px; }
+h3 { margin: 0 0 4px; font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+h3 small { margin-left: 6px; font-size: 13px; font-weight: 500; color: var(--mute); }
+.group ul { margin: 0; padding: 0; list-style: none; }
+/* a row: the call on the left, what it does beside it, the package under that */
+.group li { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 2px 28px; padding: 12px 0 13px; border-top: 1px solid var(--rule); }
+.group li > a { align-self: start; text-decoration: none; overflow-wrap: anywhere; }
+.group li > a code { display: inline-block; margin: 0 10px 2px 0; font-size: 14px; font-weight: 600; }
+.group li > a:hover code { text-decoration: underline; text-underline-offset: 3px; }
+.group li p { grid-column: 2; margin: 0; font-size: 15px; }
+.group li p code { font-size: 13px; }
+.group li p sub { display: block; margin-top: 4px; font-size: 13px; color: var(--mute); vertical-align: baseline; }
+.pkg { grid-column: 2; font: 12.5px var(--mono); color: var(--mute); }
+
+@media (max-width: 720px) {
+  main { padding-top: 32px; }
+  .group li { grid-template-columns: minmax(0, 1fr); }
+  .group li p, .pkg { grid-column: 1; }
+}

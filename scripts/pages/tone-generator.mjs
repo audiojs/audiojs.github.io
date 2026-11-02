@@ -604,5 +604,5 @@ export default {
       <li id="r14">A. Farina, “Simultaneous measurement of impulse response and distortion with a swept-sine technique,” AES 108th Convention (2000), preprint 5093.</li>
       <li id="r15">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/ChannelMergerNode">ChannelMergerNode</a> and <a href="https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode">OscillatorNode</a>: Baseline, widely available.</li>
     </ol>
-    <script type="module" src="https://audio.js.org/audio/embed.js"></script>`,
+    <script type="module" src="https://audio.js.org/audio/playground/embed.js"></script>`,
 }

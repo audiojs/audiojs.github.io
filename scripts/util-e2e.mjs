@@ -13,8 +13,10 @@ const server = createServer(async (req, res) => {
   if (rel === '' || rel.endsWith('/')) rel += 'index.html'
   const path = resolve(root, rel)
   if (!path.startsWith(root + sep)) { res.writeHead(403); return res.end() }
-  try { res.writeHead(200, { 'content-type': types[extname(path)] || 'application/octet-stream' }); res.end(await readFile(path)) }
-  catch { res.writeHead(404); res.end('404') }
+  // read first, then answer: a file missing is a 404, not a 200 begun
+  let body
+  try { body = await readFile(path) } catch { res.writeHead(404); return res.end('404') }
+  res.writeHead(200, { 'content-type': types[extname(path)] || 'application/octet-stream' }), res.end(body)
 })
 await new Promise(r => server.listen(0, r))
 const base = `http://127.0.0.1:${server.address().port}`
