@@ -1,5 +1,5 @@
 // Drawing a waveform: every figure drawn here, pixel by pixel, from the sound's own samples, in the panels' colours.
-import { RATE, sounds, sound, stereo, panel, demo, css, oklab, srgb, oklch, encode, fft, window } from '../kit.js'
+import { RATE, sounds, sound, stereo, panel, demo, css, oklab, srgb, oklch, decode, fft, window } from '../kit.js'
 
 const $ = s => document.querySelector(s)
 
@@ -180,45 +180,53 @@ redraws.push(demo(dbFigure, ({ scale, range }) => {
 }))
 
 // ── 7. Colour for frequency ─────────────────────────────────────
-// lows under 200 Hz, mids to 2 kHz, highs above: two one-pole lowpasses, their differences
-const split = new Map()
-function bands(key, x) {
-  if (split.has(key)) return split.get(key)
-  const lp = f => { const a = 1 - Math.exp(-2 * Math.PI * f / RATE), y = new Float32Array(x.length); let s = 0; for (let i = 0; i < x.length; i++) y[i] = s += a * (x[i] - s); return y }
-  const l = lp(200), m = lp(2000), out = [l, m.map((v, i) => v - l[i]), x.map((v, i) => v - m[i])]
-  split.set(key, out)
-  return out
-}
-// the spectral centroid of a 1,024-sample frame at each column's middle
-function centroids(x, W, from, spp) {
-  const size = 1024, w = window('hann', size), re = new Float64Array(size), im = new Float64Array(size), out = new Float64Array(W)
+// Each column's spectrum, the 1,024-sample frame at its middle, read as software colours a waveform: each band's share
+// of its amplitude (lows under 600 Hz, mids to 4 kHz, highs above: Mixxx's split), its centroid, its strongest
+// frequency, and how tonal it is: its spectral flatness from 100 Hz to 10 kHz in dB over −60 dB, at most 1 (Johnston)
+function spectral(x, W, from, spp) {
+  const size = 1024, w = window('hann', size), re = new Float64Array(size), im = new Float64Array(size), bin = RATE / size
+  const bands = [0, 1, 2].map(() => new Float64Array(W)), centroid = new Float64Array(W), strongest = new Float64Array(W), tonal = new Float64Array(W)
   for (let c = 0; c < W; c++) {
-    const start = Math.floor(from + (c + .5) * spp) - size / 2
+    const start = Math.floor(from + (c + .5) * spp) - size / 2, b = [0, 0, 0]
     for (let i = 0; i < size; i++) { re[i] = (x[start + i] || 0) * w[i]; im[i] = 0 }
     fft(re, im)
-    let sum = 0, weighted = 0
-    for (let k = 1; k < size / 2; k++) { const p = re[k] * re[k] + im[k] * im[k]; sum += p; weighted += p * k * RATE / size }
-    out[c] = sum ? weighted / sum : 0
+    let sum = 0, weighted = 0, top = 0, best = 0, logs = 0, inner = 0, n = 0
+    for (let k = 1; k < size / 2; k++) {
+      const p = re[k] * re[k] + im[k] * im[k] + 1e-20, f = k * bin
+      sum += p; weighted += p * f; b[f < 600 ? 0 : f < 4000 ? 1 : 2] += p
+      if (p > best) { best = p; top = f }
+      if (f >= 100 && f <= 10000) { logs += Math.log10(p); inner += p; n++ }
+    }
+    b.forEach((p, j) => bands[j][c] = Math.sqrt(p / sum))
+    centroid[c] = weighted / sum; strongest[c] = top
+    tonal[c] = Math.min(1, 10 * (logs / n - Math.log10(inner / n)) / -60)
   }
-  return out
+  return { bands, centroid, strongest, tonal }
 }
-// A column's colour: the ink, or its lows, mids and highs as red, green and blue, or its centroid as a hue from red
-// (100 Hz) to violet (10 kHz); the colours at one OKLab lightness, so hue alone differs
-function colouring(by, T, key, x, W, from, spp) {
-  if (by === 'bands') {
-    const e = bands(key, x).map(b => columns(b, W, from, from + spp * W).rms)
-    return col => { const v = [e[0][col], e[1][col], e[2][col]], m = Math.max(...v) || 1, [, A, B] = oklab(v.map(u => encode((u / m) ** 1.6))); return srgb([.78, A, B]) }
-  }
-  if (by === 'centroid') {
-    const cen = centroids(x, W, from, spp), hue = f => 25 + 275 * Math.max(0, Math.min(1, (Math.log2(Math.max(f, 1)) - Math.log2(100)) / (Math.log2(10000) - Math.log2(100))))
-    return col => oklch(.78, .15, hue(cen[col]))
-  }
+// A frequency's place from 100 Hz to 10 kHz in octaves, and a hue for it from red to violet, as light's spectrum runs
+const place = f => Math.max(0, Math.min(1, Math.log2(Math.max(f, 1) / 100) / Math.log2(100))), hueOf = f => 25 + 275 * place(f)
+// rekordbox's 3Band: lows dark blue, mids amber, highs white
+const LAYERS = [oklch(.5, .16, 264), oklch(.78, .15, 70), oklch(.96, 0, 0)]
+// A column's colour: its lows, mids and highs as red, green and blue, added and scaled till the strongest is full
+// (Mixxx); its centroid as a hue; its strongest frequency as a hue, as saturated as it is tonal (REAPER); its centroid
+// as lightness in one hue (Traktor); all at one OKLab lightness but the last, so hue alone differs
+function colouring(by, T, s) {
+  if (by === 'bands') return col => { const v = s.bands.map(b => b[col]), m = Math.max(...v) || 1, [, A, B] = oklab(v.map(u => decode(u / m))); return srgb([.78, A, B]) }
+  if (by === 'centroid') return col => oklch(.78, .15, hueOf(s.centroid[col]))
+  if (by === 'dominant') return col => oklch(.78, .15 * s.tonal[col], hueOf(s.strongest[col]))
+  if (by === 'lightness') return col => oklch(.45 + .5 * place(s.centroid[col]), .08, 210)
   return T.ink
+}
+// A waveform coloured: its envelope a colour a column; or layered, each band's envelope as tall as its share, the lows
+// first, a band under a hundredth left out
+function coloured(px, c, y, by, T, x, from, spp, opts = {}, s = by === 'none' ? null : spectral(x, c.W, from, spp)) {
+  if (by !== 'layers') return envelope(px, c, y, { ...opts, color: colouring(by, T, s) })
+  s.bands.forEach((share, j) => envelope(px, { ...c, lo: c.lo.map((v, i) => share[i] > .01 ? v * share[i] : NaN), hi: c.hi.map((v, i) => v * share[i]) }, y, { ...opts, color: LAYERS[j] }))
 }
 const colourFigure = $('#colour')
 redraws.push(demo(colourFigure, ({ by }) => {
-  const { ctx, W, H, T } = panel(colourFigure.querySelector('canvas'), 200), x = current(), c = columns(x, W), px = pixels(ctx, W, H)
-  envelope(px, c, linear(10, H - 20), { color: colouring(by, T, picker.value, x, W, 0, x.length / W) })
+  const { ctx, W, H, T } = panel(colourFigure.querySelector('canvas'), 200), x = current(), px = pixels(ctx, W, H)
+  coloured(px, columns(x, W), linear(10, H - 20), by, T, x, 0, x.length / W)
   px.done()
 }))
 
@@ -280,13 +288,14 @@ const draw = demo(bench, ({ zoom, reduce, edges, fill, floor, gamma, scale, rang
   view = { ...view, spp, start, W, dpr, centre: start + spp * W / 2 }
   bench.querySelector('output[for="zoom"]').value = spp < 10 ? spp.toFixed(1) : Math.round(spp)
   const pad = 12 * dpr, y = scale === 'db' ? decibels(pad, H - 2 * pad, range) : linear(pad, H - 2 * pad)
-  const c = columns(x, W, start, to), px = pixels(ctx, W, H), color = colouring(colour, T, key, x, W, start, spp)
+  const c = columns(x, W, start, to), px = pixels(ctx, W, H)
   const shaded = fill !== 'flat' && fill !== 'rms' && shading(fill, x, c, start, spp, Math.round(H - 2 * pad))
   const level = shaded ? (col, v) => floor + (1 - floor) * shaded(col, v) ** gamma : null
-  // every Nth sample: its trace over the pale truth; RMS: a lighter core inside dimmer peaks
+  // every Nth sample: its trace over the pale truth; RMS: a lighter core inside dimmer peaks, layers but their peaks
   const nth = reduce === 'nth', crisp = edges === 'columns'
-  envelope(px, c, y, { color, crisp, shade: nth ? (col, v) => .22 * (level ? level(col, v) : 1) : fill === 'rms' ? () => .5 : level })
-  if (fill === 'rms') envelope(px, { ...c, lo: c.rms.map(v => -v), hi: c.rms }, y, { color, crisp })
+  const s = colour === 'none' ? null : spectral(x, W, start, spp), core = fill === 'rms' && colour !== 'layers'
+  coloured(px, c, y, colour, T, x, start, spp, { crisp, shade: nth ? (col, v) => .22 * (level ? level(col, v) : 1) : core ? () => .5 : level }, s)
+  if (core) coloured(px, { ...c, lo: c.rms.map(v => -v), hi: c.rms }, y, colour, T, x, start, spp, { crisp }, s)
   px.done()
   if (nth) {
     ctx.strokeStyle = css(T.ink); ctx.lineWidth = dpr

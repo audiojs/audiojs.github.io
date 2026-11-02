@@ -4,4 +4,4 @@ Disallow: /index-v2.html
 Disallow: /index-v3.html
 Disallow: /index-v4.html
 
-Sitemap: https://audiojs.dev/sitemap.xml
+Sitemap: https://audio.js.org/sitemap.xml

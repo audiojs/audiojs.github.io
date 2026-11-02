@@ -1,6 +1,5 @@
-/* The audiojs site bar: one header for the whole site. Self-contained, it owns its colours and type, so it reads
- * the same on every page. The same file is bar.css in audiojs/audiojs.github.io (markup: scripts/bar.mjs) and
- * site/bar.css in audiojs/audio (markup: index.html): change both together. */
+/* The audiojs site bar: one header for the utilities and the lab (markup: scripts/bar.mjs). Self-contained, it owns
+ * its colours and type, so it reads the same on every page. */
 .site-bar {
   --bar-ink: #0d1014; --bar-paper: #edebe4; --bar-focus: #00a4b8; --bar-gutter: 20px;
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -21,6 +20,9 @@
 .site-bar nav a[aria-current] { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; }
 .site-gh svg { display: block; width: 18px; height: 18px; }
 @media (min-width: 40rem) { .site-bar { --bar-gutter: 40px; } }
-/* narrow screens: the GitHub mark goes first (it is a link away), then the bar tightens */
-@media (max-width: 419px) { .site-bar .site-gh { display: none; } }
-@media (max-width: 359px) { .site-bar { gap: 12px; padding-inline: 16px; font-size: 12px; } .site-brand svg { height: 15px; } .site-bar nav { gap: 10px; } }
+/* narrow screens: the GitHub mark goes (it is a link away), and the sections take a row of their own under the brand */
+@media (max-width: 459px) {
+  .site-bar { flex-wrap: wrap; row-gap: 0; padding-inline: 16px; }
+  .site-bar .site-gh { display: none; }
+  .site-bar nav { flex: 1 0 100%; justify-content: space-between; }
+}
