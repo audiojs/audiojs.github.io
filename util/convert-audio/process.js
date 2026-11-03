@@ -7,7 +7,7 @@ const chs = n => n === 1 ? 'mono' : n === 2 ? 'stereo' : n + ' ch'
 
 export default async function process(a, o, ui) {
   let { channelData, sampleRate } = a
-  const report = [{ k: 'Source', v: rate(sampleRate) + ' · ' + chs(channelData.length), cls: 'list' }]
+  const report = [{ k: 'Source', v: rate(sampleRate) + ', ' + chs(channelData.length), cls: 'list' }]
   const want = +o.channels || 0
   if (want === 1 && channelData.length > 1) {
     const n = channelData[0].length, mono = new Float32Array(n)
@@ -22,6 +22,6 @@ export default async function process(a, o, ui) {
     channelData = channelData.map(ch => polyphase(ch, { from: sampleRate, to }))
     sampleRate = to
   }
-  report.push({ k: 'Output', v: rate(sampleRate) + ' · ' + chs(channelData.length), cls: 'list' })
+  report.push({ k: 'Output', v: rate(sampleRate) + ', ' + chs(channelData.length), cls: 'list' })
   return { audio: { channelData, sampleRate }, report }
 }

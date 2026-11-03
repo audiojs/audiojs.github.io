@@ -1,23 +1,46 @@
-/* audiojs utilities — shared shell */
+/* audiojs utilities, the shell they share: the audio design system's tokens (/audio/assets/tokens.css), in black and
+ * white, the page on the site's dot grid, its column filled (/bar.css) */
 :root {
-  --c-ink: #0d1014; --c-paper: #edebe4; --c-bg: #f1efe9; --c-accent: #00a4b8; --c-mute: #6b6f73; --c-rule: #d6d3cb; --c-err: #b3261e; --c-ok: #1f7a4d;
-  --f-body: 'Manrope', system-ui, sans-serif; --f-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --c-ink: var(--color-ink); --c-paper: var(--color-paper); --c-bg: var(--color-paper); --c-accent: var(--color-ink); --c-mute: var(--color-muted); --c-rule: var(--color-rule); --c-err: var(--color-error); --c-ok: #1f7a4d;
+  --f-body: var(--font-display); --f-mono: var(--font-mono);
   --fs-xs: clamp(12px, 1.5vw, 14px); --fs-sm: clamp(14px, 1.7vw, 16px); --fs-md: clamp(16px, 2vw, 19px); --fs-lg: clamp(22px, 3vw, 30px); --fs-xl: clamp(32px, 5vw, 48px);
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; font-family: var(--f-body); background: var(--c-bg); color: var(--c-ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+body { margin: 0; font-family: var(--f-body); background: var(--dots), var(--c-bg); color: var(--c-ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
 h1, h2, h3, p { margin: 0; font-weight: inherit; }
 a { color: inherit; }
 code { font-family: var(--f-mono); font-size: .92em; }
-.inner { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+/* a utility in the site's page (/bar.css .site-page): its rail of every utility beside it on a wide screen; the tool
+ * itself in a column of its own width, its words at a reading measure */
+.inner:not(.collection) > * { max-width: 760px; }
+.inner { padding-bottom: var(--space-2xl); }
 
-.hero { padding: 56px 0 16px; text-align: center; }
-.hero h1 { font-weight: 800; font-size: var(--fs-xl); letter-spacing: -.03em; line-height: 1.05; }
-.hero p { margin-top: 12px; font-size: var(--fs-md); font-weight: 500; color: var(--c-mute); }
+.hero { padding: 8px 0 8px; }
+.hero h1 { font-weight: 600; font-size: clamp(34px, 4vw, 52px); letter-spacing: -.04em; line-height: 1.04; text-wrap: balance; }
+.hero p { max-width: 40em; margin-top: 12px; font-size: var(--fs-md); line-height: 1.45; color: var(--color-soft-ink); text-wrap: pretty; }
+/* its icon over its name, as the index shows it */
+.icon { display: block; width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.hero .icon { width: 44px; height: 44px; margin-bottom: 20px; }
+
+/* The index: the utilities on their shelves, each its icon, its name, what it does, the packages it runs on; a grid
+ * of them ruled as the home's cells are, no boxes */
+.collection > .seo { max-width: 760px; }
+.shelf { margin-top: var(--space-2xl); scroll-margin-top: var(--space-lg); }
+.shelf h2 { margin: 0 0 4px; font-weight: 600; font-size: 22px; letter-spacing: -.02em; }
+.apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--c-rule); }
+.apps li { border-bottom: 1px dotted var(--c-rule); }
+.apps a { display: grid; grid-template-rows: auto auto 1fr auto; gap: 6px; height: 100%; padding: 22px 24px 20px 0; text-decoration: none; }
+.apps .icon { width: 36px; height: 36px; margin-bottom: 10px; transition: transform 400ms var(--ease-out); }
+.apps a:hover .icon { transform: scale(1.08); }
+.apps .n { font-weight: 600; font-size: 17px; letter-spacing: -.01em; }
+.apps .n .ticked { display: inline-block; }
+.apps .d { font-size: 14.5px; line-height: 1.45; color: var(--color-soft-ink); }
+.apps .p { margin-top: 6px; font-size: 12px; color: var(--c-mute); }
+.apps .p code { font-size: 11.5px; }
 
 .drop { margin-top: 32px; padding: 56px 24px; text-align: center; cursor: pointer; border: 2px dashed var(--c-rule); border-radius: 8px; background: var(--c-paper); transition: border-color .15s, background .15s; outline: none; }
-.drop:hover, .drop:focus-visible, .drop.over { border-color: var(--c-accent); background: #e6ede9; }
+.drop:hover, .drop:focus-visible, .drop.over { border-color: var(--c-accent); background: var(--color-hover); }
 .drop svg { width: 40px; height: 40px; display: block; margin: 0 auto 14px; }
 .drop .t { font-size: var(--fs-md); font-weight: 700; letter-spacing: -.01em; }
 .drop .s { margin-top: 6px; font-size: var(--fs-xs); font-weight: 500; color: var(--c-mute); }
@@ -44,7 +67,7 @@ code { font-family: var(--f-mono); font-size: .92em; }
 
 .report { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 24px; }
 .report .k { font-size: var(--fs-xs); font-weight: 500; color: var(--c-mute); }
-.report .v { margin-top: 2px; font-size: var(--fs-lg); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.report .v { margin-top: 2px; font-size: var(--fs-lg); font-weight: 600; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .report .v small { font-size: var(--fs-xs); font-weight: 600; color: var(--c-mute); margin-left: .3em; }
 .report .v.ok { color: var(--c-ok); }
 .report .v.warn { color: var(--c-err); }
@@ -65,10 +88,10 @@ select { padding: 8px 32px 8px 12px; border: 1px solid var(--c-rule); border-rad
 audio { width: 100%; display: block; }
 .row.out { gap: 12px; }
 .spacer { flex: 1; }
-.privacy { margin-top: 18px; text-align: center; font-size: var(--fs-xs); font-weight: 500; color: var(--c-mute); }
+.privacy { margin-top: 18px; font-size: var(--fs-xs); font-weight: 500; color: var(--c-mute); }
 
 .live { margin-top: 32px; padding: 32px 24px; text-align: center; border: 1px solid var(--c-rule); border-radius: 8px; background: var(--c-paper); }
-.live .big { font-size: clamp(64px, 14vw, 120px); font-weight: 800; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.live .big { font-size: clamp(64px, 14vw, 120px); font-weight: 600; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
 .live .sub { margin-top: 8px; font-size: var(--fs-md); font-weight: 600; color: var(--c-mute); font-variant-numeric: tabular-nums; }
 .live .meter { position: relative; height: 10px; margin: 24px auto 0; max-width: 420px; background: var(--c-rule); border-radius: 5px; }
 .live .meter::before { content: ''; position: absolute; left: 50%; top: -6px; width: 2px; height: 22px; background: var(--c-ink); }
@@ -78,7 +101,7 @@ audio { width: 100%; display: block; }
 .live .time { font-family: var(--f-mono); font-size: var(--fs-lg); font-weight: 600; }
 
 .seo { margin-top: 72px; padding: 48px 0 32px; border-top: 1px solid var(--c-rule); }
-.seo h2 { font-weight: 800; font-size: var(--fs-lg); letter-spacing: -.02em; line-height: 1.15; }
+.seo h2 { font-weight: 600; font-size: var(--fs-lg); letter-spacing: -.02em; line-height: 1.15; }
 .seo h3 { margin-top: 32px; font-weight: 700; font-size: var(--fs-md); letter-spacing: -.01em; }
 .seo p { margin-top: 10px; font-size: var(--fs-sm); line-height: 1.55; }
 .seo ul { margin: 10px 0 0; padding-left: 1.2em; font-size: var(--fs-sm); line-height: 1.55; }
@@ -89,12 +112,6 @@ audio { width: 100%; display: block; }
 .more a { text-decoration: none; font-weight: 600; }
 .more a:hover { text-decoration: underline; }
 
-.index { margin-top: 32px; list-style: none; padding: 0; display: grid; gap: 12px; }
-.index a { display: block; padding: 16px 18px; border: 1px solid var(--c-rule); border-radius: 8px; background: var(--c-paper); text-decoration: none; transition: border-color .15s; }
-.index a:hover { border-color: var(--c-accent); }
-.index .n { font-weight: 700; font-size: var(--fs-md); letter-spacing: -.01em; }
-.index .d { margin-top: 3px; font-size: var(--fs-sm); font-weight: 500; color: var(--c-mute); }
-.index .p { margin-top: 6px; font-size: var(--fs-xs); color: var(--c-mute); }
 
 footer { padding: 32px 0 48px; text-align: center; font-size: var(--fs-xs); font-weight: 500; color: var(--c-mute); }
 footer a { text-decoration: none; }

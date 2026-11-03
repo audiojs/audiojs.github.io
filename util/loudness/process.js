@@ -14,7 +14,7 @@ export default async function process(a, o, ui) {
 { k: 'Integrated loudness', v: db(L) + '<small>LUFS</small>' },
 { k: 'True peak', v: db(tp) + '<small>dBTP</small>', cls: tp > -1 ? 'warn' : '' },
 { k: 'Loudness range', v: range.toFixed(1) + '<small>LU</small>' },
-{ k: 'Platform playback', cls: 'list wide', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L) + ' dB').join(' · '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
+{ k: 'Platform playback', cls: 'list wide', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L) + ' dB').join(', '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
   ]
   if (!o.target) return { report }
   const target = +o.target, gain = target - L, g = Math.pow(10, gain / 20)

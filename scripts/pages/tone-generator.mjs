@@ -220,7 +220,7 @@ export default {
           <label>Carrier <input type="number" id="carrier" value="250" min="40" max="1000" step="any"> Hz</label>
           <label>Beat <input type="number" id="beat" value="10" min="0.5" max="30" step="any"> Hz</label>
         </div>
-        <div class="line" id="binLR" aria-live="polite">Left ear 245 Hz · Right ear 255 Hz</div>
+        <div class="line" id="binLR" aria-live="polite">Left ear 245 Hz, Right ear 255 Hz</div>
         <div class="line">
           <button type="button" class="mini" id="check">Check stereo: left, then right</button>
           <span class="ears"><span id="earL" aria-hidden="true">L</span><span id="earR" aria-hidden="true">R</span><span class="vh" id="earMsg" role="status"></span></span>
@@ -269,7 +269,7 @@ export default {
         <div class="line">
           <label id="lenRow">Length <input type="number" id="len" value="10" min="1" max="600" step="any"> s</label>
           <label>Rate <select id="rate"><option value="44100">44.1 kHz</option><option value="48000" selected>48 kHz</option></select></label>
-          <label>Format <select id="fmt"><option value="wav16">WAV · 16-bit</option><option value="wav24">WAV · 24-bit</option><option value="flac">FLAC</option><option value="mp3">MP3</option></select></label>
+          <label>Format <select id="fmt"><option value="wav16">WAV, 16-bit</option><option value="wav24">WAV, 24-bit</option><option value="flac">FLAC</option><option value="mp3">MP3</option></select></label>
           <button type="button" class="btn ghost" id="save">Save file</button>
         </div>
         <p class="note" id="saveMsg" role="status" aria-live="polite">The file is the sound as set now, with a 10 ms fade at each end.</p>
@@ -392,7 +392,7 @@ export default {
       slider.setAttribute('aria-valuetext', fmtHz(S.hz) + ' Hz, ' + n.name + ' ' + centsEl.textContent)
       const [l, r] = binaural(S.carrier, S.beat)
       $('binBig').innerHTML = fmtHz(S.beat) + '<small> Hz beat</small>'
-      $('binLR').textContent = 'Left ear ' + fmtHz(l) + ' Hz · Right ear ' + fmtHz(r) + ' Hz'
+      $('binLR').textContent = 'Left ear ' + fmtHz(l) + ' Hz, Right ear ' + fmtHz(r) + ' Hz'
       if (!cur || S.mode !== 'sweep') $('sweepBig').innerHTML = fmtHz(S.f0) + '<small> Hz</small>'
       $('colorNote').textContent = { white: 'Equal energy per hertz: flat, bright hiss.', pink: 'Equal energy per octave, −3 dB per octave: the usual signal for tuning speakers and rooms.', brown: '−6 dB per octave above 20 Hz: a deep rumble.' }[S.color]
       levelOut.textContent = dbText(S.db); level.setAttribute('aria-valuetext', dbText(S.db))
@@ -500,7 +500,7 @@ export default {
         b.setAttribute('aria-valuemin', amp ? 0 : -180); b.setAttribute('aria-valuemax', amp ? 1 : 180)
         b.setAttribute('aria-valuenow', amp ? S.amp[k] : S.ph[k])
         b.setAttribute('aria-valuetext', 'Harmonic ' + (k + 1) + ', ' + fmtHz(f) + ' Hz: ' + (amp ? 'amplitude ' + S.amp[k] : 'phase ' + S.ph[k] + '°'))
-        b.title = 'Harmonic ' + (k + 1) + ' · ' + fmtHz(f) + ' Hz'
+        b.title = 'Harmonic ' + (k + 1) + ', ' + fmtHz(f) + ' Hz'
       })
       const dpr = devicePixelRatio || 1, w = wave.clientWidth * dpr, h = wave.clientHeight * dpr
       if (!w) return
@@ -540,7 +540,7 @@ export default {
         msg.textContent = 'Encoding ' + FORMATS[fmt].ext.toUpperCase() + '…'
         const blob = await encodeAudio(fmt, audio, opts), name = fileName(S, secs, FORMATS[fmt].ext)
         saveBlob(link, blob, name)
-        link.textContent = name + ' · ' + fmtSize(blob.size); link.hidden = false
+        link.textContent = name + ', ' + fmtSize(blob.size); link.hidden = false
         link.click()
         msg.textContent = 'Saved. Click the name to save it again.'
       } catch (e) { msg.textContent = 'Could not make the file: ' + e.message }

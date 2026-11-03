@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online metronome: tap tempo, accents, subdivisions – audiojs</title>
+  <meta name="description" content="Free online metronome with sound, 20 to 300 BPM: tap tempo, 1 to 12 beats a bar, accent or mute any beat, eighths, triplets and sixteenths, nine click sounds. Timed by the audio clock. Nothing to install.">
+  <meta name="theme-color" content="#0d1014">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://audio.js.org/util/metronome/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://audio.js.org/util/metronome/">
+  <meta property="og:title" content="Online metronome: tap tempo, accents, subdivisions">
+  <meta property="og:description" content="Free online metronome with sound, 20 to 300 BPM: tap tempo, 1 to 12 beats a bar, accent or mute any beat, eighths, triplets and sixteenths, nine click sounds. Timed by the audio clock. Nothing to install.">
+  <meta property="og:site_name" content="audiojs">
+  <meta property="og:image" content="https://audio.js.org/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://audio.js.org/icon-512.png">
+  <meta name="twitter:site" content="@audio_js">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://audio.js.org/util/metronome/#app",
+        "name": "Metronome",
+        "url": "https://audio.js.org/util/metronome/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Audio",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Free online metronome with sound, 20 to 300 BPM: tap tempo, 1 to 12 beats a bar, accent or mute any beat, eighths, triplets and sixteenths, nine click sounds. Timed by the audio clock. Nothing to install.",
+        "author": {
+          "@type": "Organization",
+          "name": "audiojs",
+          "url": "https://audio.js.org/",
+          "logo": "https://audio.js.org/icon-512.png"
+        },
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/audiojs/audiojs.github.io/blob/main/scripts/pages/metronome.mjs"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "audiojs",
+            "item": "https://audio.js.org/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Utilities",
+            "item": "https://audio.js.org/util/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Metronome",
+            "item": "https://audio.js.org/util/metronome/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How accurate is the beat?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Each click is laid on the audio clock a tenth of a second before it sounds, the way the Web Audio API is meant to keep time: the sound card places it, not the page's timers, so a busy tab does not push it late. The beat dots light when the click reaches the speakers."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I set the tempo by tapping?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Press Tap tempo, or T, on the beat four times or more. The tempo is the median gap of your last eight taps, so one early or late tap does not throw it off. A pause of two seconds starts over."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I play 3/4, 6/8 or 7/8?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Beats sets how many beats a bar has. For 3/4 choose 3. For 6/8 either choose 6 at the eighth-note tempo and accent beats 1 and 4, or choose 2 with Triplets at the dotted-quarter tempo. For 7/8 grouped 2 + 2 + 3, choose 7 and accent beats 1, 3 and 5."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I accent or mute beats?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Press a beat to cycle it: accent (large), plain, muted (dashed). Muting beats is a way to practise keeping time yourself: mute all but the first, and the click only checks you once a bar."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it keep playing in another tab?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. A browser runs a hidden tab's timers as seldom as once a second, so there the clicks are laid two seconds ahead instead of a tenth, and the beat goes on as set."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is anything recorded or sent?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The page makes the clicks itself and keeps your settings in this browser only."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://esm.sh">
+  <link rel="preload" href="/audio/assets/geist.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/audio/assets/tokens.css">
+  <link rel="stylesheet" href="/bar.css?v=420af901">
+  <script type="module" src="/bar.js?v=e62aa30a"></script>
+  <link rel="stylesheet" href="/util/util.css?v=ac5d519d">
+  <link rel="modulepreload" href="/util/util.js?v=5dc5b6ed">
+</head>
+<body>
+  <header class="site-bar">
+    <div class="site-top">
+      <a class="site-brand" href="/" aria-label="audiojs home" draggable="false"><span class="logo" aria-hidden="true"><svg viewBox="-1 -.94 2 1.88" fill="currentColor"><use href="#mark"/></svg><canvas hidden></canvas></span><span class="word">audio</span><span class="js">JS</span></a>
+      <nav aria-label="Sections"><a class="ticked" href="/modules/">modules</a><a class="ticked" href="/util/" aria-current="true">utils</a><a class="ticked" href="/lab/">lab</a><a class="ticked" href="/audio/playground/">playground</a></nav>
+      <a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a>
+    </div>
+    <svg class="site-sprite" aria-hidden="true"><defs><path id="lobes" d="M-1 -0L-0.979 -0L-0.958 -0.001L-0.938 -0.003L-0.917 -0.006L-0.896 -0.012L-0.875 -0.021L-0.854 -0.033L-0.833 -0.048L-0.812 -0.068L-0.792 -0.091L-0.771 -0.118L-0.75 -0.15L-0.729 -0.185L-0.708 -0.225L-0.688 -0.267L-0.667 -0.313L-0.646 -0.362L-0.625 -0.413L-0.604 -0.465L-0.583 -0.518L-0.562 -0.571L-0.542 -0.624L-0.521 -0.675L-0.5 -0.724L-0.479 -0.769L-0.458 -0.811L-0.438 -0.848L-0.417 -0.88L-0.396 -0.905L-0.375 -0.924L-0.354 -0.936L-0.333 -0.94L-0.312 -0.936L-0.292 -0.924L-0.271 -0.903L-0.25 -0.873L-0.229 -0.836L-0.208 -0.79L-0.188 -0.736L-0.167 -0.675L-0.146 -0.607L-0.125 -0.533L-0.104 -0.453L-0.083 -0.368L-0.062 -0.28L-0.042 -0.188L-0.021 -0.095L0 0L0.021 0.095L0.042 0.188L0.062 0.28L0.083 0.368L0.104 0.453L0.125 0.533L0.146 0.607L0.167 0.675L0.188 0.736L0.208 0.79L0.229 0.836L0.25 0.873L0.271 0.903L0.292 0.924L0.312 0.936L0.333 0.94L0.354 0.936L0.375 0.924L0.396 0.905L0.417 0.88L0.438 0.848L0.458 0.811L0.479 0.769L0.5 0.724L0.521 0.675L0.542 0.624L0.562 0.571L0.583 0.518L0.604 0.465L0.625 0.413L0.646 0.362L0.667 0.313L0.688 0.267L0.708 0.225L0.729 0.185L0.75 0.15L0.771 0.118L0.792 0.091L0.812 0.068L0.833 0.048L0.854 0.033L0.875 0.021L0.896 0.012L0.917 0.006L0.938 0.003L0.958 0.001L0.979 0L1 0Z"/></defs><g id="mark"><use href="#lobes" transform="scale(1 1)" opacity="0.042"/><use href="#lobes" transform="scale(1 0.958)" opacity="0.043"/><use href="#lobes" transform="scale(1 0.917)" opacity="0.045"/><use href="#lobes" transform="scale(1 0.875)" opacity="0.048"/><use href="#lobes" transform="scale(1 0.833)" opacity="0.05"/><use href="#lobes" transform="scale(1 0.792)" opacity="0.053"/><use href="#lobes" transform="scale(1 0.75)" opacity="0.056"/><use href="#lobes" transform="scale(1 0.708)" opacity="0.059"/><use href="#lobes" transform="scale(1 0.667)" opacity="0.062"/><use href="#lobes" transform="scale(1 0.625)" opacity="0.067"/><use href="#lobes" transform="scale(1 0.583)" opacity="0.071"/><use href="#lobes" transform="scale(1 0.542)" opacity="0.077"/><use href="#lobes" transform="scale(1 0.5)" opacity="0.083"/><use href="#lobes" transform="scale(1 0.458)" opacity="0.091"/><use href="#lobes" transform="scale(1 0.417)" opacity="0.1"/><use href="#lobes" transform="scale(1 0.375)" opacity="0.111"/><use href="#lobes" transform="scale(1 0.333)" opacity="0.125"/><use href="#lobes" transform="scale(1 0.292)" opacity="0.143"/><use href="#lobes" transform="scale(1 0.25)" opacity="0.167"/><use href="#lobes" transform="scale(1 0.208)" opacity="0.2"/><use href="#lobes" transform="scale(1 0.167)" opacity="0.25"/><use href="#lobes" transform="scale(1 0.125)" opacity="0.333"/><use href="#lobes" transform="scale(1 0.083)" opacity="0.5"/><use href="#lobes" transform="scale(1 0.042)" opacity="1"/></g></svg>
+  </header>
+  <div class="site-page">
+    <nav class="site-rail" aria-label="Utilities">
+      <h2>Convert</h2>
+      <ul><li><a href="/util/convert-audio/"><span class="ticked">Audio converter</span></a></li><li><a href="/util/extract-audio/"><span class="ticked">Extract audio from video</span></a></li><li><a href="/util/video-audio/"><span class="ticked">Remove or replace video audio</span></a></li><li><a href="/util/midi-to-mp3/"><span class="ticked">MIDI to MP3</span></a></li><li><a href="/util/audio-to-midi/"><span class="ticked">Audio to MIDI converter</span></a></li></ul>
+      <h2>Measure</h2>
+      <ul><li><a href="/util/loudness/"><span class="ticked">Loudness meter and normalizer</span></a></li><li><a href="/util/lossless-check/"><span class="ticked">Lossless audio checker</span></a></li><li><a href="/util/key-bpm/"><span class="ticked">Key and BPM finder</span></a></li><li><a href="/util/tuner/"><span class="ticked">Tuner</span></a></li><li><a href="/util/spectrogram/"><span class="ticked">Spectrogram</span></a></li><li><a href="/util/measure/"><span class="ticked">Room and speaker measurement</span></a></li><li><a href="/util/latency/"><span class="ticked">Audio latency test</span></a></li></ul>
+      <h2>Clean up</h2>
+      <ul><li><a href="/util/denoise/"><span class="ticked">Noise remover</span></a></li><li><a href="/util/dewow/"><span class="ticked">Wow and flutter fixer</span></a></li></ul>
+      <h2>Edit</h2>
+      <ul><li><a href="/util/pitch-tempo/"><span class="ticked">Pitch and tempo changer</span></a></li><li><a href="/util/desilence/"><span class="ticked">Remove silence from audio</span></a></li></ul>
+      <h2>Separate</h2>
+      <ul><li><a href="/util/vocal-remover/"><span class="ticked">Vocal remover</span></a></li><li><a href="/util/stem-splitter/"><span class="ticked">Stem splitter</span></a></li></ul>
+      <h2>Voice</h2>
+      <ul><li><a href="/util/transcribe/"><span class="ticked">Transcribe audio to text and subtitles</span></a></li><li><a href="/util/prosody/"><span class="ticked">Speech prosody editor</span></a></li></ul>
+      <h2>Make</h2>
+      <ul><li><a href="/util/metronome/" aria-current="page"><span class="ticked">Metronome</span></a></li><li><a href="/util/recorder/"><span class="ticked">Audio recorder</span></a></li><li><a href="/util/tone-generator/"><span class="ticked">Tone generator</span></a></li></ul>
+    </nav>
+  <main class="site-main inner">
+    <section class="hero">
+      <svg class="icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M11.5 4.5h9l5 23h-19z"/><path d="M8.5 21.5h15"/><path d="M16 21.5 22 8"/><circle cx="20.6" cy="11.2" r="1.4"/></svg>
+      <h1>Metronome</h1>
+      <p>Set the tempo and press start. Tap it in, accent or mute any beat, add subdivisions.</p>
+    </section>
+
+    <style>
+      #mt { padding: 28px 20px; }
+      #mt :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+      #mt .tempo { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 3vw, 24px); }
+      #mt .read { display: inline-flex; align-items: baseline; gap: 6px; }
+      #mt .read input { width: 3.1ch; padding: 0; border: 0; border-bottom: 2px dashed var(--c-rule); border-radius: 0; background: transparent; color: var(--c-ink); font: inherit; font-size: clamp(64px, 15vw, 112px); font-weight: 600; letter-spacing: -.04em; line-height: 1.05; text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+      #mt .read input::-webkit-inner-spin-button, #mt .read input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+      #mt .read input:focus { border-bottom-color: var(--c-accent); outline: none; }
+      #mt .read span { font-size: var(--fs-lg); font-weight: 600; color: var(--c-mute); }
+      #mt [aria-invalid=true] { border-bottom-color: var(--c-err) !important; color: var(--c-err); }
+      #mt .nudge { flex: none; width: 44px; height: 44px; padding: 0; border: 1px solid var(--c-rule); border-radius: 50%; background: var(--c-paper); color: var(--c-ink); font: inherit; font-size: 22px; line-height: 1; cursor: pointer; }
+      #mt .nudge:hover { border-color: var(--c-ink); }
+      #mt #slider { display: block; width: 100%; max-width: 520px; margin: 18px auto 0; accent-color: var(--c-ink); }
+      #mt .beats { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 520px; margin: 26px auto 0; }
+      #mt .beats button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+      #mt .beats i { display: block; width: 14px; height: 14px; border: 1.5px solid var(--c-ink); border-radius: 50%; transition: background .05s; }
+      #mt .beats [data-mark=X] i { width: 24px; height: 24px; border-width: 2px; }
+      #mt .beats [data-mark="-"] i { border-style: dashed; border-color: var(--c-mute); }
+      #mt .beats .on i { background: var(--c-ink); }
+      #mt .beats [data-mark="-"].on i { background: var(--c-rule); }
+      #mt .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 26px; }
+      #mt .actions .btn { min-width: 8.5em; justify-content: center; }
+      #mt .line { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; justify-content: center; margin-top: 22px; font-size: var(--fs-sm); font-weight: 500; }
+      #mt .line label { display: inline-flex; align-items: center; gap: 6px; }
+      #mt select { padding: 6px 8px; border: 1px solid var(--c-rule); border-radius: 6px; background: var(--c-paper); color: var(--c-ink); font: inherit; font-size: var(--fs-sm); }
+      #mt .seg { display: inline-flex; border: 1px solid var(--c-rule); border-radius: 6px; overflow: hidden; background: var(--c-paper); }
+      #mt .seg button { padding: 7px 10px; border: 0; background: transparent; color: var(--c-ink); font: inherit; font-weight: 600; cursor: pointer; }
+      #mt .seg button + button { border-left: 1px solid var(--c-rule); }
+      #mt .seg button[aria-pressed=true] { background: var(--c-ink); color: var(--c-paper); }
+      #mt #vol { width: 110px; accent-color: var(--c-ink); }
+      #mt .msg { margin: 16px 0 0; color: var(--c-err); font-size: var(--fs-sm); }
+      #mt .keys { margin: 18px 0 0; font-size: var(--fs-xs); color: var(--c-mute); }
+      #mt kbd { font: inherit; padding: 0 .35em; border: 1px solid var(--c-rule); border-radius: 3px; }
+    </style>
+    <div class="live" id="mt">
+      <div class="tempo">
+        <button class="nudge" type="button" data-step="-1" aria-label="Slower by 1 BPM">−</button>
+        <label class="read"><input id="bpm" type="number" inputmode="numeric" min="20" max="300" step="1" value="120" aria-label="Tempo, beats a minute"><span>BPM</span></label>
+        <button class="nudge" type="button" data-step="1" aria-label="Faster by 1 BPM">+</button>
+      </div>
+      <input id="slider" type="range" min="20" max="300" step="1" value="120" aria-label="Tempo">
+      <div class="beats" id="beats" role="group" aria-label="The bar's beats: press one to accent it, play it plain or mute it"></div>
+      <div class="actions">
+        <button class="btn" id="play" type="button" aria-pressed="false">Start</button>
+        <button class="btn ghost" id="tap" type="button">Tap tempo</button>
+      </div>
+      <div class="line">
+        <label>Beats <select id="count"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select></label>
+        <span class="seg" id="sub" role="group" aria-label="Subdivision"><button type="button" data-sub="1" aria-pressed="true">None</button><button type="button" data-sub="2" aria-pressed="false">Eighths</button><button type="button" data-sub="3" aria-pressed="false">Triplets</button><button type="button" data-sub="4" aria-pressed="false">Sixteenths</button></span>
+        <label>Sound <select id="sound"><option value="classic">Classic</option></select></label>
+        <label>Volume <input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume"></label>
+      </div>
+      <p class="msg" id="msg" role="status" hidden></p>
+      <p class="keys"><kbd>Space</kbd> starts and stops, <kbd>T</kbd> taps the tempo; in the number, <kbd>↑</kbd> <kbd>↓</kbd> step 1, with <kbd>Shift</kbd> 10</p>
+    </div>
+    <p class="privacy">Nothing is uploaded. Everything runs in this tab with <a href="/modules/web-audio-api/"><code>web-audio-api</code></a>.</p>
+    <section class="seo">
+    <h2>A metronome timed by the audio clock</h2>
+    <p>A metronome is only as good as its timing. Timers in a web page can fire late by tens of milliseconds while the page is busy, which you would hear as a wobble. So this metronome never plays a click from a timer: every 25 ms it lays the clicks due in the next tenth of a second on the audio context's own clock, and the audio hardware plays them at those times<sup><a href="#r1">1</a></sup><sup><a href="#r2">2</a></sup>. A change of tempo, beats or sound takes effect from the next click laid.</p>
+    <h3>Accents, subdivisions and odd meters</h3>
+    <p>Each beat of the bar has a mark: an accent, a plain click or silence. Subdivisions add softer clicks between the beats: two (eighths), three (triplets) or four (sixteenths). Together they make any meter: 6/8 as six eighth-note beats with accents on 1 and 4, or as two beats of triplets; 5/4 as 3 + 2 by accenting beats 1 and 4.</p>
+    <h3>The sounds</h3>
+    <p>The nine sounds are the metronome instrument of <code>web-audio-api</code><sup><a href="#r3">3</a></sup>, most of them a small model of a struck body: a mechanical metronome's wooden case, a pendulum's escapement, a quartz beeper, a woodblock, claves, a small bell, an electronic beep, a broadcast pip and karatala, small hand cymbals. An accent is struck harder and, on most, higher. The same instrument runs in Node: <code>npx web-audio-api metronome 120 X-x-X-x-</code> plays a click pattern in a terminal.</p>
+    <h3>References</h3>
+    <ol class="refs">
+      <li id="r1">C. Wilson, <a href="https://web.dev/articles/audio-scheduling">A tale of two clocks</a>, web.dev (2013): scheduling Web Audio with a lookahead, a timer laying events ahead on the audio clock.</li>
+      <li id="r2">W3C, <a href="https://www.w3.org/TR/webaudio/">Web Audio API</a>: <code>AudioScheduledSourceNode.start(when)</code> on the context's time coordinate system; <code>AudioContext.getOutputTimestamp()</code>.</li>
+      <li id="r3">audiojs, <a href="https://github.com/audiojs/web-audio-api/blob/main/examples/graphs/metronome.js">web-audio-api: examples/graphs/metronome.js</a>, the instrument and its nine presets.</li>
+    </ol>
+      <section class="faq" aria-label="Questions">
+        <h3>Questions</h3>
+        <details><summary>How accurate is the beat?</summary><p>Each click is laid on the audio clock a tenth of a second before it sounds, the way the Web Audio API is meant to keep time: the sound card places it, not the page's timers, so a busy tab does not push it late. The beat dots light when the click reaches the speakers.</p></details>
+        <details><summary>How do I set the tempo by tapping?</summary><p>Press Tap tempo, or T, on the beat four times or more. The tempo is the median gap of your last eight taps, so one early or late tap does not throw it off. A pause of two seconds starts over.</p></details>
+        <details><summary>How do I play 3/4, 6/8 or 7/8?</summary><p>Beats sets how many beats a bar has. For 3/4 choose 3. For 6/8 either choose 6 at the eighth-note tempo and accent beats 1 and 4, or choose 2 with Triplets at the dotted-quarter tempo. For 7/8 grouped 2 + 2 + 3, choose 7 and accent beats 1, 3 and 5.</p></details>
+        <details><summary>Can I accent or mute beats?</summary><p>Press a beat to cycle it: accent (large), plain, muted (dashed). Muting beats is a way to practise keeping time yourself: mute all but the first, and the click only checks you once a bar.</p></details>
+        <details><summary>Does it keep playing in another tab?</summary><p>Yes. A browser runs a hidden tab's timers as seldom as once a second, so there the clicks are laid two seconds ahead instead of a tenth, and the beat goes on as set.</p></details>
+        <details><summary>Is anything recorded or sent?</summary><p>No. The page makes the clicks itself and keeps your settings in this browser only.</p></details>
+      </section>
+      <div class="more">
+        <h3>More audio utilities</h3>
+        <ul>
+          <li><a href="/util/extract-audio/">Extract audio from video</a></li>
+          <li><a href="/util/video-audio/">Remove or replace video audio</a></li>
+          <li><a href="/util/convert-audio/">Audio converter</a></li>
+          <li><a href="/util/loudness/">Loudness meter and normalizer</a></li>
+          <li><a href="/util/denoise/">Noise remover</a></li>
+          <li><a href="/util/desilence/">Remove silence from audio</a></li>
+          <li><a href="/util/dewow/">Wow and flutter fixer</a></li>
+          <li><a href="/util/transcribe/">Transcribe audio to text and subtitles</a></li>
+          <li><a href="/util/key-bpm/">Key and BPM finder</a></li>
+          <li><a href="/util/vocal-remover/">Vocal remover</a></li>
+          <li><a href="/util/stem-splitter/">Stem splitter</a></li>
+          <li><a href="/util/pitch-tempo/">Pitch and tempo changer</a></li>
+          <li><a href="/util/midi-to-mp3/">MIDI to MP3</a></li>
+          <li><a href="/util/audio-to-midi/">Audio to MIDI converter</a></li>
+          <li><a href="/util/tuner/">Tuner</a></li>
+          <li><a href="/util/tone-generator/">Tone generator</a></li>
+          <li><a href="/util/prosody/">Speech prosody editor</a></li>
+          <li><a href="/util/recorder/">Audio recorder</a></li>
+          <li><a href="/util/lossless-check/">Lossless audio checker</a></li>
+          <li><a href="/util/spectrogram/">Spectrogram</a></li>
+          <li><a href="/util/measure/">Room and speaker measurement</a></li>
+          <li><a href="/util/latency/">Audio latency test</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  </div>
+  <footer><a href="/">audiojs</a>, open audio stack for JavaScript, <a href="https://github.com/audiojs/audiojs.github.io/blob/main/scripts/pages/metronome.mjs" target="_blank" rel="noopener">source</a>, <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>
+  <script type="module">
+    import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '/util/util.js?v=5dc5b6ed'
+    function clampBpm(v, lo = 20, hi = 300) {
+  const n = typeof v === 'string' && !v.trim() ? NaN : Math.round(+v)
+  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : NaN
+}
+function tapTempo(taps, gap = 2000) {
+  let from = 0
+  for (let i = 1; i < taps.length; i++) if (taps[i] - taps[i - 1] > gap) from = i
+  const t = taps.slice(Math.max(from, taps.length - 8)), d = t.slice(1).map((x, i) => x - t[i]).sort((a, b) => a - b)
+  if (!d.length) return null
+  return clampBpm(60000 / (d.length % 2 ? d[d.length >> 1] : (d[d.length / 2 - 1] + d[d.length / 2]) / 2))
+}
+function nextMark(m) { return { X: 'x', x: '-', '-': 'X' }[m] ?? 'x' }
+function resize(marks, n) { return Array.from({ length: n }, (_, i) => marks[i] ?? (i ? 'x' : 'X')) }
+function advance(beat, part, sub, n) { return ++part < sub ? [beat % n, part] : [(beat + 1) % n, 0] }
+function strike(marks, beat, part, soft = .45) { return part ? ['x', soft] : [marks[beat % marks.length], 1] }
+    // clicks go AHEAD seconds ahead on the audio clock, laid every TICK ms; a hidden tab's timers are slowed, so there
+    // they go HIDDEN seconds ahead; a subdivision at SOFT of a beat's level
+    const AHEAD = 0.1, TICK = 25, HIDDEN = 2, SOFT = 0.45, KEY = 'metronome'
+    const lib = import('https://esm.sh/web-audio-api@1.6.0/examples/graphs/metronome.js')
+    const bpmEl = $('bpm'), slider = $('slider'), beatsEl = $('beats'), play = $('play'), tapEl = $('tap'), countEl = $('count'), subEl = $('sub'), soundEl = $('sound'), volEl = $('vol'), msg = $('msg')
+    const NAMES = { X: 'accent', x: 'plain', '-': 'muted' }
+    let S = { bpm: 120, marks: ['X', 'x', 'x', 'x'], sub: 1, sound: 'classic', vol: 0.8 }
+    try { const k = JSON.parse(localStorage.getItem(KEY) || '{}'); S = { bpm: clampBpm(k.bpm) || S.bpm, marks: Array.isArray(k.marks) && k.marks.length && k.marks.length <= 12 && k.marks.every(m => m in NAMES) ? k.marks : S.marks, sub: [1, 2, 3, 4].includes(k.sub) ? k.sub : S.sub, sound: typeof k.sound === 'string' ? k.sound : S.sound, vol: k.vol >= 0 && k.vol <= 1 ? k.vol : S.vol } } catch {}
+    const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(S)) } catch {} }
+    let ctx = null, out = null, inst = null, timer = 0, raf = 0, next = 0, beat = 0, part = 0, queue = [], taps = []
+
+    // ── the bar's beats, each a button: its mark, and lit while it sounds ──
+    function drawBeats() {
+      beatsEl.innerHTML = S.marks.map((m, i) => '<button type="button" data-i="' + i + '" data-mark="' + m + '" aria-label="Beat ' + (i + 1) + ', ' + NAMES[m] + '"><i></i></button>').join('')
+    }
+    function light(i) { for (const b of beatsEl.children) b.classList.toggle('on', +b.dataset.i === i) }
+    beatsEl.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return
+      const m = S.marks[b.dataset.i] = nextMark(S.marks[b.dataset.i])
+      b.dataset.mark = m; b.ariaLabel = 'Beat ' + (+b.dataset.i + 1) + ', ' + NAMES[m]; keep()
+    })
+
+    // ── the tempo: the number, the slider, −/+, taps ──
+    function setBpm(v, typed = false) {
+      const n = clampBpm(v); if (!n) return
+      S.bpm = n; slider.value = n; bpmEl.removeAttribute('aria-invalid')
+      if (!typed) bpmEl.value = n
+      keep()
+    }
+    bpmEl.addEventListener('input', () => { const n = +bpmEl.value; n >= 20 && n <= 300 && Number.isInteger(n) ? setBpm(n, true) : bpmEl.setAttribute('aria-invalid', 'true') })
+    bpmEl.addEventListener('change', () => setBpm(clampBpm(bpmEl.value) || S.bpm))
+    bpmEl.addEventListener('keydown', e => { if (e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); setBpm(S.bpm + (e.key === 'ArrowUp' ? 10 : -10)) } })
+    slider.addEventListener('input', () => setBpm(slider.value))
+    for (const b of document.querySelectorAll('#mt .nudge')) b.addEventListener('click', () => setBpm(S.bpm + +b.dataset.step))
+    function tap() {
+      const now = performance.now()
+      taps = [...taps, now].slice(-16)
+      const t = tapTempo(taps); if (t) setBpm(t)
+    }
+    tapEl.addEventListener('click', tap)
+
+    // ── the bar: beats, subdivision, sound, volume ──
+    countEl.addEventListener('change', () => { S.marks = resize(S.marks, +countEl.value); beat %= S.marks.length; drawBeats(); keep() })
+    subEl.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return
+      S.sub = +b.dataset.sub; part = 0; keep()
+      for (const o of subEl.children) o.setAttribute('aria-pressed', String(o === b))
+    })
+    soundEl.addEventListener('change', async () => { S.sound = soundEl.value; keep(); if (ctx && out) inst = (await lib).createInstrument(ctx, { sound: S.sound, destination: out }) })
+    volEl.addEventListener('input', () => { S.vol = volEl.value / 100; keep(); if (out) out.gain.setTargetAtTime(S.vol, ctx.currentTime, 0.01) })
+    lib.then(({ soundNames }) => {
+      soundEl.innerHTML = soundNames.map(n => '<option value="' + n + '">' + n[0].toUpperCase() + n.slice(1) + '</option>').join('')
+      soundEl.value = soundNames.includes(S.sound) ? S.sound : (S.sound = soundNames[0])
+    }, () => {})
+
+    // ── sound: each click laid ahead on the audio clock, from where the count is; what plays lit as it is heard ──
+    function schedule() {
+      const ahead = document.hidden ? HIDDEN : AHEAD
+      while (next < ctx.currentTime + ahead) {
+        const [mark, level] = strike(S.marks, beat, part, SOFT)
+        inst.hit(next, mark, level)
+        if (!part) queue.push([next, beat % S.marks.length])
+        next += 60 / S.bpm / S.sub;
+        [beat, part] = advance(beat, part, S.sub, S.marks.length)
+      }
+    }
+    // the clock as the speakers have reached it, where the browser tells (getOutputTimestamp), else the context's
+    function heard() {
+      const ts = ctx.getOutputTimestamp?.()
+      return ts?.contextTime > 0 ? ts.contextTime + (performance.now() - ts.performanceTime) / 1000 : ctx.currentTime
+    }
+    function frame() {
+      const now = heard()
+      let lit = null
+      while (queue.length && queue[0][0] <= now) lit = queue.shift()
+      if (lit) light(lit[1])
+      raf = requestAnimationFrame(frame)
+    }
+    async function start() {
+      // (made and resumed in the press itself: Safari lets a page's sound start only there)
+      if (!ctx) { if (navigator.audioSession) navigator.audioSession.type = 'playback'; ctx = new AudioContext({ latencyHint: 'interactive' }) }
+      const resumed = ctx.resume()
+      play.disabled = true
+      try {
+        const { createInstrument } = await lib
+        await resumed
+        // a gain of its own each start: what was laid ahead before the last stop goes with the one let go
+        out = ctx.createGain(); out.gain.value = S.vol; out.connect(ctx.destination)
+        inst = createInstrument(ctx, { sound: S.sound, destination: out })
+        next = ctx.currentTime + 0.05; beat = 0; part = 0; queue = []
+        schedule(); timer = setInterval(schedule, TICK); raf = requestAnimationFrame(frame)
+        play.textContent = 'Stop'; play.setAttribute('aria-pressed', 'true')
+      } catch (e) { msg.textContent = 'The metronome could not start: ' + e.message; msg.hidden = false }
+      play.disabled = false
+    }
+    function stop() {
+      clearInterval(timer); cancelAnimationFrame(raf); timer = 0
+      out?.disconnect(); out = null; queue = []; light(-1)
+      ctx?.suspend()
+      play.textContent = 'Start'; play.setAttribute('aria-pressed', 'false')
+    }
+    const toggle = () => timer ? stop() : start()
+    play.addEventListener('click', toggle)
+    // Space and T anywhere but in a field (a focused button takes Space itself), Escape stops
+    addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === 'Escape' && timer) return stop()
+      if (e.target.closest('input, select, textarea')) return
+      if (e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); toggle() }
+      else if (e.key === 't' || e.key === 'T') tap()
+    })
+
+    countEl.value = S.marks.length; volEl.value = Math.round(S.vol * 100)
+    for (const o of subEl.children) o.setAttribute('aria-pressed', String(+o.dataset.sub === S.sub))
+    setBpm(S.bpm); drawBeats()
+  </script>
+</body>
+</html>

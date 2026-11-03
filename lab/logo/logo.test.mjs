@@ -9,9 +9,9 @@ import { site } from '../../scripts/serve.mjs'
 let chromium
 try { ({ chromium } = await import('playwright')) } catch { console.error('playwright is not installed: npm i -D playwright'); process.exit(2) }
 
-// The window the tests were tuned on (audiojs/audio's own lab page, 800 × 760) with the site bar's 48 px added, so the
+// The window the tests were tuned on (audiojs/audio's own lab page, 800 × 760) with the site bar's 96 px added, so the
 // stage under the bar, which the mark's size and its hover ellipse follow, stays as tall as it was
-const VIEW = { width: 800, height: 760 + 48 }
+const VIEW = { width: 800, height: 760 + 96 }
 
 let server, base, browser, page, errors
 before(async () => {
@@ -31,7 +31,7 @@ beforeEach(async () => {
 afterEach(async () => { await page?.close(); assert.deepEqual(errors, []) })
 
 // A canvas as gray levels, one byte a pixel: the logo's tones are neutral, so red carries the whole image
-async function logoShot(canvas = page.locator('canvas')) {
+async function logoShot(canvas = page.locator('.stage canvas')) {
   const png = (await canvas.screenshot()).toString('base64')
   const { w, h, gray } = await page.evaluate(async png => {
     const image = new Image()
@@ -108,7 +108,7 @@ test('logo: a signal through a window, filled by half a window as its gradient, 
   await logoStill()
 
   // A drag turns the phase by hand; brought back, it lands on the rest pose again
-  const box = await page.locator('canvas').boundingBox(), y = box.y + box.height / 2
+  const box = await page.locator('.stage canvas').boundingBox(), y = box.y + box.height / 2
   await page.mouse.move(box.x + box.width / 2, y)
   await page.mouse.down()
   await page.mouse.move(box.x + box.width / 2 + 60, y, { steps: 6 })
@@ -175,7 +175,7 @@ test('logo motion: at rest it is the logo; near its middle it stirs; flung it sp
   await page.setViewportSize(VIEW)
   await page.goto(base + '/lab/logo/', { waitUntil: 'networkidle' })
   await page.selectOption('#print', 'smooth')
-  const canvas = page.locator('canvas'), box = await canvas.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2
+  const canvas = page.locator('.stage canvas'), box = await canvas.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2
   const away = () => page.mouse.move(x, box.y + box.height + 30)
   const apart = (a, b) => { let sum = 0; for (let i = 0; i < a.gray.length; i++) sum += Math.abs(a.gray.charCodeAt(i) - b.gray.charCodeAt(i)); return sum / a.gray.length }
   const top = shot => { for (let row = 0; row < shot.h; row++) for (let col = 0; col < shot.w; col++) if (shot.at(col, row) > 60) return row }
@@ -277,7 +277,7 @@ test('logo motion: a mimic copies the pointer\'s sideways moves near its middle,
   await page.selectOption('#print', 'smooth')
   await page.selectOption('#hover', 'mimic')
   await page.locator('#speed').fill('0')
-  const canvas = page.locator('canvas'), box = await canvas.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2
+  const canvas = page.locator('.stage canvas'), box = await canvas.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2
   const apart = (a, b) => { let sum = 0; for (let i = 0; i < a.gray.length; i++) sum += Math.abs(a.gray.charCodeAt(i) - b.gray.charCodeAt(i)); return sum / a.gray.length }
   const rest = await logoStill()
   assert(asymmetry(rest) < 1, 'at rest it is the logo')

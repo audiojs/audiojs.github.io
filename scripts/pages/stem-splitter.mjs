@@ -148,7 +148,7 @@ async function stemSplitter(worker, { UTIL, SEPARATE, MODELS, STEMS }) {
       const d = await decodeFile(f)
       if (id !== runs) return
       audio = { ...d, duration: d.channelData[0].length / d.sampleRate }
-      meta.textContent = fmtSize(f.size) + ' · ' + fmtTime(audio.duration) + ' · ' + chLabel(d.channelData.length) + ' · ' + d.sampleRate / 1000 + ' kHz' + (d.channelData.length > 2 ? ' · its first two channels are split' : '')
+      meta.textContent = fmtSize(f.size) + ', ' + fmtTime(audio.duration) + ', ' + chLabel(d.channelData.length) + ', ' + d.sampleRate / 1000 + ' kHz' + (d.channelData.length > 2 ? ', its first two channels are split' : '')
       progress.hidden = true
       showPlan()
     } catch (e) {
@@ -323,7 +323,7 @@ async function stemSplitter(worker, { UTIL, SEPARATE, MODELS, STEMS }) {
       a.download = base() + '-' + (s || mixName()) + '.' + FORMATS[f].ext
       a.dataset.key = key
       a.textContent = label
-      a.title = a.download + ' · ' + fmtSize(blob.size)
+      a.title = a.download + ', ' + fmtSize(blob.size)
       a.classList.remove('busy')
       a.click()
     } catch (err) {
@@ -353,8 +353,8 @@ export default {
   body: drop('Drop a song here') + `
     <form class="opts" id="opts">
       <label>Model <select name="model">
-        <option value="scnet" selected>SCNet · 13 MB · fast</option>
-        <option value="scnet-large">SCNet-large · 45 MB · cleaner, slower</option>
+        <option value="scnet" selected>SCNet, 13 MB, fast</option>
+        <option value="scnet-large">SCNet-large, 45 MB, cleaner, slower</option>
       </select></label>
     </form>
     <p class="hint" id="hint" aria-live="polite"></p>

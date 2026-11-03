@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Recording audio in the browser: getUserMedia, MediaRecorder, WAV · audiojs lab</title>
+  <title>Recording audio in the browser: getUserMedia, MediaRecorder, WAV – audiojs lab</title>
   <meta name="description" content="How a web page records the microphone: getUserMedia and its constraints, the formats MediaRecorder gives in your browser, every sample to a WAV file, latency, takes that survive a crash. Each part runs live on your mic.">
   <link rel="canonical" href="https://audio.js.org/lab/recording/">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -11,10 +11,10 @@
   <meta property="og:url" content="https://audio.js.org/lab/recording/">
   <meta property="og:title" content="Recording audio in the browser">
   <meta property="og:site_name" content="audiojs">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/bar.css?v=66bdb530">
+  <link rel="preload" href="/audio/assets/geist.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/audio/assets/tokens.css">
+  <link rel="stylesheet" href="/bar.css?v=420af901">
+  <script type="module" src="/bar.js?v=e62aa30a"></script>
   <link rel="stylesheet" href="/lab/lab.css">
   <style>
     main [hidden] { display: none !important; }
@@ -55,10 +55,19 @@
 </head>
 <body>
   <header class="site-bar">
-    <a class="site-brand" href="/" aria-label="audiojs home"><svg aria-hidden="true" viewBox="0 5 90.4 17" fill="currentColor"><path d="M4.2 22Q3.3 22 2.7 21.6Q2 21.2 1.6 20.5Q1.1 19.8 1.1 19V14.2H11.2V12.4Q11.2 12.3 11.1 12.2Q11.1 12.1 10.9 12.1H1.1V9.2H11.1Q11.9 9.2 12.6 9.7Q13.3 10.1 13.7 10.8Q14.1 11.4 14.1 12.3V22ZM4.3 19.1H11.2V16.8H4V18.9Q4 19 4.1 19Q4.2 19.1 4.3 19.1ZM19 22Q18.2 22 17.5 21.6Q16.8 21.2 16.4 20.5Q16 19.8 16 19V9.2H18.9V18.9Q18.9 19 19 19Q19 19.1 19.1 19.1H25.8Q25.9 19.1 26 19Q26.1 19 26.1 18.9V9.2H29V19Q29 19.8 28.5 20.5Q28.1 21.2 27.4 21.6Q26.8 22 25.9 22H19ZM33.2 22Q32.4 22 31.7 21.6Q31 21.2 30.6 20.5Q30.2 19.8 30.2 19V12.3Q30.2 11.4 30.6 10.8Q31 10.1 31.7 9.7Q32.4 9.2 33.2 9.2H40.3V5.1H43.2V22H33.2ZM33.4 19.1H40Q40.1 19.1 40.2 19Q40.3 19 40.3 18.9V12.4Q40.3 12.3 40.2 12.2Q40.1 12.1 40 12.1H33.4Q33.2 12.1 33.2 12.2Q33.1 12.3 33.1 12.4V18.9Q33.1 19 33.2 19Q33.2 19.1 33.4 19.1ZM45.1 22V9.2H47.9V22ZM45.1 8V5.1H47.9V8ZM52.5 22Q51.7 22 51 21.6Q50.3 21.2 49.9 20.5Q49.5 19.8 49.5 19V12.3Q49.5 11.4 49.9 10.8Q50.3 10.1 51 9.7Q51.7 9.2 52.5 9.2H59.4Q60.2 9.2 60.9 9.7Q61.6 10.1 62 10.8Q62.4 11.4 62.4 12.3V19Q62.4 19.8 62 20.5Q61.6 21.2 60.9 21.6Q60.2 22 59.4 22H52.5ZM52.6 19.1H59.3Q59.4 19.1 59.5 19Q59.5 19 59.5 18.9V12.4Q59.5 12.3 59.5 12.2Q59.4 12.1 59.3 12.1H52.6Q52.5 12.1 52.4 12.2Q52.4 12.3 52.4 12.4V18.9Q52.4 19 52.4 19Q52.5 19.1 52.6 19.1Z"/><path d="M75.1 18.4Q74.1 18.4 73.4 17.8Q72.7 17.3 72.4 16.4L73.8 16Q73.9 16.5 74.3 16.8Q74.6 17.1 75.1 17.1Q75.4 17.1 75.7 16.9Q76.1 16.8 76.2 16.4Q76.3 16.2 76.4 15.9Q76.4 15.6 76.4 15.2V8.8H77.7V15.2Q77.7 15.6 77.7 15.9Q77.7 16.2 77.7 16.5Q77.6 16.8 77.4 17.1Q77.1 17.8 76.5 18.1Q75.9 18.4 75.1 18.4ZM82.8 18.4Q81.8 18.4 81 18Q80.2 17.7 79.7 17Q79.2 16.4 79 15.5L80.4 15.3Q80.6 16.1 81.3 16.6Q82 17.1 82.9 17.1Q83.5 17.1 84 16.9Q84.4 16.7 84.7 16.4Q85 16.1 85 15.6Q85 15.3 84.9 15.1Q84.8 14.9 84.7 14.8Q84.5 14.7 84.3 14.6Q84.1 14.4 83.8 14.4L81.4 13.7Q81.1 13.6 80.7 13.4Q80.4 13.2 80.1 13Q79.7 12.7 79.6 12.3Q79.4 11.9 79.4 11.3Q79.4 10.4 79.8 9.8Q80.3 9.2 81 8.9Q81.8 8.6 82.7 8.6Q83.7 8.6 84.4 9Q85.2 9.3 85.7 9.9Q86.2 10.5 86.4 11.4L84.9 11.6Q84.8 11.1 84.5 10.7Q84.2 10.3 83.7 10.1Q83.2 9.9 82.7 9.9Q82.2 9.9 81.8 10.1Q81.3 10.2 81.1 10.5Q80.8 10.8 80.8 11.2Q80.8 11.6 81 11.9Q81.3 12.1 81.6 12.3Q81.9 12.4 82.3 12.5L84 13Q84.3 13.1 84.7 13.2Q85.1 13.4 85.5 13.6Q85.9 13.9 86.2 14.4Q86.4 14.8 86.4 15.5Q86.4 16.2 86.1 16.7Q85.9 17.3 85.4 17.6Q84.9 18 84.2 18.2Q83.6 18.4 82.8 18.4Z" fill="none" stroke="currentColor" stroke-width=".8"/><rect x="68.9" y="5.5" width="21" height="16" fill="none" stroke="currentColor"/></svg></a>
-    <nav aria-label="audiojs"><a href="/modules/">Modules</a><a href="/util/">Utils</a><a href="/#platform">Platform</a><a href="/lab/" aria-current="true">Lab</a><a href="/audio/playground/">Playground</a><a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a></nav>
+    <div class="site-top">
+      <a class="site-brand" href="/" aria-label="audiojs home" draggable="false"><span class="logo" aria-hidden="true"><svg viewBox="-1 -.94 2 1.88" fill="currentColor"><use href="#mark"/></svg><canvas hidden></canvas></span><span class="word">audio</span><span class="js">JS</span></a>
+      <nav aria-label="Sections"><a class="ticked" href="/modules/">modules</a><a class="ticked" href="/util/">utils</a><a class="ticked" href="/lab/" aria-current="true">lab</a><a class="ticked" href="/audio/playground/">playground</a></nav>
+      <a class="site-gh" href="https://github.com/audiojs" aria-label="audiojs on GitHub"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0539 13.5182 14.0332 14.4958 12.6716C15.4735 11.3101 15.9996 9.6762 16 8C16 3.58 12.42 0 8 0Z"/></svg></a>
+    </div>
+    <svg class="site-sprite" aria-hidden="true"><defs><path id="lobes" d="M-1 -0L-0.979 -0L-0.958 -0.001L-0.938 -0.003L-0.917 -0.006L-0.896 -0.012L-0.875 -0.021L-0.854 -0.033L-0.833 -0.048L-0.812 -0.068L-0.792 -0.091L-0.771 -0.118L-0.75 -0.15L-0.729 -0.185L-0.708 -0.225L-0.688 -0.267L-0.667 -0.313L-0.646 -0.362L-0.625 -0.413L-0.604 -0.465L-0.583 -0.518L-0.562 -0.571L-0.542 -0.624L-0.521 -0.675L-0.5 -0.724L-0.479 -0.769L-0.458 -0.811L-0.438 -0.848L-0.417 -0.88L-0.396 -0.905L-0.375 -0.924L-0.354 -0.936L-0.333 -0.94L-0.312 -0.936L-0.292 -0.924L-0.271 -0.903L-0.25 -0.873L-0.229 -0.836L-0.208 -0.79L-0.188 -0.736L-0.167 -0.675L-0.146 -0.607L-0.125 -0.533L-0.104 -0.453L-0.083 -0.368L-0.062 -0.28L-0.042 -0.188L-0.021 -0.095L0 0L0.021 0.095L0.042 0.188L0.062 0.28L0.083 0.368L0.104 0.453L0.125 0.533L0.146 0.607L0.167 0.675L0.188 0.736L0.208 0.79L0.229 0.836L0.25 0.873L0.271 0.903L0.292 0.924L0.312 0.936L0.333 0.94L0.354 0.936L0.375 0.924L0.396 0.905L0.417 0.88L0.438 0.848L0.458 0.811L0.479 0.769L0.5 0.724L0.521 0.675L0.542 0.624L0.562 0.571L0.583 0.518L0.604 0.465L0.625 0.413L0.646 0.362L0.667 0.313L0.688 0.267L0.708 0.225L0.729 0.185L0.75 0.15L0.771 0.118L0.792 0.091L0.812 0.068L0.833 0.048L0.854 0.033L0.875 0.021L0.896 0.012L0.917 0.006L0.938 0.003L0.958 0.001L0.979 0L1 0Z"/></defs><g id="mark"><use href="#lobes" transform="scale(1 1)" opacity="0.042"/><use href="#lobes" transform="scale(1 0.958)" opacity="0.043"/><use href="#lobes" transform="scale(1 0.917)" opacity="0.045"/><use href="#lobes" transform="scale(1 0.875)" opacity="0.048"/><use href="#lobes" transform="scale(1 0.833)" opacity="0.05"/><use href="#lobes" transform="scale(1 0.792)" opacity="0.053"/><use href="#lobes" transform="scale(1 0.75)" opacity="0.056"/><use href="#lobes" transform="scale(1 0.708)" opacity="0.059"/><use href="#lobes" transform="scale(1 0.667)" opacity="0.062"/><use href="#lobes" transform="scale(1 0.625)" opacity="0.067"/><use href="#lobes" transform="scale(1 0.583)" opacity="0.071"/><use href="#lobes" transform="scale(1 0.542)" opacity="0.077"/><use href="#lobes" transform="scale(1 0.5)" opacity="0.083"/><use href="#lobes" transform="scale(1 0.458)" opacity="0.091"/><use href="#lobes" transform="scale(1 0.417)" opacity="0.1"/><use href="#lobes" transform="scale(1 0.375)" opacity="0.111"/><use href="#lobes" transform="scale(1 0.333)" opacity="0.125"/><use href="#lobes" transform="scale(1 0.292)" opacity="0.143"/><use href="#lobes" transform="scale(1 0.25)" opacity="0.167"/><use href="#lobes" transform="scale(1 0.208)" opacity="0.2"/><use href="#lobes" transform="scale(1 0.167)" opacity="0.25"/><use href="#lobes" transform="scale(1 0.125)" opacity="0.333"/><use href="#lobes" transform="scale(1 0.083)" opacity="0.5"/><use href="#lobes" transform="scale(1 0.042)" opacity="1"/></g></svg>
   </header>
-<main>
+<div class="site-page">
+<nav class="site-rail" aria-label="Contents">
+  <h2>Contents</h2>
+  <ul><li><a href="#asking"><span class="ticked">Asking</span><small>1</small></a></li><li><a href="#what-the-browser-does-to-the-sound"><span class="ticked">What the browser does to the sound</span><small>2</small></a></li><li><a href="#which-microphone"><span class="ticked">Which microphone</span><small>3</small></a></li><li><a href="#mediarecorder-the-browser-s-own-file"><span class="ticked">MediaRecorder: the browser's own file</span><small>4</small></a></li><li><a href="#every-sample-an-audioworklet"><span class="ticked">Every sample: an AudioWorklet</span><small>5</small></a></li><li><a href="#the-bytes-in-front"><span class="ticked">The bytes in front</span><small>6</small></a></li><li><a href="#latency-part"><span class="ticked">Latency</span><small>7</small></a></li><li><a href="#surviving-a-crash"><span class="ticked">Surviving a crash</span><small>8</small></a></li><li><a href="#letting-go"><span class="ticked">Letting go</span><small>9</small></a></li><li><a href="#with-audio"><span class="ticked">With audio</span><small>10</small></a></li></ul>
+</nav>
+<main class="site-main article">
   <nav class="top"><span class="crumb"><a href="/lab/">Lab</a></span><a href="https://github.com/audiojs/audiojs.github.io/tree/main/lab/recording">Source</a></nav>
   <h1>Recording audio in the browser</h1>
   <p class="lead">A page asks for the microphone, gets a stream, and makes a file of it. Two APIs do the work, and they give different files. Every figure here runs in your browser, the recordings on your own microphone; nothing is sent anywhere.</p>
@@ -69,7 +78,7 @@
     <span class="readout" id="state" role="status">not in use</span>
   </div>
 
-  <h2><small>1</small>Asking</h2>
+  <h2 id="asking"><small>1</small>Asking</h2>
   <p><code>getUserMedia</code> asks. The browser shows its prompt, and the promise waits for the answer: a <code>MediaStream</code> with an audio track, or an error.<sup><a href="#r1">1</a></sup> Ask from a press, once the reader knows why. A prompt the moment a page opens has no context, and is often blocked.<sup><a href="#r2">2</a></sup></p>
   <pre><code>const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 const [track] = stream.getAudioTracks()</code></pre>
@@ -88,7 +97,7 @@ const [track] = stream.getAudioTracks()</code></pre>
     <figcaption>This page, as your browser sees it. The permission is <code>navigator.permissions.query({ name: 'microphone' })</code>; <i>Allow the microphone</i>, above, asks.</figcaption>
   </figure>
 
-  <h2><small>2</small>What the browser does to the sound</h2>
+  <h2 id="what-the-browser-does-to-the-sound"><small>2</small>What the browser does to the sound</h2>
   <p>Between the microphone and the page a browser may run three processors, each a constraint the page can switch:<sup><a href="#r1">1</a></sup></p>
   <ul class="try props">
     <li><b><code>echoCancellation</code></b><span>removes the sound the computer plays from what the microphone hears, so the other end of a call does not hear itself.</span></li>
@@ -121,7 +130,7 @@ const [track] = stream.getAudioTracks()</code></pre>
   channelCount: 1, sampleRate: 48000   // wishes: read back getSettings()
 } })</code></pre>
 
-  <h2><small>3</small>Which microphone</h2>
+  <h2 id="which-microphone"><small>3</small>Which microphone</h2>
   <p><code>enumerateDevices()</code> lists the inputs and outputs. Until the page has opened a microphone it shows at most one device of each kind, with no name and no id, so a page cannot read the hardware before asking.<sup><a href="#r1">1</a></sup> After, it lists every input by name. Ask for one with <code>deviceId: { exact: id }</code>; <code>devicechange</code> fires when one is plugged in or out; an input and an output of the same device share a <code>groupId</code>. Once allowed, the picker above reopens the stream from the input you choose.</p>
   <div class="table words">
     <table>
@@ -131,7 +140,7 @@ const [track] = stream.getAudioTracks()</code></pre>
   </div>
   <p class="caption">Your devices, as this page may see them now. The input in use is marked.</p>
 
-  <h2><small>4</small>MediaRecorder: the browser's own file</h2>
+  <h2 id="mediarecorder-the-browser-s-own-file"><small>4</small>MediaRecorder: the browser's own file</h2>
   <p><code>new MediaRecorder(stream)</code> encodes the stream as it comes and hands the file over in blobs.<sup><a href="#r6">6</a></sup> It is the shortest way to a recording, and the format is the browser's choice: Chromium writes WebM with Opus, Firefox Ogg with Opus, Safari MP4 with AAC.<sup><a href="#r7">7</a>,<a href="#r8">8</a>,<a href="#r9">9</a></sup> Ask for another with <code>{ mimeType }</code>; <code>MediaRecorder.isTypeSupported()</code> says whether this browser can make it. Yours says:</p>
   <div class="table words">
     <table>
@@ -158,7 +167,7 @@ setTimeout(() =&gt; recorder.stop(), 3000)</code></pre>
   </figure>
   <p>The size over the time is the bitrate you got, beside the one <code>audioBitsPerSecond</code> reports; they need not agree. The last line is what an <code>&lt;audio&gt;</code> element makes of the file's length. Decoding the blob gives the true one, and the waveform is drawn from it.</p>
 
-  <h2><small>5</small>Every sample: an AudioWorklet</h2>
+  <h2 id="every-sample-an-audioworklet"><small>5</small>Every sample: an AudioWorklet</h2>
   <p>For WAV, FLAC or MP3, or for samples to measure, take them yourself. Route the stream into an <code>AudioContext</code> and on to an <code>AudioWorkletNode</code>. Its processor runs on the audio thread, once for every block of 128 frames, and copies each one out.<sup><a href="#r5">5</a></sup> A busy page delays the messages; it does not lose them. <code>ScriptProcessorNode</code> did this on the main thread; it is deprecated in favour of the worklet.<sup><a href="#r5">5</a></sup></p>
   <pre><code>// tap.js, on the audio thread
 registerProcessor('tap', class extends AudioWorkletProcessor {
@@ -184,7 +193,7 @@ context.createMediaStreamSource(stream).connect(tap)</code></pre>
     <div class="out" hidden><audio controls preload="metadata"></audio><a class="action" download>Save</a></div>
   </figure>
 
-  <h2><small>6</small>The bytes in front</h2>
+  <h2 id="the-bytes-in-front"><small>6</small>The bytes in front</h2>
   <p>A WAV file is a RIFF header and then the samples, little-endian, channels interleaved.<sup><a href="#r10">10</a>,<a href="#r11">11</a></sup> For integer PCM the header is 44 bytes, every field worked out from four numbers: rate, channels, bits and frames.<sup><a href="#r12">12</a></sup></p>
   <div class="table">
     <table>
@@ -206,11 +215,11 @@ context.createMediaStreamSource(stream).connect(tap)</code></pre>
 }</code></pre>
   <p>The two sizes are known only at the end, so a recorder that writes as it goes leaves them zero and fills them in on stop; a file cut off before that still holds every sample, and its length gives the sizes back. A reader should walk the chunks rather than skip 44 bytes: other files carry more before the samples.<sup><a href="#r11">11</a></sup> Float is not PCM in the format's sense: tag 3, an fmt chunk two bytes longer for its <code>cbSize</code>, and a <code>fact</code> chunk with the length in frames, 58 bytes in all.<sup><a href="#r10">10</a>,<a href="#r11">11</a></sup> The sizes are 32-bit, so a WAV holds at most 4 GiB, about 6.2 hours of 48 kHz 16-bit stereo; RF64 makes them 64-bit.<sup><a href="#r13">13</a></sup></p>
 
-  <h2><small>7</small>Latency</h2>
+  <h2 id="latency-part"><small>7</small>Latency</h2>
   <p>Sound reaches a recording late and leaves the speakers late. Web Audio reports the output side. <code>baseLatency</code> is the context's own buffering on the way to the audio system; <code>outputLatency</code> estimates the rest of the way, until the speaker makes the sound. The <code>latencyHint</code> a context is made with sets the first: <code>'interactive'</code>, the default, asks for the lowest that does not glitch, <code>'playback'</code> for the least power.<sup><a href="#r5">5</a></sup></p>
   <div class="table" id="latency">
     <table>
-      <thead><tr><th scope="col">latencyHint</th><th scope="col">baseLatency · frames</th><th scope="col">outputLatency · frames</th></tr></thead>
+      <thead><tr><th scope="col">latencyHint</th><th scope="col">baseLatency, frames</th><th scope="col">outputLatency, frames</th></tr></thead>
       <tbody id="latencies"><tr><th scope="row" colspan="3" class="empty">Press <i>Read the latencies</i>: three contexts are made, run for 0.4 s in silence, and closed.</th></tr></tbody>
     </table>
   </div>
@@ -218,7 +227,7 @@ context.createMediaStreamSource(stream).connect(tap)</code></pre>
   <p>Web Audio has nothing for the input side: from the microphone through the converter, the driver and the system's buffers to your processor. A track's <code>latency</code> setting is the target its configuration aims at, not a measurement.<sup><a href="#r1">1</a></sup> The Media Capture Extensions draft adds <code>track.stats.latency</code>, the input latency as measured, in milliseconds;<sup><a href="#r14">14</a></sup> Chromium 151 reports it.</p>
   <p>To place a take against what was playing, for an overdub or a measurement, measure the whole round trip: play a click, record it back, and find how far it moved by cross-correlation.<sup><a href="#r15">15</a></sup> A loopback cable from output to input measures the device. A speaker and the microphone add the air between them, and need echo cancellation off, since it is made to remove exactly that sound.<sup><a href="#r1">1</a></sup> The <a href="/util/latency/">latency test</a> does this on your device; <a href="/util/measure/">room measurement</a> does it with a sweep and reports the latency beside the room's response.</p>
 
-  <h2><small>8</small>Surviving a crash</h2>
+  <h2 id="surviving-a-crash"><small>8</small>Surviving a crash</h2>
   <p>A recorder that keeps the take in memory loses all of it when the tab goes: a crash, a reload, a phone reclaiming memory. Give <code>start()</code> a timeslice and MediaRecorder hands over a chunk that often;<sup><a href="#r6">6</a></sup> write each one to storage as it comes. The chunks end to end are the file, the first carrying its header.</p>
   <pre><code>recorder.ondataavailable = async e =&gt; save(take, n++, await e.data.arrayBuffer())
 recorder.start(1000)   // a chunk every second
@@ -239,7 +248,7 @@ document.addEventListener('visibilitychange', () =&gt; document.hidden &amp;&amp
   <p class="hint">Record, switch to another tab and back, then reload this page while it still records. The take comes back here, above the chunks, from IndexedDB. A take stopped normally is read back from storage into one file, and the storage cleared.</p>
   <p>Chunks cost Chromium's WebM its length. Written live, its header goes out before the length is known, so the joined file has no duration and no cues. Since Chrome 140 a recording without a timeslice is written seekable; one in timeslices still is not.<sup><a href="#r19">19</a></sup> An <code>&lt;audio&gt;</code> element then reports <code>Infinity</code> until it has read to the end, as the line above may show; decoding the file gives its length.</p>
 
-  <h2><small>9</small>Letting go</h2>
+  <h2 id="letting-go"><small>9</small>Letting go</h2>
   <p>While a page may use the microphone, and while a track is live, the browser must show it, each time either starts or stops: look at this tab.<sup><a href="#r1">1</a></sup> Stopping the MediaRecorder does not end capture, nor does closing the AudioContext. Stopping the track does, and every clone of it.</p>
   <pre><code>stream.getTracks().forEach(track =&gt; track.stop())</code></pre>
   <figure id="release">
@@ -260,7 +269,7 @@ document.addEventListener('visibilitychange', () =&gt; document.hidden &amp;&amp
     <figcaption>Open all three, then end them one at a time and watch this tab's microphone mark. A disabled track sends silence; once every track on the device is disabled, muted or stopped, the browser should let the device go within 3 seconds, and take it back when one is enabled.<sup><a href="#r1">1</a></sup></figcaption>
   </figure>
 
-  <h2><small>10</small>With audio</h2>
+  <h2 id="with-audio"><small>10</small>With audio</h2>
   <p>The <a href="https://github.com/audiojs/audio">audio</a> library takes the AudioWorklet's path in one call. <code>record()</code> opens the microphone with the three processors off and keeps every block, as 16-bit samples, until <code>stop()</code>;<sup><a href="#r20">20</a></sup> the take is then a sound like any other, to edit and encode.</p>
   <pre><code>let take = audio()
 take.record()                        // { device, sampleRate, channels, monitor }
@@ -307,9 +316,10 @@ let bytes = await take.encode('wav') // or 'flac', 'mp3', 'opus'</code></pre>
     <li id="r19">Chromium, <a href="https://issues.chromium.org/issues/40482588">issue 40482588</a> (formerly 642012), “MediaRecorder: consider producing seekable WebM files”: fixed for recordings without a timeslice in <a href="https://chromium.googlesource.com/chromium/src/+/742e276678eb">742e276678eb</a>, Chrome 140.</li>
     <li id="r20"><a href="https://github.com/audiojs/audio#playback--recording">audio</a>, Playback / Recording; <a href="https://github.com/audiojs/mic/blob/main/browser.js">@audio/mic</a>, browser.js: getUserMedia with the three processors off, an AudioWorklet taking every block.</li>
   </ol>
-  <footer><a href="/lab/">Audio Lab</a> · experiments from <a href="/">audiojs</a></footer>
+  <footer><a href="/lab/">Audio Lab</a>, experiments from <a href="/">audiojs</a></footer>
 </main>
+</div>
 <script type="module" src="demo.js"></script>
-<script type="module" src="https://audio.js.org/audio/playground/embed.js"></script>
+<script type="module" src="/audio/playground/embed.js"></script>
 </body>
 </html>

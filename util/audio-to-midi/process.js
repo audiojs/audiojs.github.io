@@ -111,7 +111,7 @@ function roll(notes, dur) {
     ctx.fillStyle = 'rgba(0,164,184,' + (0.4 + 0.6 * Math.min(1, n.velocity)).toFixed(2) + ')'
     ctx.fillRect(x(n.time), y(n.midi) + 1, Math.max(2, x(n.duration)), Math.max(2, rowH - 2))
   }
-  ctx.fillStyle = 'rgba(237,235,228,.8)'; ctx.font = '600 22px Manrope, sans-serif'
+  ctx.fillStyle = 'rgba(237,235,228,.8)'; ctx.font = '600 22px Geist, sans-serif'
   for (let m = lo; m <= hi; m++) if (m % 12 === 0) ctx.fillText('C' + (m / 12 - 1), 10, y(m) + rowH - 6)
   return { width: W, height: H, data: ctx.getImageData(0, 0, W, H).data }
 }

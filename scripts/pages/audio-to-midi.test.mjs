@@ -11,22 +11,11 @@
 //    .musicxml and the rendered "hear it" MP3; then the manual-tempo path.
 // Usage: node scripts/pages/audio-to-midi.test.mjs
 import { createServer } from 'http'
-import { readFile } from 'fs/promises'
-import { extname, normalize, resolve, sep } from 'path'
-import { fileURLToPath } from 'url'
+import { site } from '../serve.mjs'
 import * as pw from 'playwright'
 
-const root = fileURLToPath(new URL('../..', import.meta.url)).replace(/\/+$/, '')
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.ico': 'image/x-icon' }
-const server = createServer(async (req, res) => {
-  let rel = normalize(req.url.split('?')[0]).replace(/^\//, '')
-  if (rel === '' || rel.endsWith('/')) rel += 'index.html'
-  const path = resolve(root, rel)
-  if (!path.startsWith(root + sep)) { res.writeHead(403); return res.end() }
-  let body
-  try { body = await readFile(path) } catch { res.writeHead(404); return res.end('404') }
-  res.writeHead(200, { 'content-type': types[extname(path)] || 'application/octet-stream' }); res.end(body)
-})
+// the site as npm run dev serves it (scripts/serve.mjs): /audio/ too, where every page's tokens, Geist and mark come from
+const server = createServer(site)
 await new Promise(r => server.listen(0, r))
 const base = `http://127.0.0.1:${server.address().port}`
 let pass = 0, fail = 0

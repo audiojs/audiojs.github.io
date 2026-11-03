@@ -1,5 +1,4 @@
 /* The logo's lab: any signal through any window, drawn by audiojs/audio's logo/logo.js and moved by its motion.js. Dark as the site's devices; inverted, the site's paper. */
-@font-face { font-family: 'Geist'; src: url('/audio/assets/geist.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 :root {
   color-scheme: dark;
   --ground: var(--color-screen-low);

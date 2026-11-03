@@ -1,50 +1,148 @@
-/* audiojs modules: a reference on paper, one row a module: its call, what it does, its package. Its colours and type
- * are the audio design system's tokens (/audio/assets/tokens.css), as the home's are. */
-:root {
-  --paper: var(--color-paper); --ink: var(--color-ink); --mute: var(--color-muted); --rule: var(--color-rule);
-  --body: var(--font-display); --mono: var(--font-mono);
-  color-scheme: light;
-}
+/* audiojs modules: the catalog, a row a package, a family's others folded under its own, the libraries under their
+ * categories, each tagged (a working list:
+ * found, scanned, opened), and the dossier, a package's page set as a technical file. The audio
+ * design system's tokens (/audio/assets/tokens.css); the page, its rail and its column are the site's (/bar.css). */
+:root { color-scheme: light; }
 * { box-sizing: border-box; }
-/* what the search leaves out, gone, whatever display a rule gives it */
 [hidden] { display: none !important; }
-body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
-a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+html { background: var(--color-paper); }
+body { margin: 0; background: var(--dots), var(--color-paper); color: var(--color-ink); font: 400 16px/1.55 var(--font-display); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+::selection { background: var(--color-ink); color: var(--color-paper); }
+a { color: inherit; text-decoration-color: var(--color-rule); text-underline-offset: 3px; }
 a:hover { text-decoration-color: currentColor; }
-code { font: .9em var(--mono); }
-:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-main { max-width: 1120px; margin: 0 auto; padding: 48px 24px 120px; }
-h1 { margin: 0 0 10px; font-size: clamp(36px, 6vw, 56px); font-weight: 800; line-height: 1; letter-spacing: -.04em; }
-.lead { max-width: 46em; margin: 0; font-size: 18px; color: var(--mute); }
-.lead b { color: var(--ink); }
+code { font: .9em/1.4 var(--font-mono); }
+:focus-visible { outline: 1.5px solid currentColor; outline-offset: 3px; }
+h1 { margin: 0; font: 600 clamp(36px, 4vw, 56px)/1.02 var(--font-display); letter-spacing: -.04em; text-wrap: balance; }
+.lead { max-width: 44em; margin: 14px 0 0; font-size: 18px; line-height: 1.5; color: var(--color-soft-ink); text-wrap: pretty; }
+.lead a { color: var(--color-ink); }
 
-/* the search stays in reach while the list scrolls under it */
-.find { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 16px; margin: 32px -24px 0; padding: 14px 24px; background: var(--paper); border-bottom: 1px solid var(--rule); }
-.find input { flex: 1; min-width: 0; padding: 12px 14px; border: 1px solid var(--ink); border-radius: 0; background: #fff; color: var(--ink); font: 500 17px/1.2 var(--body); }
-.find input:focus-visible { outline-offset: 0; }
-.find output { flex: none; font-size: 14px; color: var(--mute); font-variant-numeric: tabular-nums; }
-.none { margin: 24px 0 0; color: var(--mute); }
+/* The catalog */
+.catalog { padding-bottom: var(--space-3xl); }
+/* the search stays in reach while the list scrolls under it, the count beside it */
+.find { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: var(--space-md); margin: var(--space-xl) 0 0; padding: 12px 0; background: var(--color-paper); border-bottom: 1px solid var(--color-rule); }
+.find input { flex: 1; min-width: 0; padding: 13px 16px; border: 1px solid var(--color-ink); border-radius: 0; background: var(--color-paper); color: var(--color-ink); font: 500 17px/1.2 var(--font-display); }
+.find input::placeholder { color: var(--color-muted); }
+/* its clearing cross drawn in the ink, as the page's own icons are */
+.find input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: var(--color-ink); cursor: pointer; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6 6 18' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+.find input:focus-visible { outline: 1.5px solid var(--color-ink); outline-offset: 0; }
+.find output { flex: none; min-width: 9ch; text-align: right; font-size: 14px; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.none { margin: var(--space-lg) 0 0; color: var(--color-muted); }
 
-h2 { margin: 56px 0 8px; font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
-.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--mute); }
-.toc a { text-decoration: none; }
-.toc a:hover { color: var(--ink); }
-.group { margin-top: 36px; scroll-margin-top: 80px; }
-h3 { margin: 0 0 4px; font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
-h3 small { margin-left: 6px; font-size: 13px; font-weight: 500; color: var(--mute); }
-.group ul { margin: 0; padding: 0; list-style: none; }
-/* a row: the call on the left, what it does beside it, the package under that */
-.group li { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 2px 28px; padding: 12px 0 13px; border-top: 1px solid var(--rule); }
-.group li > a { align-self: start; text-decoration: none; overflow-wrap: anywhere; }
-.group li > a code { display: inline-block; margin: 0 10px 2px 0; font-size: 14px; font-weight: 600; }
-.group li > a:hover code { text-decoration: underline; text-underline-offset: 3px; }
-.group li p { grid-column: 2; margin: 0; font-size: 15px; }
-.group li p code { font-size: 13px; }
-.group li p sub { display: block; margin-top: 4px; font-size: 13px; color: var(--mute); vertical-align: baseline; }
-.pkg { grid-column: 2; font: 12.5px var(--mono); color: var(--mute); }
-
+.units { margin-top: var(--space-xl); border-bottom: 1px solid var(--color-rule); }
+.unit { border-top: 1px solid var(--color-rule); scroll-margin-top: 84px; }
+.unit ul { margin: 0; padding: 0; list-style: none; }
+/* a row: its name, what it does (the unit's tags under it), its version; the unit's own package the strongest */
+.unit li + li, .kin li { border-top: 1px dotted var(--color-rule); }
+:is(.unit li a, .category .head) { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) auto; align-items: baseline; gap: 4px var(--space-lg); padding: 12px 0 13px; text-decoration: none; }
+.unit .name { font-weight: 500; }
+.unit .name .ticked { overflow-wrap: anywhere; }
+.unit > ul .name { font-weight: 600; }
+.unit .desc { font-size: 15px; color: var(--color-soft-ink); }
+.unit .tags { grid-column: 2; font: 12px/1.4 var(--font-mono); letter-spacing: .02em; color: var(--color-muted); }
+.unit .ver { grid-column: 3; grid-row: 1; font: 12px/1 var(--font-mono); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+/* a family's others, folded under its own: their count and names on one line, a chevron that turns as it opens; open,
+ * their rows set in a step, as a tree's branches */
+.kin { border-top: 1px dotted var(--color-rule); }
+.kin summary { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); align-items: baseline; gap: var(--space-lg); padding: 10px 0 11px; color: var(--color-soft-ink); cursor: pointer; list-style: none; }
+.kin summary::-webkit-details-marker { display: none; }
+.kin .count { display: inline-flex; align-items: baseline; gap: 8px; padding-left: 18px; font-size: 14px; color: var(--color-ink); }
+.kin .count::before { content: ''; flex: none; align-self: center; width: 6px; height: 6px; margin-left: -16px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; rotate: -45deg; transition: rotate var(--dur-short) var(--ease-out); }
+.kin[open] .count::before { rotate: 45deg; }
+.kin .names { overflow: hidden; font-size: 14px; white-space: nowrap; text-overflow: ellipsis; color: var(--color-muted); }
+.kin summary:hover .names, .kin summary:hover { color: var(--color-ink); }
+.kin[open] .names { visibility: hidden; }
+.kin summary:focus-visible { outline: 1.5px solid currentColor; outline-offset: 2px; }
+.kin .name { padding-left: 18px; }
+/* a category: its name, what it holds and how many, over its libraries set in a step as a family's others are */
+.category .head { margin: 0; }
+.category .head .name { font-weight: 600; }
+.category li { border-top: 1px dotted var(--color-rule); }
+.category > ul .name { padding-left: 18px; font-weight: 500; }
+@media (prefers-reduced-motion: reduce) { .kin .count::before { transition: none; } }
 @media (max-width: 720px) {
-  main { padding-top: 32px; }
-  .group li { grid-template-columns: minmax(0, 1fr); }
-  .group li p, .pkg { grid-column: 1; }
+  :is(.unit li a, .category .head) { grid-template-columns: minmax(0, 1fr) auto; }
+  .unit .desc, .unit .tags { grid-column: 1 / -1; }
+  .unit .ver { grid-column: 2; }
+  .kin summary { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
+
+/* The dossier, a technical file in the mono: its standards down the sheet's edge; its head, the way up and the way
+ * along over its name, a rule, its standing and its npm version and licence under it, what it does; its overview, the facts in a table, its
+ * picture beside them; its README in a reading column, its parts numbered, its plots on the screen's dark (their inks
+ * turned over to read there, their colours kept), each figure numbered under it; the packages before and after it */
+.dossier { position: relative; max-width: 64rem; padding-bottom: var(--space-2xl); font: 400 15px/1.75 var(--font-mono); counter-reset: part fig; }
+/* (the standards' tab against the sheet's edge, out on the dots where they leave it room) */
+.edge { display: none; position: absolute; top: 0; left: calc(-2 * var(--dot)); width: var(--dot); margin: 0; padding: 14px 0; background: var(--color-ink); color: var(--color-paper); font: 500 9.5px/var(--dot) var(--font-mono); letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; writing-mode: vertical-rl; rotate: 180deg; }
+.file { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-xl); }
+.trail, .pace, .standing { margin: 0; font: 500 13px/1.5 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; }
+.trail { color: var(--color-muted); }
+.trail a { color: var(--color-soft-ink); text-decoration: none; }
+.trail [aria-current] { color: var(--color-ink); }
+.pace { display: flex; gap: var(--space-lg); color: var(--color-soft-ink); }
+.pace a { text-decoration: none; }
+.pace a:hover { color: var(--color-ink); }
+.marks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px var(--space-lg); margin-top: 16px; padding-top: 14px; border-top: 2px solid var(--color-ink); }
+.standing { font-weight: 700; cursor: help; }
+.standing small { margin-right: .6em; font-size: 11px; font-weight: 400; color: var(--color-muted); }
+.dossier h1 { grid-column: 1 / -1; margin: 18px 0 0; font: 700 clamp(28px, 4.2vw, 60px)/1.06 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; text-wrap: balance; }
+.dossier h1 .scope { color: var(--color-muted); font-weight: 500; }
+.badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.badges > * { display: inline-flex; font: 500 12px/1 var(--font-mono); text-decoration: none; }
+.badges > * > span { padding: 6px 8px; }
+.badges > * > :first-child { background: var(--color-ink); color: var(--color-paper); }
+.badges > * > :last-child { background: var(--color-hover); }
+.badges a:hover > :last-child { background: var(--color-rule); }
+.dossier .lead { grid-column: 1 / -1; max-width: 62ch; margin: var(--space-md) 0 0; font: 400 17px/1.6 var(--font-mono); color: var(--color-ink); }
+
+.dossier h2 { margin: 0 0 var(--space-md); padding-bottom: 10px; border-bottom: 1px dotted var(--color-muted); font: 700 14px/1.4 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; }
+.overview { display: grid; gap: var(--space-xl) var(--space-2xl); margin-top: var(--space-2xl); }
+@media (min-width: 900px) { .overview.pictured { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+.facts { display: grid; grid-template-columns: minmax(7rem, auto) minmax(0, 1fr); gap: 10px var(--space-lg); margin: 0; }
+.facts div { display: contents; }
+.facts dt { color: var(--color-muted); }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+.copy { padding: 4px 10px; border: 1px solid var(--color-ink); border-radius: 0; background: var(--color-ink); color: var(--color-paper); font: inherit; text-align: left; cursor: copy; transition: background var(--dur-micro), color var(--dur-micro); }
+.copy:hover { background: transparent; color: var(--color-ink); }
+.copy code { font-size: 13px; }
+
+.readme { margin-top: var(--space-2xl); counter-reset: part; }
+.readme > * { max-width: 72ch; }
+.readme :is(h2, h3, h4, h5, h6) { scroll-margin-top: var(--space-lg); }
+.readme h2 { max-width: none; margin-top: 2.6em; counter-increment: part; counter-reset: sub; }
+.readme h2::before { content: counter(part) '. '; }
+.readme h3 { margin: 2em 0 .5em; font: 700 15px/1.4 var(--font-mono); counter-increment: sub; }
+.readme h2 ~ h3::before { content: counter(part) '.' counter(sub) ' '; color: var(--color-muted); }
+.readme :is(h4, h5, h6) { margin: 1.6em 0 .4em; font: 600 15px/1.4 var(--font-mono); }
+.readme p, .readme ul, .readme ol { margin: 0 0 1em; }
+.readme li { margin: .25em 0; }
+.readme :not(pre) > code { padding: .1em .35em; background: var(--color-hover); font-size: .93em; }
+.readme pre { max-width: none; margin: 1.2em 0 1.4em; padding: 16px 20px; overflow: auto; background: var(--color-bezel); color: var(--color-screen-ink); font: 13.5px/1.65 var(--font-mono); tab-size: 2; scrollbar-color: var(--color-screen-rule) transparent; }
+.readme pre code { font: inherit; }
+.readme table { display: block; max-width: none; margin: 1.2em 0 1.6em; overflow-x: auto; border-collapse: collapse; font-size: 13.5px; line-height: 1.5; }
+.readme th { padding: 8px 18px 8px 0; border-bottom: 1px solid var(--color-ink); text-align: left; font-weight: 700; white-space: nowrap; }
+.readme td { padding: 8px 18px 8px 0; border-bottom: 1px dotted var(--color-rule); vertical-align: top; }
+.readme td code { white-space: nowrap; }
+.readme blockquote { margin: 1.2em 0; padding: 0 0 0 1em; border-left: 2px solid var(--color-ink); color: var(--color-soft-ink); }
+.readme img { max-width: 100%; height: auto; }
+.readme hr { margin: 2em 0; border: 0; border-top: 1px solid var(--color-rule); }
+.readme sub { font-size: .8em; color: var(--color-soft-ink); }
+.dossier figure { margin: 1.8em 0; counter-increment: fig; }
+.overview figure { margin: 0; }
+.dossier figure > img { display: block; }
+.plate { padding: 12px; background: var(--color-bezel); }
+.plate img { display: block; width: 100%; filter: invert(1) hue-rotate(180deg); }
+.dossier figcaption { margin-top: 10px; font: 700 12px/1.5 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.dossier figcaption::before { content: 'Fig. ' counter(fig) ': '; color: var(--color-muted); }
+.dossier figcaption:empty::before { content: 'Fig. ' counter(fig); }
+
+.steps { display: flex; justify-content: space-between; gap: var(--space-lg); margin-top: var(--space-3xl); padding-top: var(--space-md); border-top: 2px solid var(--color-ink); }
+.steps a { display: grid; gap: 2px; text-decoration: none; font-weight: 600; }
+.steps a.next { text-align: right; justify-items: end; }
+.steps small { font-size: 11px; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--color-muted); }
+@media (min-width: 1280px), (min-width: 800px) and (max-width: 1099px) { .edge { display: block; } }
+@media (max-width: 720px) { .pace { grid-column: 1 / -1; grid-row: 3; margin-top: 10px; } .facts { grid-template-columns: minmax(0, 1fr); gap: 2px; } .facts dd { margin-bottom: 10px; } }
+
+/* A dossier's rail: every unit, the one it is in open to its packages, a step in */
+.directory ul ul { margin: 2px 0 6px; padding-left: 12px; border-left: 1px solid var(--color-rule); }
+.directory ul ul a { padding-block: 3px; font-size: 13px; }
+@media (max-width: 1099px) { .directory li { display: contents; } .directory ul ul a { padding-block: 6px; font-size: inherit; } }

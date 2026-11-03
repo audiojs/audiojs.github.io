@@ -16,7 +16,7 @@ export default {
     <link rel="stylesheet" href="/util/prosody/editor.css?v=${version}">
     <div class="prosody">
       ${drop('Drop a speech recording here', 'audio/*,.wav,.mp3,.m4a,.ogg,.flac').trimStart()}
-      <div class="row intro"><button class="btn ghost" id="demo">Try a speech sample</button><span>Experimental · one voice · mono output</span></div>
+      <div class="row intro"><button class="btn ghost" id="demo">Try a speech sample</button><span>Experimental, one voice, mono output</span></div>
       <p id="status" class="status" role="status" aria-live="polite">Choose a short, clean recording to begin.</p>
       <section id="editor" class="panel" hidden aria-label="Speech editor">
         <div class="row"><strong id="filename" class="file"></strong><button id="replace" class="btn ghost">Change file</button><button id="undo" class="btn ghost" disabled>Undo</button><button id="reset" class="btn ghost" disabled>Reset</button></div>
@@ -54,11 +54,11 @@ export default {
               <label>Duration (s)<input id="duration" type="number" min="0.01" step="0.01" value="1"></label><button id="retime" class="btn ghost">Apply</button>
             </section>
           </div>
-          <div class="row"><button id="render" class="btn" disabled>Render edits</button><label class="engine">Engine<select id="engine" aria-describedby="engine-help"><option value="auto">Auto</option><option value="waveform">Waveform</option><option value="vocoder">Vocoder</option></select></label><span id="render-state">Original audio · no edits</span></div>
+          <div class="row"><button id="render" class="btn" disabled>Render edits</button><label class="engine">Engine<select id="engine" aria-describedby="engine-help"><option value="auto">Auto</option><option value="waveform">Waveform</option><option value="vocoder">Vocoder</option></select></label><span id="render-state">Original audio, no edits</span></div>
           <p id="engine-help" class="hint">Waveform keeps the recording's own voice cycles and suits changes within an octave. Vocoder rebuilds the voice and handles any change. Auto picks per phrase.</p>
         </fieldset>
         <div class="players"><label>Original<audio id="original" controls preload="metadata"></audio></label><label>Edited<audio id="edited" controls preload="metadata"></audio></label></div>
-        <div class="row"><a id="save" class="btn" aria-disabled="true">Save WAV</a><span class="hint">32-bit float · mono · original sample rate</span></div>
+        <div class="row"><a id="save" class="btn" aria-disabled="true">Save WAV</a><span class="hint">32-bit float, mono, original sample rate</span></div>
       </section>
     </div>`,
   script: `import { startEditor } from '/util/prosody/editor.bundle.js?v=${version}'; startEditor('${version}')`,

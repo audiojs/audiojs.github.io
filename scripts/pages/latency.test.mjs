@@ -4,9 +4,7 @@
 // the speaker, so the round trip must say so gracefully, and the tap test must recover taps placed a known time after
 // each scheduled click.
 import { createServer } from 'http'
-import { readFile } from 'fs/promises'
-import { extname, normalize, resolve, sep } from 'path'
-import { fileURLToPath } from 'url'
+import { site } from '../serve.mjs'
 import * as pw from 'playwright'
 import { locate, roundTrip, tapOffsets, quantile, SWEEP, BEAT } from './latency.mjs'
 
@@ -142,16 +140,8 @@ ok(quantile([3, 1, 2], 0.5) === 2 && quantile([1, 2, 3, 4], 0.5) === 2.5 && isNa
 
 // ── part two: the page ──
 
-const root = fileURLToPath(new URL('../..', import.meta.url)).replace(/\/+$/, '')
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.xml': 'application/xml', '.txt': 'text/plain', '.png': 'image/png', '.ico': 'image/x-icon' }
-const server = createServer(async (req, res) => {
-  let rel = normalize(req.url.split('?')[0]).replace(/^\//, '')
-  if (rel === '' || rel.endsWith('/')) rel += 'index.html'
-  const path = resolve(root, rel)
-  if (!path.startsWith(root + sep)) { res.writeHead(403); return res.end() }
-  try { res.writeHead(200, { 'content-type': types[extname(path)] || 'application/octet-stream' }); res.end(await readFile(path)) }
-  catch { res.writeHead(404); res.end('404') }
-})
+// the site as npm run dev serves it (scripts/serve.mjs): /audio/ too, where every page's tokens, Geist and mark come from
+const server = createServer(site)
 await new Promise(r => server.listen(0, r))
 const base = `http://127.0.0.1:${server.address().port}`
 

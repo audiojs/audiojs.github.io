@@ -1,23 +1,11 @@
 // End-to-end tests for every utility page across browser engines (scripts/util-test.mjs covers tag carry-over).
 // Usage: node scripts/util-e2e.mjs [chromium] [firefox] [webkit]
 import { createServer } from 'http'
-import { readFile } from 'fs/promises'
-import { extname, normalize, resolve, sep } from 'path'
-import { fileURLToPath } from 'url'
+import { site } from './serve.mjs'
 import * as pw from 'playwright'
 
-const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/+$/, '')
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.xml': 'application/xml', '.txt': 'text/plain', '.png': 'image/png', '.ico': 'image/x-icon' }
-const server = createServer(async (req, res) => {
-  let rel = normalize(req.url.split('?')[0]).replace(/^\//, '')
-  if (rel === '' || rel.endsWith('/')) rel += 'index.html'
-  const path = resolve(root, rel)
-  if (!path.startsWith(root + sep)) { res.writeHead(403); return res.end() }
-  // read first, then answer: a file missing is a 404, not a 200 begun
-  let body
-  try { body = await readFile(path) } catch { res.writeHead(404); return res.end('404') }
-  res.writeHead(200, { 'content-type': types[extname(path)] || 'application/octet-stream' }), res.end(body)
-})
+// the site as npm run dev serves it (scripts/serve.mjs): /audio/ too, where every page's tokens, Geist and mark come from
+const server = createServer(site)
 await new Promise(r => server.listen(0, r))
 const base = `http://127.0.0.1:${server.address().port}`
 const engines = process.argv.slice(2).length ? process.argv.slice(2) : ['chromium']
@@ -69,6 +57,8 @@ for (const name of engines) {
   const browser = await pw[name].launch()
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } }) // phone viewport: overflow is a failure
   await context.addInitScript(STUB)
+  // (whether a document began under its service worker: one that did has no reload of its own to come)
+  await context.addInitScript(() => { window.__controlled = !!navigator.serviceWorker?.controller })
   const errors = []
   const page = await context.newPage()
   page.on('pageerror', e => errors.push(e.message))
@@ -76,13 +66,11 @@ for (const name of engines) {
   page.on('console', m => { if (m.type() === 'error' && !/error loading dynamically imported module|^Error$/.test(m.text().trim())) errors.push(m.text()) })
 
   for (const [slug, t] of Object.entries(FILE_TOOLS)) {
+    // a page that isolates itself (util/isolate.js) reloads once its service worker takes control, and the document
+    // that reload brings begins controlled and stays: that reload waited for, never raced by an opening of the test's
     await page.goto(`${base}/util/${slug}/`)
-    // a page that isolates itself (util/isolate.js) reloads once its service worker takes control: once it has, the
-    // page opened again starts controlled, and stays
-    if (await page.evaluate(() => document.head.innerHTML.includes('/util/isolate.js'))) {
-      await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 15000 }).catch(() => {})
-      await page.goto(`${base}/util/${slug}/`)
-    }
+    for (let tries = 0; tries < 3 && !await page.evaluate(() => window.__controlled || !document.head.innerHTML.includes('/util/isolate.js')).catch(() => false); tries++)
+      await page.waitForEvent('load', { timeout: 20000 }).catch(() => {})
     if (t[name]) await page.evaluate(pre => { for (const [k, v] of Object.entries(pre)) document.querySelector(`#opts [name="${k}"]`).value = v }, t[name])
     await page.evaluate(() => window.__drop(window.__wav()))
     let r = await page.evaluate(() => window.__done())
@@ -130,7 +118,7 @@ for (const name of engines) {
     const bps = (((bytes[20] & 1) << 4) | (bytes[21] >> 4)) + 1 // STREAMINFO bits per sample
     return { output: r.report?.Output, ch: d.channelData.length, rate: d.sampleRate, sec: +(d.channelData[0].length / d.sampleRate).toFixed(2), bps }
   })
-  ok(params.ch === 1 && params.rate === 16000 && params.sec > 2.9 && params.sec < 3.1 && params.bps === 24 && /16 kHz · mono/.test(params.output || ''), `convert-audio: 16 kHz mono 24-bit FLAC ${JSON.stringify(params)}`)
+  ok(params.ch === 1 && params.rate === 16000 && params.sec > 2.9 && params.sec < 3.1 && params.bps === 24 && /16 kHz, mono/.test(params.output || ''), `convert-audio: 16 kHz mono 24-bit FLAC ${JSON.stringify(params)}`)
 
   // spectrogram centroid on a pure 1 kHz tone
   await page.goto(`${base}/util/spectrogram/`)
@@ -148,7 +136,7 @@ for (const name of engines) {
   // recorder: 1.5 s → MP3 with a 443 Hz tone
   await page.goto(`${base}/util/recorder/`)
   await page.click('#rec')
-  const rec = await page.evaluate(async () => { const b = document.getElementById('rec'); const t0 = performance.now(); while (performance.now() - t0 < 10000 && !/Stop/.test(b.textContent)) await new Promise(r => setTimeout(r, 100)); await new Promise(r => setTimeout(r, 1500)); b.click(); const t1 = performance.now(); while (performance.now() - t1 < 30000 && !/Save \w+ ·/.test(document.getElementById('saveLabel').textContent)) await new Promise(r => setTimeout(r, 200)); const ab = await (await fetch(document.getElementById('save').href)).arrayBuffer(); const a = await new AudioContext().decodeAudioData(ab.slice(0)); const d = a.getChannelData(0); const g = f => { const w = 2 * Math.PI * f / a.sampleRate, c = 2 * Math.cos(w); let s0 = 0, s1 = 0, s2 = 0; for (let i = 0; i < d.length; i++) { s0 = d[i] + c * s1 - s2; s2 = s1; s1 = s0 } return s1 * s1 + s2 * s2 - c * s1 * s2 }; return { dur: a.duration, hz: [221, 330, 443, 631, 886].map(f => [f, g(f)]).sort((x, y) => y[1] - x[1])[0][0], name: document.getElementById('save').download } })
+  const rec = await page.evaluate(async () => { const b = document.getElementById('rec'); const t0 = performance.now(); while (performance.now() - t0 < 10000 && !/Stop/.test(b.textContent)) await new Promise(r => setTimeout(r, 100)); await new Promise(r => setTimeout(r, 1500)); b.click(); const t1 = performance.now(); while (performance.now() - t1 < 30000 && !/Save \w+,/.test(document.getElementById('saveLabel').textContent)) await new Promise(r => setTimeout(r, 200)); const ab = await (await fetch(document.getElementById('save').href)).arrayBuffer(); const a = await new AudioContext().decodeAudioData(ab.slice(0)); const d = a.getChannelData(0); const g = f => { const w = 2 * Math.PI * f / a.sampleRate, c = 2 * Math.cos(w); let s0 = 0, s1 = 0, s2 = 0; for (let i = 0; i < d.length; i++) { s0 = d[i] + c * s1 - s2; s2 = s1; s1 = s0 } return s1 * s1 + s2 * s2 - c * s1 * s2 }; return { dur: a.duration, hz: [221, 330, 443, 631, 886].map(f => [f, g(f)]).sort((x, y) => y[1] - x[1])[0][0], name: document.getElementById('save').download } })
   ok(rec.dur > 1.3 && rec.dur < 4 && rec.hz === 443, `recorder: ${rec.dur.toFixed(2)} s, dominant ${rec.hz} Hz, ${rec.name}`)
 
   // measure: loopback of the sweep, 200 ms late, with a 50 ms echo

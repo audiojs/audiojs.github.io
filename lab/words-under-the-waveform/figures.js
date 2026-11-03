@@ -315,7 +315,7 @@ for (let plate of plates('breaks')) {
       let line = lines[i], last = line.words.at(-1), next = lines[i + 1]?.words[0], kind
       if (!next) kind = 'end'
       else if (s.how === 'grid') kind = last.end > line.t1 + .02 || next.start < line.t1 - .02 ? 'cut mid-word' : 'cut'
-      else kind = `${kinds[line.penalty]} · ${line.penalty}`, cost += 100 * (1 - Math.min(1, line.fill)) ** 2 + line.penalty
+      else kind = `${kinds[line.penalty]}, ${line.penalty}`, cost += 100 * (1 - Math.min(1, line.fill)) ** 2 + line.penalty
       row.append(el('span', 'w-brk', kind))
     })
     readout.innerHTML = s.how === 'grid' ? `<span>lines <b>${lines.length}</b></span><span>every line <b>${(W / pxs).toFixed(1)} s</b></span>` : `<span>lines <b>${lines.length}</b></span><span>cost <b>${Math.round(cost)}</b> (unfilled² + penalties)</span>`

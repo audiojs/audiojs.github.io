@@ -79,7 +79,7 @@ function place(caret) {
 // The caret, how much of the sound the method listens to, and the settings its bench row ran with
 function describe() {
   const [before, after] = reach(state.method), heard = Math.round((before + after) / RATE * 1000)
-  $('#at').textContent = `caret ${(state.caret / RATE).toFixed(3)} s · hears ${heard ? heard + ' ms' : 'the head'} · frame ${state.frame} / ${state.overlap}, spread ± ${state.spread} ms · bank of ${state.bands}, ${state.analysis}, ${LINE[state.line]}`
+  $('#at').textContent = `caret ${(state.caret / RATE).toFixed(3)} s, hears ${heard ? heard + ' ms' : 'the head'}, frame ${state.frame} / ${state.overlap}, spread ± ${state.spread} ms, bank of ${state.bands}, ${state.analysis}, ${LINE[state.line]}`
 }
 const under = e => { const r = wave.getBoundingClientRect(); return Math.round(clamp((e.clientX - r.left) / r.width, 0, 1) * (state.x.length - 1)) }
 function press(on) { state.pressed = on; send({ on: sounding() }); animate() }

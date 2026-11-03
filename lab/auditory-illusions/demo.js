@@ -214,7 +214,7 @@ demo(rissetFigure, v => {
     for (let i = Math.floor(col / pw * 2 * x.length), end = Math.floor((col + 1) / pw * 2 * x.length); i < end; i++) { const s = x[i % x.length]; if (s < mn) mn = s; if (s > mx) mx = s }
     g.fillRect(left + col, mid - mx / PEAK * wave / 2, 1, Math.max(1, (mx - mn) / PEAK * wave / 2))
   }
-  $('#cycle').textContent = `cycle ${cycle.toFixed(1)} s · ${Math.round(slowest * 60)} to ${Math.round(slowest * r ** L * 60)} beats a minute`
+  $('#cycle').textContent = `cycle ${cycle.toFixed(1)} s, ${Math.round(slowest * 60)} to ${Math.round(slowest * r ** L * 60)} beats a minute`
   rp = keep({ ...p, xOf, top })
   replay('risset')
 })

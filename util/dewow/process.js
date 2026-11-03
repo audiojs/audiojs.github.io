@@ -46,7 +46,7 @@ export default async function process(a, o, ui) {
   }
   plot(before.times, before.speed, 'rgba(237,235,228,.5)')
   plot(after.times, after.speed, '#00a4b8')
-  ctx.fillStyle = 'rgba(237,235,228,.8)'; ctx.font = '600 11px Manrope, sans-serif'
+  ctx.fillStyle = 'rgba(237,235,228,.8)'; ctx.font = '600 11px Geist, sans-serif'
   ctx.fillText('+3%', 6, 13); ctx.fillText('0%', 6, H / 2 + 4); ctx.fillText('-3%', 6, H - 6)
 
   const pct = x => x.toFixed(2)

@@ -94,7 +94,7 @@ let grid = null, key = '', image = null, col = null, v = null
 redraws.push(demo(bench, values => {
   v = values
   const { method, size, kind, k, scale, top, map, range } = v, n = 2 ** size, hi = Math.min(NYQUIST, top * 1000)
-  $('#frame').value = `${n.toLocaleString()} · ${(n / RATE * 1000).toFixed(n < 1024 ? 1 : 0)} ms`
+  $('#frame').value = `${n.toLocaleString()}, ${(n / RATE * 1000).toFixed(n < 1024 ? 1 : 0)} ms`
   const { ctx, W, H, T } = panel(main, 320, 1), at = [picker.value, method, n, kind, k, scale, hi, W, H].join()
   if (at !== key) { grid = methods[method](current(), W, H, { size: n, kind, k, scale, hi }); key = at }
   picture(ctx, grid, W, H, { map, range, scale, hi, T })

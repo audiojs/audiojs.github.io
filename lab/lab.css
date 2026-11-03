@@ -1,47 +1,55 @@
-/* audiojs lab: prose on paper, demos on dark instrument panels */
+/* audiojs lab: prose on paper, demos on dark instrument panels; the audio design system's tokens
+ * (/audio/assets/tokens.css), the page on the site's dot grid, its column filled (/bar.css) */
 @font-face { font-family: 'Wavefont'; src: url('/lab/fonts/Wavefont.woff2') format('woff2'); font-display: block; }
 @font-face { font-family: 'Departure Mono'; src: url('/lab/fonts/DepartureMono-Regular.woff2') format('woff2'); font-display: swap; }
 
 :root {
-  --paper: oklch(96% .004 80); --ink: oklch(18% 0 0); --mute: oklch(46% .005 240); --rule: oklch(86% .005 80);
-  --accent: oklch(58% .11 210);
+  --paper: var(--color-paper); --ink: var(--color-ink); --mute: var(--color-muted); --rule: var(--color-rule);
+  --accent: var(--color-ink);
   /* the panels: kit.js draws canvases in these; figures set in HTML take them through a plate's own tokens */
   --panel: #121212; --panel-ink: #bebebe; --panel-ink-2: #8f8f8f; --panel-ink-3: #636363; --panel-rule: #2e2e2e; --panel-accent: #5cbacc;
-  --body: 'Manrope', system-ui, sans-serif; --mono: ui-monospace, SFMono-Regular, Menlo, monospace; --serif: 'Newsreader', ui-serif, Georgia, serif;
+  --body: var(--font-display); --mono: var(--font-mono); --serif: 'Newsreader', ui-serif, Georgia, serif;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); color: var(--ink); font: 500 17px/1.6 var(--body); -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--dots), var(--paper); color: var(--ink); font: 400 18px/1.7 var(--body); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+::selection { background: var(--ink); color: var(--paper); }
 a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 3px; }
 a:hover { text-decoration-color: currentColor; }
 code { font: .9em var(--mono); }
-main { max-width: 720px; margin: 0 auto; padding: 32px 24px 96px; }
+/* An article in the site's page (/bar.css .site-page, its parts in the rail): its words at a reading measure, its
+ * figures, tables and the sound picker wider, the column's own width up to 1000 px */
+.site-main { padding-bottom: 96px; }
+.article > * { max-width: 40rem; }
+.article > :is(figure, .table, .sound, .grid, .wide, ol.refs, .src) { max-width: 62rem; }
+.article > .wide { max-width: none; }
+.article > .top { max-width: 62rem; }
+.magazine > .top { max-width: none; }
 .top { display: flex; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--mute); }
 .top a { text-decoration: none; }
 .top > :last-child { margin-left: auto; }
 .kicker { margin: 56px 0 10px; font-size: 14px; color: var(--mute); }
-h1 { margin: 56px 0 8px; font-size: clamp(32px, 6vw, 48px); font-weight: 800; line-height: 1.05; letter-spacing: -.035em; }
+h1 { margin: 48px 0 14px; font-size: clamp(38px, 5vw, 64px); font-weight: 600; line-height: 1.02; letter-spacing: -.04em; text-wrap: balance; }
 .kicker + h1 { margin-top: 0; }
-.lead, .dek { margin: 0 0 12px; font-size: 19px; color: var(--mute); }
+.lead, .dek { margin: 0 0 12px; font-size: 21px; line-height: 1.45; color: var(--color-soft-ink); text-wrap: pretty; }
 .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 16px 0 0; font-size: 13px; color: var(--mute); }
-h2 { margin: 64px 0 6px; font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+h2 { margin: 80px 0 12px; font-size: 27px; font-weight: 600; line-height: 1.2; letter-spacing: -.025em; text-wrap: balance; scroll-margin-top: 24px; }
 h2 small, h2 .n { margin-right: 10px; font: 500 13px var(--mono); color: var(--mute); vertical-align: 3px; }
-h3 { margin: 32px 0 6px; font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
-p { margin: 0 0 12px; }
+h3 { margin: 40px 0 8px; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+p { margin: 0 0 1em; text-wrap: pretty; }
 sup a { text-decoration: none; font-size: 12px; color: var(--accent); }
 /* a note set apart: how something works under the hood */
 .note { margin: 24px 0; padding: 2px 0 2px 16px; border-left: 2px solid var(--accent); font-size: 15.5px; }
 .note > b:first-child { display: block; margin-bottom: 2px; font-size: 13px; color: var(--accent); }
 .note p { margin: 6px 0 0; }
 
-figure { margin: 18px -32px 8px; }
+figure { margin: 28px 0 16px; }
 figure canvas { display: block; width: 100%; border-radius: 10px; background: var(--panel); }
 figure canvas + canvas { margin-top: 10px; }
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .grid figcaption { margin-top: 4px; }
 figcaption { margin-top: 8px; font-size: 13px; color: var(--mute); }
 figcaption b { margin-right: 8px; font: 500 12px var(--mono); color: var(--accent); }
-@media (max-width: 800px) { figure { margin-inline: 0; } }
 /* the audio playground in a figure (audio.js.org/audio/playground/embed.js): its slab as wide as the panels */
 figure.repl audio-repl { margin: 0; }
 @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
@@ -70,12 +78,10 @@ figure.repl audio-repl { margin: 0; }
 .hint { font-size: 13px; color: var(--mute); }
 .hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-.sound { position: sticky; top: 0; z-index: 1; margin: 20px -32px 0; padding: 10px 32px; background: color-mix(in oklch, var(--paper) 92%, transparent); backdrop-filter: blur(8px); }
-@media (max-width: 800px) { .sound { margin-inline: -24px; padding-inline: 24px; } }
+.sound { position: sticky; top: 0; z-index: 1; margin: 20px 0 0; padding: 10px 0; background: var(--paper); border-bottom: 1px solid var(--rule); }
 
 /* measurements: numbers right-aligned on tabular digits, the name column left */
-.table { position: relative; margin: 18px -32px 8px; overflow-x: auto; }
-@media (max-width: 800px) { .table { margin-inline: 0; } }
+.table { position: relative; margin: 24px 0 12px; overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
 th, td { padding: 7px 10px; border-bottom: 1px solid var(--rule); text-align: right; white-space: nowrap; }
 th:first-child { text-align: left; }
@@ -89,11 +95,19 @@ ol.refs { padding-left: 20px; }
 .try { display: grid; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
 .try li { display: flex; gap: 10px; }
 .try b { min-width: 120px; }
-.experiments { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px 20px; margin: 48px -32px 0; padding: 0; list-style: none; }
-.experiments a { display: grid; gap: 4px; text-decoration: none; }
-.experiments canvas { display: block; width: 100%; margin-bottom: 10px; border-radius: 10px; background: var(--panel); }
-.experiments b { font-size: 21px; font-weight: 800; letter-spacing: -.02em; }
-.experiments a:hover b { text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 4px; }
-.experiments span { font-size: 14px; color: var(--mute); }
-@media (max-width: 800px) { .experiments { margin-inline: 0; } }
+/* The lab's front: the articles as a magazine sets them, the newest across the page, its picture large, the others
+ * three abreast */
+.magazine > :is(h1, .lead, .top) { max-width: 46rem; }
+.experiments { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 48px 28px; margin: 56px 0 0; padding: 0; list-style: none; }
+.experiments a { display: grid; align-content: start; gap: 6px; text-decoration: none; }
+.experiments canvas { display: block; width: 100%; margin-bottom: 14px; border-radius: 10px; background: var(--panel); }
+.experiments b { justify-self: start; font-size: 21px; font-weight: 600; line-height: 1.25; letter-spacing: -.02em; }
+.experiments span { font-size: 15px; line-height: 1.5; color: var(--color-soft-ink); }
+@media (min-width: 900px) {
+  .experiments li:first-child { grid-column: 1 / -1; }
+  .experiments li:first-child a { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); column-gap: 40px; align-items: end; }
+  .experiments li:first-child canvas { grid-row: span 3; margin: 0; }
+  .experiments li:first-child b { font-size: clamp(28px, 2.6vw, 38px); letter-spacing: -.03em; }
+  .experiments li:first-child span { font-size: 17px; }
+}
 footer { margin-top: 48px; font-size: 13px; color: var(--mute); }

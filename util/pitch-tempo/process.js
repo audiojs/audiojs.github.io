@@ -6,12 +6,12 @@ const stretch = load('https://esm.sh/@audio/stretch@2.0.4')
 
 export default async function process(a, o, ui) {
   const semis = +o.semitones || 0, tempo = (+o.tempo || 100) / 100, fs = a.sampleRate
-  if (!semis && tempo === 1) return { audio: a, report: [{ k: 'Unchanged', v: '0 st · 100 %', note: 'Move a slider to transpose or change tempo.' }] }
+  if (!semis && tempo === 1) return { audio: a, report: [{ k: 'Unchanged', v: '0 st, 100 %', note: 'Move a slider to transpose or change tempo.' }] }
   const channelData = []
   for (let c = 0; c < a.channels; c++) {
 let ch = a.channelData[c]
-if (semis) { ui.status('Transposing ' + (semis > 0 ? '+' : '') + semis + ' st' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await shift).transient(ch, { semitones: semis, fs }) }
-if (tempo !== 1) { ui.status('Stretching to ' + Math.round(tempo * 100) + ' %' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await stretch).transient(ch, { factor: 1 / tempo, fs }) }
+if (semis) { ui.status('Transposing ' + (semis > 0 ? '+' : '') + semis + ' st' + (a.channels > 1 ? ', channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await shift).transient(ch, { semitones: semis, fs }) }
+if (tempo !== 1) { ui.status('Stretching to ' + Math.round(tempo * 100) + ' %' + (a.channels > 1 ? ', channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await stretch).transient(ch, { factor: 1 / tempo, fs }) }
 channelData.push(ch)
   }
   return { audio: { channelData, sampleRate: fs }, suffix: (semis ? (semis > 0 ? '+' : '') + semis + 'st' : '') + (tempo !== 1 ? '-' + Math.round(tempo * 100) + 'pct' : ''),

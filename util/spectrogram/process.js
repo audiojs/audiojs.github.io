@@ -28,7 +28,7 @@ for (let y = 0; y < H; y++) {
 }
   }
   ctx.putImageData(img, 0, 0)
-  ctx.fillStyle = 'rgba(237,235,228,.85)'; ctx.font = '600 12px Manrope, sans-serif'
+  ctx.fillStyle = 'rgba(237,235,228,.85)'; ctx.font = '600 12px Geist, sans-serif'
   for (const fr of (log ? [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000] : [2000, 5000, 10000, 15000, 20000])) { if (fr >= nyq) continue; const y = log ? H * (1 - Math.log(fr / fmin) / Math.log(nyq / fmin)) : H * (1 - fr / nyq); ctx.fillRect(0, y, W, 1); ctx.fillText(fr >= 1000 ? fr / 1000 + ' kHz' : fr + ' Hz', 6, y - 3) }
   let pk = 1; for (let k = 2; k < bins; k++) if (peaks[k] > peaks[pk]) pk = k
   let hi = bins - 1; while (hi > 1 && 20 * Math.log10(peaks[hi] / peaks[pk] || 1e-9) < -60) hi--

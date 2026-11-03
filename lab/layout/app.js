@@ -51,7 +51,7 @@ export function create(variant, { phone = false, panels = 5 } = {}) {
     lanes: { wave: true, spec: true }, focus: 'normalize', solo: false, layout: 0,
     params: { floor: -60, target: -1, mode: 'peak', fin: .02, fout: .1 }, edits: [],
     history: ['The script as it opened', 'normalize: −3 → −1', 'fade: 0.05, 0.1 → 0.02, 0.1'], at: 2,
-    log: [{ text: 'chime.wav · 2.20 s · 44.1 kHz · stereo', level: 'value' }, { text: 'peak −1.0 dBFS · −16.2 LUFS', level: 'value' }],
+    log: [{ text: 'chime.wav, 2.20 s, 44.1 kHz, stereo', level: 'value' }, { text: 'peak −1.0 dBFS, −16.2 LUFS', level: 'value' }],
     chat: [{ who: 'you', text: 'Make it even and quiet at the ends.' }, { who: 'agent', text: 'Normalized to −1 dB peak and faded both ends: lines 3 and 4 of the script.' }]
   }
   const listeners = new Set(), cleanups = []
@@ -110,7 +110,7 @@ export function create(variant, { phone = false, panels = 5 } = {}) {
   const checkButton = h('button', { class: 'check-button pass', type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false', title: 'Apple Podcasts: passes. Open for each rule', onclick: e => checkPopover(e.currentTarget) }, '✓ Apple')
   app.toggles = h('div', { class: 'panel-toggles', role: 'group', 'aria-label': 'Panels' })
   const status = h('footer', { class: 'status' },
-    play, h('div', { class: 'timecode' }, time, h('div', { class: 'display' }, h('p', { class: 'facts' }, loop, h('span', {}, '44.1 kHz · stereo')), h('p', { class: 'levels' }, 'peak −1.0 dBFS · −16.2 LUFS'))),
+    play, h('div', { class: 'timecode' }, time, h('div', { class: 'display' }, h('p', { class: 'facts' }, loop, h('span', {}, '44.1 kHz, stereo')), h('p', { class: 'levels' }, 'peak −1.0 dBFS, −16.2 LUFS'))),
     ab, checkButton, h('div', { class: 'tools' }, h('div', { class: 'history' }, undo, past), app.toggles))
   app.status = status
   app.area = h('div', { class: 'area' })

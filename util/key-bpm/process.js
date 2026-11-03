@@ -29,7 +29,7 @@ export default async function process(a, o, ui) {
 { k: 'Key', v: NAMES[k.tonic] + ' ' + k.mode + '<small>' + Math.round(k.confidence * 100) + '% sure</small>' },
 { k: 'Camelot', v: camelot, note: 'Mix with ' + camelot + ', ' + neighbours(camelot).join(', ') + ' for harmonic mixing.' },
 { k: 'Tempo', v: Math.round(b.bpm) + '<small>BPM</small>', note: b.confidence < 0.4 ? 'Low confidence: the beat is soft or the tempo drifts. Half or double time is possible.' : 'Alternatives: ' + Math.round(b.bpm / 2) + ' or ' + Math.round(b.bpm * 2) + ' BPM if you count half or double time.' },
-...(seq.length ? [{ k: 'Chord progression', cls: 'list wide', v: seq.slice(0, 32).join(' · ') + (seq.length > 32 ? ' …' : '') }] : []),
+...(seq.length ? [{ k: 'Chord progression', cls: 'list wide', v: seq.slice(0, 32).join(', ') + (seq.length > 32 ? ' …' : '') }] : []),
   ] }
   function neighbours(c) { const num = parseInt(c), l = c.slice(-1); return [((num + 10) % 12 + 1) + l, (num % 12 + 1) + l, num + (l === 'A' ? 'B' : 'A')] }
 }

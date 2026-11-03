@@ -322,7 +322,7 @@ export default {
       let top = 0; for (let i = 0; i < n; i++) top = Math.max(top, r.curve[i])
       const x = t => 8 + (W - 16) * t / span, y = v => H - 30 - (H - 48) * v
       g.fillStyle = '#0d1014'; g.fillRect(0, 0, W, H)
-      g.strokeStyle = 'rgba(237,235,228,.25)'; g.fillStyle = 'rgba(237,235,228,.8)'; g.font = '600 20px Manrope, sans-serif'; g.lineWidth = 1
+      g.strokeStyle = 'rgba(237,235,228,.25)'; g.fillStyle = 'rgba(237,235,228,.8)'; g.font = '600 20px Geist, sans-serif'; g.lineWidth = 1
       const step = span / 5
       for (let t = 0; t <= span + 1e-9; t += step) { g.beginPath(); g.moveTo(x(t), 10); g.lineTo(x(t), H - 30); g.stroke(); g.fillText(+t.toFixed(1) + ' ms', Math.min(x(t) + 6, W - 84), H - 6) }
       g.strokeStyle = '#00a4b8'; g.lineWidth = 2; g.beginPath()
@@ -382,7 +382,7 @@ export default {
           row('Delay you hear', med.toFixed(0) + '<small>ms</small>', 'Median of ' + offs.length + ' of ' + want + ' taps, from the moment the page sent each click to your tap. It includes your own timing.'),
           row('Spread', '±' + half.toFixed(0) + '<small>ms</small>', 'Half the range of your middle half of taps.', half > 50 ? 'warn' : ''),
           row('Browser\\'s figures', f.parts.length ? (f.sum * 1000).toFixed(1) + '<small>ms</small>' : 'not reported', f.parts.length ? f.text + ', as reported for this output.' : ''))
-        tpRuns.replaceChildren(...runs.map((r, i) => el('li', {}, 'Run ' + (i + 1) + ' · ' + (r.name || 'default output') + ': ' + r.med.toFixed(0) + ' ms ±' + r.half.toFixed(0) + (i ? ' · ' + (r.med >= runs[0].med ? '+' : '−') + Math.abs(r.med - runs[0].med).toFixed(0) + ' ms against run 1' : ''))))
+        tpRuns.replaceChildren(...runs.map((r, i) => el('li', {}, 'Run ' + (i + 1) + ', ' + (r.name || 'default output') + ': ' + r.med.toFixed(0) + ' ms ±' + r.half.toFixed(0) + (i ? ', ' + (r.med >= runs[0].med ? '+' : '−') + Math.abs(r.med - runs[0].med).toFixed(0) + ' ms against run 1' : ''))))
         tpPanel.hidden = false
         await browserReport(ctx, null, 'tap test')
         finish(half > 50 ? 'Your taps scatter by ±' + half.toFixed(0) + ' ms, so this median is rough. Run it again and tap with each click you hear.'

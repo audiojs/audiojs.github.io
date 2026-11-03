@@ -4,8 +4,9 @@
 // @huggingface/transformers from esm.sh and the Whisper "base" weights from huggingface.co on first run.
 // Run: node scripts/pages/transcribe.test.mjs
 import { createServer } from 'http'
+import { site } from '../serve.mjs'
 import { readFile } from 'fs/promises'
-import { extname, join, normalize, resolve, sep } from 'path'
+import { join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url)).replace(/\/+$/, '')
@@ -28,15 +29,8 @@ function wavDuration(buf) {
 }
 const duration = wavDuration(await readFile(FIXTURE))
 
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wav': 'audio/wav' }
-const server = createServer(async (req, res) => {
-  let rel = normalize(req.url.split('?')[0]).replace(/^\//, '')
-  if (rel === '' || rel.endsWith('/')) rel += 'index.html'
-  const path = resolve(ROOT, rel)
-  if (!path.startsWith(ROOT + sep)) { res.writeHead(403); return res.end() }
-  try { res.writeHead(200, { 'content-type': types[extname(path)] || 'application/octet-stream' }); res.end(await readFile(path)) }
-  catch { res.writeHead(404); res.end() }
-})
+// the site as npm run dev serves it (scripts/serve.mjs): /audio/ too, where every page's tokens, Geist and mark come from
+const server = createServer(site)
 await new Promise(r => server.listen(0, r))
 const base = `http://127.0.0.1:${server.address().port}`
 

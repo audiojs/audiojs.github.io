@@ -3,7 +3,9 @@
 // Pages live inline below and as one module each in scripts/pages/ (export default { slug, … }, same shape).
 import { writeFileSync, readFileSync, mkdirSync, readdirSync, existsSync } from 'fs'
 import { ROOT, sha, hash, drop, pkg, esc, src, faq } from './page-helpers.mjs'
-import { bar, css } from './bar.mjs'
+import { bar, chrome } from './bar.mjs'
+import { icon } from './util-icons.mjs'
+import { preview } from './util-previews.mjs'
 
 const SITE = 'https://audio.js.org'
 // util/libs.js — the shell's package URLs: a vendored bundle while a package is unpublished, esm.sh once it is (see page-helpers src)
@@ -15,7 +17,7 @@ export const TYPE = '${src('audio-type', '2.7.0')}'
 export const MIC = '${src('@audio/mic', '1.1.2')}'
 `)
 // content-hashed asset URLs: browsers and CDNs drop the old shell the moment it changes
-const BAR = css(), CSS = `/util/util.css?v=${hash('util.css')}`, JS = `/util/util.js?v=${hash('util.js')}`
+const CSS = `/util/util.css?v=${hash('util.css')}`, JS = `/util/util.js?v=${hash('util.js')}`
 const NO_UPLOAD = 'Nothing is uploaded. Everything runs in this tab with '
 
 export const pages = [
@@ -79,7 +81,7 @@ const chs = n => n === 1 ? 'mono' : n === 2 ? 'stereo' : n + ' ch'
 
 export default async function process(a, o, ui) {
   let { channelData, sampleRate } = a
-  const report = [{ k: 'Source', v: rate(sampleRate) + ' · ' + chs(channelData.length), cls: 'list' }]
+  const report = [{ k: 'Source', v: rate(sampleRate) + ', ' + chs(channelData.length), cls: 'list' }]
   const want = +o.channels || 0
   if (want === 1 && channelData.length > 1) {
     const n = channelData[0].length, mono = new Float32Array(n)
@@ -94,7 +96,7 @@ export default async function process(a, o, ui) {
     channelData = channelData.map(ch => polyphase(ch, { from: sampleRate, to }))
     sampleRate = to
   }
-  report.push({ k: 'Output', v: rate(sampleRate) + ' · ' + chs(channelData.length), cls: 'list' })
+  report.push({ k: 'Output', v: rate(sampleRate) + ', ' + chs(channelData.length), cls: 'list' })
   return { audio: { channelData, sampleRate }, report }
 }
 `,
@@ -154,7 +156,7 @@ export default async function process(a, o, ui) {
     powered: ['@audio/loudness', '@audio/dynamics'], repo: 'https://github.com/audiojs/loudness',
     body: drop('Drop an audio or video file here') + `
     <form class="opts" id="opts">
-      <label>Normalize to <select name="target"><option value="">measure only</option><option value="-14">-14 LUFS · Spotify, YouTube, Tidal</option><option value="-16">-16 LUFS · Apple Music, podcasts</option><option value="-18">-18 LUFS · SoundCloud, Amazon</option><option value="-23">-23 LUFS · EBU R128 broadcast</option><option value="-24">-24 LKFS · ATSC A/85 broadcast</option></select></label>
+      <label>Normalize to <select name="target"><option value="">measure only</option><option value="-14">-14 LUFS, Spotify, YouTube, Tidal</option><option value="-16">-16 LUFS, Apple Music, podcasts</option><option value="-18">-18 LUFS, SoundCloud, Amazon</option><option value="-23">-23 LUFS, EBU R128 broadcast</option><option value="-24">-24 LKFS, ATSC A/85 broadcast</option></select></label>
       <label>True-peak ceiling <select name="ceiling"><option value="-1">-1 dBTP</option><option value="-2">-2 dBTP</option><option value="-0.3">-0.3 dBTP</option></select></label>
     </form>`,
     worker: `
@@ -172,7 +174,7 @@ export default async function process(a, o, ui) {
 { k: 'Integrated loudness', v: db(L) + '<small>LUFS</small>' },
 { k: 'True peak', v: db(tp) + '<small>dBTP</small>', cls: tp > -1 ? 'warn' : '' },
 { k: 'Loudness range', v: range.toFixed(1) + '<small>LU</small>' },
-{ k: 'Platform playback', cls: 'list wide', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L) + ' dB').join(' · '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
+{ k: 'Platform playback', cls: 'list wide', v: TARGETS.map(([n, t]) => n + ' ' + db(t - L) + ' dB').join(', '), note: 'Gain each platform will apply on playback (negative = turned down). Mastering above the target buys nothing.' },
   ]
   if (!o.target) return { report }
   const target = +o.target, gain = target - L, g = Math.pow(10, gain / 20)
@@ -242,14 +244,14 @@ export default async function process(a, o, ui) {
   let plan = null
   const channelData = []
   for (let c = 0; c < a.channelData.length; c++) {
-ui.status((o.method ? 'Applying ' + o.method : 'Classifying and cleaning') + (a.channelData.length > 1 ? ' · channel ' + (c + 1) : '') + '…')
+ui.status((o.method ? 'Applying ' + o.method : 'Classifying and cleaning') + (a.channelData.length > 1 ? ', channel ' + (c + 1) : '') + '…')
 await new Promise(r => setTimeout(r, 20))
 const src = a.channelData[c].slice()
 if (o.method) channelData.push(m[o.method](src, { fs }))
 else { const r = m.denoise(src, { fs, returnPlan: true }); plan ??= r.plan; channelData.push(r.out) }
   }
   const method = o.method || plan?.method || 'wiener'
-  const scores = plan?.scores ? Object.entries(plan.scores).filter(([k, v]) => typeof v === 'number' && k !== 'humFreq').map(([k, v]) => k + ' ' + v.toFixed(1)).join(' · ') : ''
+  const scores = plan?.scores ? Object.entries(plan.scores).filter(([k, v]) => typeof v === 'number' && k !== 'humFreq').map(([k, v]) => k + ' ' + v.toFixed(1)).join(', ') : ''
   return {
 report: [{ k: o.method ? 'Method' : 'Method chosen by the classifier', v: method, note: (WHY[method] || '') + (scores ? '. Detector scores: ' + scores : '') }],
 audio: { channelData, sampleRate: fs }, suffix: '-' + method
@@ -315,7 +317,7 @@ export default async function process(a, o, ui) {
 { k: 'Key', v: NAMES[k.tonic] + ' ' + k.mode + '<small>' + Math.round(k.confidence * 100) + '% sure</small>' },
 { k: 'Camelot', v: camelot, note: 'Mix with ' + camelot + ', ' + neighbours(camelot).join(', ') + ' for harmonic mixing.' },
 { k: 'Tempo', v: Math.round(b.bpm) + '<small>BPM</small>', note: b.confidence < 0.4 ? 'Low confidence: the beat is soft or the tempo drifts. Half or double time is possible.' : 'Alternatives: ' + Math.round(b.bpm / 2) + ' or ' + Math.round(b.bpm * 2) + ' BPM if you count half or double time.' },
-...(seq.length ? [{ k: 'Chord progression', cls: 'list wide', v: seq.slice(0, 32).join(' · ') + (seq.length > 32 ? ' …' : '') }] : []),
+...(seq.length ? [{ k: 'Chord progression', cls: 'list wide', v: seq.slice(0, 32).join(', ') + (seq.length > 32 ? ' …' : '') }] : []),
   ] }
   function neighbours(c) { const num = parseInt(c), l = c.slice(-1); return [((num + 10) % 12 + 1) + l, (num % 12 + 1) + l, num + (l === 'A' ? 'B' : 'A')] }
 }
@@ -347,9 +349,9 @@ export default async function process(a, o, ui) {
     body: drop('Drop a song here') + `
     <form class="opts" id="opts">
       <label>Method <select name="method">
-        <option value="scnet" selected>SCNet model · 13 MB</option>
-        <option value="mel-roformer">Mel-Band RoFormer model · 466 MB · cleanest, needs WebGPU</option>
-        <option value="midside">Mid/side · instant, no download, stereo only</option>
+        <option value="scnet" selected>SCNet model, 13 MB</option>
+        <option value="mel-roformer">Mel-Band RoFormer model, 466 MB, cleanest, needs WebGPU</option>
+        <option value="midside">Mid/side, instant, no download, stereo only</option>
       </select></label>
       <label><input type="radio" name="mode" value="remove" checked> Remove vocals (karaoke)</label>
       <label><input type="radio" name="mode" value="isolate"> Isolate vocals</label>
@@ -453,12 +455,12 @@ const stretch = import('https://esm.sh/@audio/stretch@2.0.4')
 
 export default async function process(a, o, ui) {
   const semis = +o.semitones || 0, tempo = (+o.tempo || 100) / 100, fs = a.sampleRate
-  if (!semis && tempo === 1) return { audio: a, report: [{ k: 'Unchanged', v: '0 st · 100 %', note: 'Move a slider to transpose or change tempo.' }] }
+  if (!semis && tempo === 1) return { audio: a, report: [{ k: 'Unchanged', v: '0 st, 100 %', note: 'Move a slider to transpose or change tempo.' }] }
   const channelData = []
   for (let c = 0; c < a.channels; c++) {
 let ch = a.channelData[c]
-if (semis) { ui.status('Transposing ' + (semis > 0 ? '+' : '') + semis + ' st' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await shift).transient(ch, { semitones: semis, fs }) }
-if (tempo !== 1) { ui.status('Stretching to ' + Math.round(tempo * 100) + ' %' + (a.channels > 1 ? ' · channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await stretch).transient(ch, { factor: 1 / tempo, fs }) }
+if (semis) { ui.status('Transposing ' + (semis > 0 ? '+' : '') + semis + ' st' + (a.channels > 1 ? ', channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await shift).transient(ch, { semitones: semis, fs }) }
+if (tempo !== 1) { ui.status('Stretching to ' + Math.round(tempo * 100) + ' %' + (a.channels > 1 ? ', channel ' + (c + 1) : '') + '…'); await new Promise(r => setTimeout(r, 20)); ch = (await stretch).transient(ch, { factor: 1 / tempo, fs }) }
 channelData.push(ch)
   }
   return { audio: { channelData, sampleRate: fs }, suffix: (semis ? (semis > 0 ? '+' : '') + semis + 'st' : '') + (tempo !== 1 ? '-' + Math.round(tempo * 100) + 'pct' : ''),
@@ -519,7 +521,7 @@ report: [{ k: 'Pitch', v: (semis > 0 ? '+' : '') + semis + '<small>semitones</sm
           const ref = +a4.value || 440
           const c = cents(r.freq * 440 / ref)
           noteEl.textContent = c.name.replace(/(\\d)$/, '<sub style="font-size:.4em">$1</sub>'); noteEl.innerHTML = noteEl.textContent
-          hzEl.textContent = r.freq.toFixed(1) + ' Hz · ' + (c.cents > 0 ? '+' : '') + c.cents.toFixed(0) + ' cents'
+          hzEl.textContent = r.freq.toFixed(1) + ' Hz, ' + (c.cents > 0 ? '+' : '') + c.cents.toFixed(0) + ' cents'
           needle.style.left = (50 + Math.max(-50, Math.min(50, c.cents))) + '%'
           needle.classList.toggle('ok', Math.abs(c.cents) < 5)
         })
@@ -591,7 +593,7 @@ report: [{ k: 'Pitch', v: (semis > 0 ? '+' : '') + semis + '<small>semitones</sm
       const n = chunks.reduce((s, c) => s + c.length, 0); if (!n) return
       const d = new Float32Array(n); let off = 0; for (const c of chunks) { d.set(c, off); off += c.length }
       audio = { channelData: [d], sampleRate: fs }
-      level.textContent = fmtTime(n / fs) + ' recorded · ' + (fs / 1000) + ' kHz mono'
+      level.textContent = fmtTime(n / fs) + ' recorded, ' + (fs / 1000) + ' kHz mono'
       panel.hidden = false; encode()
     }
     async function encode() {
@@ -600,7 +602,7 @@ report: [{ k: 'Pitch', v: (semis > 0 ? '+' : '') + semis + '<small>semitones</sm
       try {
         const blob = await encodeAudio(f, audio)
         saveBlob(save, blob, 'recording-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.' + FORMATS[f].ext)
-        player.src = save.href; saveLabel.textContent = 'Save ' + FORMATS[f].ext.toUpperCase() + ' · ' + fmtSize(blob.size); save.style.visibility = ''; progress.hidden = true
+        player.src = save.href; saveLabel.textContent = 'Save ' + FORMATS[f].ext.toUpperCase() + ', ' + fmtSize(blob.size); save.style.visibility = ''; progress.hidden = true
       } catch (e) { status.textContent = f.toUpperCase() + ' is not available in this browser. Pick another format.' }
     }`,
     faq: [
@@ -657,7 +659,7 @@ for (let y = 0; y < H; y++) {
 }
   }
   ctx.putImageData(img, 0, 0)
-  ctx.fillStyle = 'rgba(237,235,228,.85)'; ctx.font = '600 12px Manrope, sans-serif'
+  ctx.fillStyle = 'rgba(237,235,228,.85)'; ctx.font = '600 12px Geist, sans-serif'
   for (const fr of (log ? [50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000] : [2000, 5000, 10000, 15000, 20000])) { if (fr >= nyq) continue; const y = log ? H * (1 - Math.log(fr / fmin) / Math.log(nyq / fmin)) : H * (1 - fr / nyq); ctx.fillRect(0, y, W, 1); ctx.fillText(fr >= 1000 ? fr / 1000 + ' kHz' : fr + ' Hz', 6, y - 3) }
   let pk = 1; for (let k = 2; k < bins; k++) if (peaks[k] > peaks[pk]) pk = k
   let hi = bins - 1; while (hi > 1 && 20 * Math.log10(peaks[hi] / peaks[pk] || 1e-9) < -60) hi--
@@ -751,7 +753,7 @@ for (let y = 0; y < H; y++) {
         const smooth = f => { let s = 0, m = 0; const lo = f / Math.pow(2, 1 / 12), hi = f * Math.pow(2, 1 / 12); for (let k = 0; k < freqs.length; k++) if (freqs[k] >= lo && freqs[k] <= hi) { s += Math.pow(10, db[k] / 10); m++ } return m ? 10 * Math.log10(s / m) : -100 }
         const ref = smooth(1000), pts = []
         for (let x = 0; x < W; x += 2) { const f = 30 * Math.pow(20000 / 30, x / W); pts.push([x, smooth(f) - ref]) }
-        c2.strokeStyle = 'rgba(237,235,228,.25)'; c2.fillStyle = 'rgba(237,235,228,.8)'; c2.font = '600 12px Manrope, sans-serif'
+        c2.strokeStyle = 'rgba(237,235,228,.25)'; c2.fillStyle = 'rgba(237,235,228,.8)'; c2.font = '600 12px Geist, sans-serif'
         for (const f of [50, 100, 200, 500, 1000, 2000, 5000, 10000]) { const x = fx(f); c2.beginPath(); c2.moveTo(x, 0); c2.lineTo(x, H); c2.stroke(); c2.fillText(f >= 1000 ? f / 1000 + 'k' : f, x + 4, H - 6) }
         for (const d of [20, 10, 0, -10, -20]) { const y = H / 2 - d * (H / 60); c2.beginPath(); c2.moveTo(0, y); c2.lineTo(W, y); c2.stroke(); c2.fillText((d > 0 ? '+' : '') + d + ' dB', 6, y - 4) }
         c2.strokeStyle = '#00a4b8'; c2.lineWidth = 2; c2.beginPath()
@@ -799,7 +801,7 @@ const head = (p) => `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${esc(p.title)} · audiojs</title>
+  <title>${esc(p.title)} – audiojs</title>
   <meta name="description" content="${esc(p.description)}">
   <meta name="theme-color" content="#0d1014">
 ${p.isolated ? `  <!-- cross-origin isolated (util/isolate.js), so the model runs on threads: the first visit reloads once the worker is in
@@ -839,24 +841,47 @@ ${p.isolated ? `  <!-- cross-origin isolated (util/isolate.js), so the model run
     ]
   }, null, 2).replace(/\n/g, '\n  ')}
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://esm.sh">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="${BAR}">
-  <link rel="stylesheet" href="${CSS}">
+${chrome()}  <link rel="stylesheet" href="${CSS}">
   <link rel="modulepreload" href="${JS}">
 </head>`
 
 const header = (path) => `
   ${bar(path)}`
+// The utilities by what they do to a sound: the shelves the index sets them on and every page's rail lists; a utility
+// on none of them comes last, under More
+const SHELVES = [
+  ['Convert', ['convert-audio', 'extract-audio', 'video-audio', 'midi-to-mp3', 'audio-to-midi']],
+  ['Measure', ['loudness', 'lossless-check', 'key-bpm', 'tuner', 'spectrogram', 'measure', 'latency']],
+  ['Clean up', ['denoise', 'dewow']],
+  ['Edit', ['pitch-tempo', 'desilence']],
+  ['Separate', ['vocal-remover', 'stem-splitter']],
+  ['Voice', ['transcribe', 'prosody']],
+  ['Make', ['metronome', 'recorder', 'tone-generator']]
+]
+const shelves = () => {
+  const placed = new Set(SHELVES.flatMap(([, s]) => s)), more = pages.filter(p => !placed.has(p.slug))
+  return [...SHELVES.map(([name, slugs]) => [name, slugs.map(s => pages.find(p => p.slug === s)).filter(Boolean)]), ...more.length ? [['More', more]] : []].filter(([, ps]) => ps.length)
+}
+const shelfId = name => name.toLowerCase().replace(/\W+/g, '-')
+// a utility's rail: every utility by its shelf, its own marked; the index's, the shelves and how many each holds
+const rail = current => `<nav class="site-rail" aria-label="Utilities">${shelves().map(([name, ps]) => `
+      <h2>${name}</h2>
+      <ul>${ps.map(p => `<li><a href="/util/${p.slug}/"${p.slug === current ? ' aria-current="page"' : ''}><span class="ticked">${p.name}</span></a></li>`).join('')}</ul>`).join('')}
+    </nav>`
+const shelfRail = () => `<nav class="site-rail" aria-label="Shelves">
+      <ul>${shelves().map(([name, ps]) => `<li><a href="#${shelfId(name)}"><span class="ticked">${name}</span><small>${ps.length}</small></a></li>`).join('')}</ul>
+    </nav>`
 const footer = (repo) => `
-  <footer><a href="/">audiojs</a> · open audio stack for JavaScript · <a href="${repo}" target="_blank" rel="noopener">source</a> · <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>`
+  <footer><a href="/">audiojs</a>, open audio stack for JavaScript, <a href="${repo}" target="_blank" rel="noopener">source</a>, <a href="https://github.com/sponsors/audiojs" target="_blank" rel="noopener">sponsor</a></footer>`
 
 const page = (p) => `${head(p)}
 <body>${header(`/util/${p.slug}/`)}
-  <main class="inner">
+  <div class="site-page">
+    ${rail(p.slug)}
+  <main class="site-main inner">
     <section class="hero">
+      ${icon(p.slug)}
       <h1>${p.name}</h1>
       <p>${p.lead}</p>
     </section>
@@ -869,7 +894,8 @@ ${p.body}
         </ul>
       </div>
     </section>
-  </main>${footer(p.repo)}
+  </main>
+  </div>${footer(p.repo)}
   <script type="module">
     import { tool, dropzone, mic, $, el, FORMATS, encodeAudio, saveBlob, fmtSize, fmtTime } from '${JS}'
     ${p.script.trim().replace('PROCESS', `'/util/${p.slug}/process.js?v=${p.worker ? sha(p.worker) : ''}'`).replace('TOOL', JSON.stringify(p.tool || {}))}
@@ -880,30 +906,39 @@ ${p.body}
 
 const index = () => `${head({ slug: '', title: 'Free audio utilities that run in your browser', name: 'Audio utilities', description: 'Free audio tools in your browser: convert, extract, normalize, denoise, split songs into stems, transcribe, tune, generate tones. Your audio is never uploaded.', repo: 'https://github.com/audiojs', faq: [] }).replace(/util\/\//g, 'util/')}
 <body>${header('/util/')}
-  <main class="inner">
+  <div class="site-page">
+    ${shelfRail()}
+  <main class="site-main inner collection">
     <section class="hero">
       <h1>Audio utilities</h1>
-      <p>Each one runs in your browser on an open-source audiojs package. Nothing is uploaded.</p>
-    </section>
-    <ul class="index">${pages.map(p => `
-      <li><a href="/util/${p.slug}/"><div class="n">${p.name}</div><div class="d">${p.short}</div><div class="p">${p.powered.map(n => `<code>${n}</code>`).join(' · ')}</div></a></li>`).join('')}
-    </ul>
+      <p>${pages.length} tools for a sound, each in your browser on an open-source audiojs package. Nothing is uploaded.</p>
+    </section>${shelves().map(([name, ps]) => `
+    <section class="shelf" id="${shelfId(name)}" aria-labelledby="${shelfId(name)}-h">
+      <h2 id="${shelfId(name)}-h">${name}</h2>
+      <ul class="apps">${ps.map(p => `
+        <li><a href="/util/${p.slug}/">${icon(p.slug)}<span class="n"><span class="ticked">${p.name}</span></span><span class="d">${p.short}</span><span class="p">${p.powered.map(n => `<code>${n}</code>`).join(', ')}</span></a></li>`).join('')}
+      </ul>
+    </section>`).join('')}
     <section class="seo">
       <h2>Why these run on your device</h2>
       <p>audiojs is a set of JavaScript and WebAssembly packages for decoding, encoding, measuring and processing audio. The same packages power these pages: <code>@audio/decode</code> reads the file, the tool's package does the work, <code>@audio/encode</code> writes the result. No server sees your audio, so there is no size limit, no queue and nothing to delete. Every page links the package it demonstrates; the code is on <a href="https://github.com/audiojs" target="_blank" rel="noopener">GitHub</a> and <a href="https://www.npmjs.com/org/audio" target="_blank" rel="noopener">npm</a>.</p>
     </section>
-  </main>${footer('https://github.com/audiojs')}
+  </main>
+  </div>${footer('https://github.com/audiojs')}
 </body>
 </html>
 `
 
 const today = new Date().toISOString().slice(0, 10)
+// modules/: every package's dossier (scripts/modules-page.mjs)
+const modules = existsSync(`${ROOT}modules`) ? readdirSync(`${ROOT}modules`, { withFileTypes: true }).filter(d => d.isDirectory() && existsSync(`${ROOT}modules/${d.name}/index.html`)).map(d => d.name).sort() : []
 // lab/: its front page and every article folder that has a page
 const lab = existsSync(`${ROOT}lab/index.html`) ? readdirSync(`${ROOT}lab`, { withFileTypes: true }).filter(d => d.isDirectory() && existsSync(`${ROOT}lab/${d.name}/index.html`)).map(d => d.name).sort() : null
 const sitemap = () => `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${SITE}/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>${SITE}/modules/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>${SITE}/modules/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>${modules.map(m => `
+  <url><loc>${SITE}/modules/${m}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`).join('')}
   <url><loc>${SITE}/util/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>${pages.map(p => `
   <url><loc>${SITE}/util/${p.slug}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>`).join('')}${lab ? `
   <url><loc>${SITE}/lab/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>${lab.map(slug => `
@@ -923,13 +958,20 @@ Sitemap: ${SITE}/sitemap.xml
 const workerModule = src => `// Generated by scripts/util-pages.mjs — runs in a module Worker (see util/worker.js)\nimport { fmtTime } from '/util/util.js'\nconst load = u => import(u).catch(() => new Promise(r => setTimeout(r, 300)).then(() => import(u)))\n${src.trim().replace(/\bimport\((['"]https:\/\/esm\.sh\/[^'"]+['"])\)/g, 'load($1)')}\n`
 for (const p of pages) { mkdirSync(`${ROOT}util/${p.slug}`, { recursive: true }); writeFileSync(`${ROOT}util/${p.slug}/index.html`, page(p)); if (p.worker) writeFileSync(`${ROOT}util/${p.slug}/process.js`, workerModule(p.worker)) }
 writeFileSync(`${ROOT}util/index.html`, index())
-// the homepage's Utilities list is the same pages, kept in sync between its markers
+// The home's utilities: those a reader comes looking for most (FEATURED), each with its shelf and its preview
+// (util-previews.mjs), between its markers; how many there are in all, wherever it says (data-utils)
+const FEATURED = ['metronome', 'tuner', 'prosody', 'recorder', 'denoise', 'convert-audio', 'transcribe', 'stem-splitter']
 {
-  const home = readFileSync(`${ROOT}index.html`, 'utf8')
-  const open = home.indexOf('<!-- utilities:'), close = home.indexOf('<!-- /utilities -->')
-  if (open < 0 || close < 0) throw Error('index.html: utilities markers not found')
-  const items = pages.map(p => `\n        <li><a href="/util/${p.slug}/"><div class="t-name">${esc(p.name)}</div><div class="t-desc">${esc(p.short)}</div></a></li>`).join('')
-  writeFileSync(`${ROOT}index.html`, home.slice(0, home.indexOf('-->', open) + 3) + items + '\n        ' + home.slice(close))
+  let home = readFileSync(`${ROOT}index.html`, 'utf8')
+  const open = home.indexOf('<!-- featured:'), close = home.indexOf('<!-- /featured -->')
+  if (open < 0 || close < 0) throw Error('index.html: featured markers not found')
+  const items = FEATURED.map(slug => {
+    const p = pages.find(p => p.slug === slug), fig = preview(slug), shelf = SHELVES.find(([, s]) => s.includes(slug))?.[0]
+    if (!p || !fig || !shelf) throw Error(`featured ${slug}: ${!p ? 'no such utility' : !fig ? 'no preview' : 'on no shelf'}`)
+    return `\n          <li><a href="/util/${slug}/"><span class="t-name ticked">${esc(p.name)}</span><span class="t-desc">${esc(p.short)}</span><small>${shelf}</small>${fig}</a></li>`
+  }).join('')
+  home = home.slice(0, home.indexOf('-->', open) + 3) + items + '\n          ' + home.slice(close)
+  writeFileSync(`${ROOT}index.html`, home.replace(/(<b data-utils>)\d+(<\/b>)/g, `$1${pages.length}$2`))
 }
 writeFileSync(`${ROOT}sitemap.xml`, sitemap())
 writeFileSync(`${ROOT}robots.txt`, robots())

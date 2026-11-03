@@ -1,19 +1,11 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
-import { readFile } from 'node:fs/promises'
-import { resolve, extname, sep } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { site } from '../serve.mjs'
 import * as pw from 'playwright'
 import { encode } from '../../util/prosody/process.js'
 
-const root = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '')
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wav': 'audio/wav' }
-const server = createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost'), path = resolve(root, '.' + url.pathname + (url.pathname.endsWith('/') ? 'index.html' : ''))
-  if (!path.startsWith(root + sep)) { res.writeHead(403); res.end(); return }
-  try { const bytes = await readFile(path); res.writeHead(200, { 'content-type': types[extname(path)] || 'application/octet-stream' }); res.end(bytes) }
-  catch { res.writeHead(404); res.end() }
-})
+// the site as npm run dev serves it (scripts/serve.mjs): /audio/ too, where every page's tokens, Geist and mark come from
+const server = createServer(site)
 await new Promise(r => server.listen(0, '127.0.0.1', r))
 const base = `http://127.0.0.1:${server.address().port}`
 
@@ -48,7 +40,7 @@ try {
       assert.ok(before.length > 300, 'speech sample has a pitch contour')
       const centres = () => page.locator('.note').evaluateAll(notes => notes.map(n => n.dataset.center).filter(Boolean).map(Number))
       assert.ok((await centres()).length >= 20, 'syllables are drawn as notes')
-      assert.equal(await page.locator('#scope').textContent(), '· all')
+      assert.equal(await page.locator('#scope').textContent(), '(all)')
       const slide = (id, value) => page.locator('#' + id).fill(String(value))
       assert.equal(await page.locator('#length, #start, #end, #view-position, #point-hz').count(), 0, 'redundant rows and selection inputs are removed')
       assert.equal(await page.locator('#curve-help').isVisible(), false)
@@ -200,7 +192,7 @@ try {
       await page.click('#reset')
       const hz = () => page.locator('#point-info').textContent().then(text => +text.match(/([\d.]+) Hz/)[1])
       await page.locator('#curve').focus(); await page.keyboard.press('Escape'); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight')
-      assert.equal(await page.locator('#scope').textContent(), '· 1 note')
+      assert.equal(await page.locator('#scope').textContent(), '(1 note)')
       assert.match(await page.locator('#point-info').textContent(), /^[A-G]♯?\d .*Hz$/)
       const second = await hz()
       await page.keyboard.press('ArrowUp')
@@ -210,18 +202,18 @@ try {
       const blob = async () => { const box = await page.locator('.note.on').first().boundingBox(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 } }
       let at = await blob()
       await page.mouse.move(at.x, at.y); await page.mouse.down(); await page.mouse.move(at.x, at.y - 30, { steps: 5 }); await page.mouse.up()
-      assert.match(await page.locator('#point-info').textContent(), /^[A-G]♯?\d · [\d.]+ Hz · was /, 'drag lands the note on a semitone')
+      assert.match(await page.locator('#point-info').textContent(), /^[A-G]♯?\d, [\d.]+ Hz, was /, 'drag lands the note on a semitone')
       assert.ok(await hz() > second, 'drag raises the note')
-      assert.equal(await page.locator('#scope').textContent(), '· 1 note', 'dragging keeps the note selected')
+      assert.equal(await page.locator('#scope').textContent(), '(1 note)', 'dragging keeps the note selected')
       await page.click('#undo')
       at = await blob()
       await page.keyboard.down('Alt'); await page.mouse.move(at.x, at.y); await page.mouse.down(); await page.mouse.move(at.x, at.y - 7, { steps: 3 }); await page.mouse.up(); await page.keyboard.up('Alt')
-      assert.match(await page.locator('#point-info').textContent(), /¢ · [\d.]+ Hz · was /, 'Alt moves freely')
+      assert.match(await page.locator('#point-info').textContent(), /¢, [\d.]+ Hz, was /, 'Alt moves freely')
       at = await blob()
       await page.mouse.dblclick(at.x, at.y)
-      assert.match(await page.locator('#point-info').textContent(), /^[A-G]♯?\d · /, 'double-click snaps the note')
+      assert.match(await page.locator('#point-info').textContent(), /^[A-G]♯?\d, /, 'double-click snaps the note')
       await page.keyboard.press('Escape')
-      assert.equal(await page.locator('#scope').textContent(), '· all')
+      assert.equal(await page.locator('#scope').textContent(), '(all)')
       // A typed duration survives hovering the plot on the way to Apply.
       await page.fill('#duration', '100')
       const note = await page.locator('.note').nth(3).boundingBox()
@@ -236,9 +228,9 @@ try {
       await page.mouse.move(chart.x + 160, chart.y + 240)
       await page.mouse.down(); await page.mouse.move(chart.x + 360, chart.y + 240, { steps: 5 }); await page.mouse.up()
       { const [start, end] = await selected(); assert.ok(end > start + .5, 'background drag selects source time') }
-      assert.match(await page.locator('#scope').textContent(), /· \d+ notes/)
+      assert.match(await page.locator('#scope').textContent(), /^\(\d+ notes\)$/)
       await page.mouse.click(chart.x + chart.width - 60, chart.y + 240)
-      assert.equal(await page.locator('#scope').textContent(), '· all', 'a click on empty plot clears the selection')
+      assert.equal(await page.locator('#scope').textContent(), '(all)', 'a click on empty plot clears the selection')
       await page.click('#reset'); await page.click('#render')
       await page.waitForFunction(() => document.querySelector('#render-state').textContent.startsWith('Rendered'))
       assert.equal(await page.locator('.target').getAttribute('d'), before)

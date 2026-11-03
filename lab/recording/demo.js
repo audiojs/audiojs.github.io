@@ -45,7 +45,7 @@ watch(m => {
   allow.setAttribute('aria-pressed', m.live)
   picker.disabled = !!m.busy
   const s = m.live ? m.track.getSettings() : {}
-  say(state, m.live ? `${m.track.label || 'microphone'} · ${s.sampleRate ? num(s.sampleRate) + ' Hz · ' : ''}${m.track.muted ? 'muted' : 'live'}` : m.error ? failure(m.error) : 'not in use')
+  say(state, m.live ? `${m.track.label || 'microphone'}, ${s.sampleRate ? num(s.sampleRate) + ' Hz, ' : ''}${m.track.muted ? 'muted' : 'live'}` : m.error ? failure(m.error) : 'not in use')
   devices()
 })
 
@@ -134,7 +134,7 @@ function draw() {
   if (!mic.live) {
     ctx.fillStyle = css(T.ink2)
     const asked = Object.entries(mic.ask).map(([k, v]) => `${k} ${v}`).join(', ') || 'the browser’s defaults'
-    ctx.fillText(`dBFS, the last ${SPAN} s · allow the microphone · asking for ${asked}`, left, 3 * dpr)
+    ctx.fillText(`dBFS, the last ${SPAN} s; allow the microphone; asking for ${asked}`, left, 3 * dpr)
     return
   }
   // the level: RMS filled, peaks as a line above
@@ -159,10 +159,10 @@ function draw() {
   }
   const s = mic.track.getSettings()
   ctx.fillStyle = css(T.ink2)
-  ctx.fillText(`${mic.track.label || 'microphone'} · ${PROCESSING.filter(p => s[p]).map(p => SHORT[p]).join(' ') || 'processing off'}`, left, 3 * dpr)
+  ctx.fillText(`${mic.track.label || 'microphone'}, ${PROCESSING.filter(p => s[p]).map(p => SHORT[p]).join(' ') || 'processing off'}`, left, 3 * dpr)
   // the readout: now, the floor (the quietest tenth of the last 5 s) and the peak
   const recent = history.filter(p => p.t > now - 5).map(p => p.rms).sort((a, b) => a - b)
-  if (recent.length) say($('#level'), `now ${dbfs(history.at(-1).rms)} dBFS RMS · floor ${dbfs(recent[Math.floor(recent.length * .1)])} · peak ${dbfs(Math.max(...history.filter(p => p.t > now - 5).map(p => p.peak)))}`)
+  if (recent.length) say($('#level'), `now ${dbfs(history.at(-1).rms)} dBFS RMS, floor ${dbfs(recent[Math.floor(recent.length * .1)])}, peak ${dbfs(Math.max(...history.filter(p => p.t > now - 5).map(p => p.peak)))}`)
 }
 // asked and got, for each property: what the browser knows, what the page asked, what the track says
 function settings(s) {
@@ -225,7 +225,7 @@ const drawTake = demo(take, v => {
     if (done < 1) requestAnimationFrame(() => drawTake())
     return
   }
-  if (!clip?.audio) return ctx.fillText(`3 seconds · ${v.type || 'the browser’s choice'} · ${v.bitrate === 'default' ? 'its default bitrate' : v.bitrate / 1000 + ' kbps asked'}`, 8 * dpr, 6 * dpr)
+  if (!clip?.audio) return ctx.fillText(`3 seconds, ${v.type || 'the browser’s choice'}, ${v.bitrate === 'default' ? 'its default bitrate' : v.bitrate / 1000 + ' kbps asked'}`, 8 * dpr, 6 * dpr)
   const x = clip.audio.getChannelData(0)
   ctx.fillStyle = css(T.ink)
   for (let c = 0; c < W; c++) {
@@ -234,7 +234,7 @@ const drawTake = demo(take, v => {
     ctx.fillRect(c, mid - hi * half, 1, Math.max(dpr, (hi - lo) * half))
   }
   ctx.fillStyle = css(T.ink2)
-  ctx.fillText(`${clip.type} · decoded: ${clip.audio.duration.toFixed(2)} s, ${num(clip.audio.sampleRate)} Hz, ${clip.audio.numberOfChannels} ch`, 8 * dpr, 6 * dpr)
+  ctx.fillText(`${clip.type}; decoded: ${clip.audio.duration.toFixed(2)} s, ${num(clip.audio.sampleRate)} Hz, ${clip.audio.numberOfChannels} ch`, 8 * dpr, 6 * dpr)
 })
 take.querySelector('.record').onclick = async e => {
   const button = e.currentTarget
@@ -263,12 +263,12 @@ take.querySelector('.record').onclick = async e => {
     clip = result
     try { clip.audio = await context().decodeAudioData(await result.blob.arrayBuffer()) } catch (err) { clip.error = err }
     const url = offer(takeOut.querySelector('a'), result.blob, `three-seconds.${EXT(result.type)}`)
-    takeOut.querySelector('a').textContent = `Save ${EXT(result.type).toUpperCase()} · ${size(result.blob.size)}`
+    takeOut.querySelector('a').textContent = `Save ${EXT(result.type).toUpperCase()}, ${size(result.blob.size)}`
     const player = takeOut.querySelector('audio')
     player.src = url
     takeOut.hidden = false
     const seconds = clip.audio?.duration ?? 3
-    say(take.querySelector('.readout'), `${result.type || '(no type given)'} · ${num(result.blob.size)} bytes · ${(result.blob.size * 8 / seconds / 1000).toFixed(0)} kbps measured${result.asked ? `, ${num(result.asked / 1000)} kbps reported by audioBitsPerSecond` : ''} · ${result.chunks} chunk${result.chunks > 1 ? 's' : ''}${clip.error ? ' · could not be decoded here: ' + failure(clip.error) : ''}`)
+    say(take.querySelector('.readout'), `${result.type || '(no type given)'}, ${num(result.blob.size)} bytes, ${(result.blob.size * 8 / seconds / 1000).toFixed(0)} kbps measured${result.asked ? `, ${num(result.asked / 1000)} kbps reported by audioBitsPerSecond` : ''}, ${result.chunks} chunk${result.chunks > 1 ? 's' : ''}${clip.error ? ', could not be decoded here: ' + failure(clip.error) : ''}`)
     say(take.querySelector('.element'), await length(player))
   } catch (err) {
     recording = null
@@ -296,7 +296,7 @@ const drawPcm = demo(pcm, v => {
   }
   ctx.fillStyle = css(T.ink2)
   const depth = +v.depth, label = bits(depth)
-  ctx.fillText(take2.running ? `recording · ${(take2.frames / r).toFixed(1)} s` : take2.x ? `${(take2.x.length / r).toFixed(2)} s · WAV, ${label}` : `every block, kept · ${num(r)} Hz, mono · WAV, ${label}`, 8 * dpr, 6 * dpr)
+  ctx.fillText(take2.running ? `recording; ${(take2.frames / r).toFixed(1)} s` : take2.x ? `${(take2.x.length / r).toFixed(2)} s; WAV, ${label}` : `every block, kept; ${num(r)} Hz, mono; WAV, ${label}`, 8 * dpr, 6 * dpr)
   if (take2.x && built !== `${depth}:${take2.x.length}`) build()
   perMinute()
 })
@@ -334,7 +334,7 @@ pcmButton.onclick = async () => {
         if (v > bucket[1]) bucket[1] = v
         if (++filled >= each) { take2.buckets.push(bucket); bucket = [0, 0]; filled = 0 }
       }
-      say(pcm.querySelector('.readout'), `${num(take2.blocks)} blocks of 128 · ${num(take2.frames)} frames · ${(take2.frames / ctx.sampleRate).toFixed(1)} s · ${size(take2.frames * 4)} in memory`)
+      say(pcm.querySelector('.readout'), `${num(take2.blocks)} blocks of 128, ${num(take2.frames)} frames, ${(take2.frames / ctx.sampleRate).toFixed(1)} s, ${size(take2.frames * 4)} in memory`)
       drawPcm()
       if (data.last) finished()
     }
@@ -368,7 +368,7 @@ function build() {
   built = `${depth}:${take2.x.length}`
   const bytes = wav(take2.x, take2.rate, depth), blob = new Blob([bytes], { type: 'audio/wav' })
   const url = offer(pcmOut.querySelector('a'), blob, `take-${depth === 32 ? '32f' : depth}.wav`)
-  pcmOut.querySelector('a').textContent = `Save WAV · ${size(blob.size)}`
+  pcmOut.querySelector('a').textContent = `Save WAV, ${size(blob.size)}`
   pcmOut.querySelector('audio').src = url
   pcmOut.hidden = false
   bytesTable(take2.rate, depth, take2.x.length, bytes)
@@ -406,8 +406,8 @@ $('#measure').onclick = async e => {
     await sleep(400)
     $('#latencies').replaceChildren(...contexts.map((c, i) => make('tr', {},
       make('th', { scope: 'row' }, make('code', {}, `'${hints[i]}'`), make('span', { className: 'what' }, ` ${num(c.sampleRate)} Hz`)),
-      make('td', {}, c.baseLatency == null ? 'not reported' : `${ms(c.baseLatency)} · ${num(c.baseLatency * c.sampleRate)}`),
-      make('td', {}, c.outputLatency == null ? 'not reported' : `${ms(c.outputLatency)} · ${num(c.outputLatency * c.sampleRate)}`))))
+      make('td', {}, c.baseLatency == null ? 'not reported' : `${ms(c.baseLatency)}, ${num(c.baseLatency * c.sampleRate)}`),
+      make('td', {}, c.outputLatency == null ? 'not reported' : `${ms(c.outputLatency)}, ${num(c.outputLatency * c.sampleRate)}`))))
   } finally {
     contexts.forEach(c => c.close())
     button.disabled = false
@@ -417,7 +417,7 @@ $('#measure').onclick = async e => {
 function input() {
   if (!mic.live) return say($('#input-latency'), 'Allow the microphone to read what its track reports.')
   const s = mic.track.getSettings(), stats = mic.track.stats
-  say($('#input-latency'), `The microphone’s track: ${'latency' in s ? `getSettings().latency ${ms(s.latency)}` : 'no latency setting'} · ${stats ? `stats.latency ${stats.latency.toFixed(1)} ms, average ${stats.averageLatency.toFixed(1)} ms` : 'no track.stats'}`)
+  say($('#input-latency'), `The microphone’s track: ${'latency' in s ? `getSettings().latency ${ms(s.latency)}` : 'no latency setting'}; ${stats ? `stats.latency ${stats.latency.toFixed(1)} ms, average ${stats.averageLatency.toFixed(1)} ms` : 'no track.stats'}`)
 }
 watch(input)
 setInterval(() => mic.live && !document.hidden && input(), 1000)
@@ -435,7 +435,7 @@ const drawSafe = demo(safe, () => {
   ctx.fillStyle = css(T.rule)
   ctx.fillRect(0, base, W, dpr)
   ctx.fillStyle = css(T.ink2)
-  ctx.fillText(c.length ? `${c.length} chunks kept · ${size(c.reduce((n, k) => n + k.bytes, 0))} in IndexedDB` : 'each chunk, a bar, as it is written to IndexedDB', 8 * dpr, 6 * dpr)
+  ctx.fillText(c.length ? `${c.length} chunks kept, ${size(c.reduce((n, k) => n + k.bytes, 0))} in IndexedDB` : 'each chunk, a bar, as it is written to IndexedDB', 8 * dpr, 6 * dpr)
   const span = Math.max(20, c.length + 1), w = W / span, most = Math.max(1, ...c.map(k => k.bytes))
   c.forEach((k, i) => {
     ctx.fillStyle = css(k.why === 'hidden' ? T.accent : T.ink, k.stored ? 1 : .35)
@@ -462,14 +462,14 @@ safeButton.onclick = async () => {
         if (at === 0) await store.begin(id, type ||= e.data.type)
         await store.put(id, at, await e.data.arrayBuffer())
         chunk.stored = true
-        note(`chunk ${at + 1} · ${size(chunk.bytes)} · stored${chunk.why === 'hidden' ? ' (asked for by requestData on hidden)' : ''}`)
+        note(`chunk ${at + 1}, ${size(chunk.bytes)}, stored${chunk.why === 'hidden' ? ' (asked for by requestData on hidden)' : ''}`)
         drawSafe()
       })
     }
     const stopped = new Promise(r => recorder.onstop = r)
     const hidden = () => {
       if (recorder.state !== 'recording') return
-      if (document.hidden) { recorder.requestData(); note('page hidden · requestData()') }
+      if (document.hidden) { recorder.requestData(); note('page hidden, requestData()') }
       else note('page visible')
     }
     document.addEventListener('visibilitychange', hidden)
@@ -494,9 +494,9 @@ safeButton.onclick = async () => {
       await store.remove(id)
       const out = safe.querySelector('.out'), player = out.querySelector('audio')
       player.src = offer(out.querySelector('a'), blob, `kept.${EXT(type)}`)
-      out.querySelector('a').textContent = `Save ${EXT(type).toUpperCase()} · ${size(blob.size)}`
+      out.querySelector('a').textContent = `Save ${EXT(type).toUpperCase()}, ${size(blob.size)}`
       out.hidden = false
-      note(`stopped · ${n} chunks read back from IndexedDB into one file · storage cleared`)
+      note(`stopped, ${n} chunks read back from IndexedDB into one file, storage cleared`)
       say(safe.querySelector('.element'), await length(player))
       saved.start = 0
       leftovers()
@@ -515,7 +515,7 @@ async function leftovers() {
     const player = make('audio', { controls: true, preload: 'metadata' }), link = make('a', { hidden: true, className: 'action' })
     const del = make('button', { className: 'action', type: 'button' }, 'Delete')
     del.onclick = async () => { await store.remove(t.id); leftovers() }
-    store.file(t.id, t.type).then(blob => { player.src = offer(link, blob, `interrupted.${EXT(t.type)}`); link.textContent = `Save · ${size(blob.size)}` }, () => {})
+    store.file(t.id, t.type).then(blob => { player.src = offer(link, blob, `interrupted.${EXT(t.type)}`); link.textContent = `Save, ${size(blob.size)}` }, () => {})
     return make('li', {}, make('span', {}, `Interrupted take from ${new Date(t.started).toLocaleTimeString('en-GB')}: ${t.chunks} chunks, ${size(t.bytes)}, ${t.type}`), player, link, del)
   }))
   kept.hidden = !kept.children.length

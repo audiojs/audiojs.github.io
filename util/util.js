@@ -6,20 +6,20 @@ import { DECODE, ENCODE, META, TYPE, MIC } from './libs.js'
 const WORKER = new URL('./worker.js', import.meta.url)
 
 export const FORMATS = {
-  mp3: { label: 'MP3 · 256 kbps', ext: 'mp3', mime: 'audio/mpeg', opts: { bitrate: 256 } },
-  wav: { label: 'WAV · 16-bit', ext: 'wav', mime: 'audio/wav', opts: { bitDepth: 16 } },
-  flac: { label: 'FLAC · lossless', ext: 'flac', mime: 'audio/flac', opts: {} },
+  mp3: { label: 'MP3, 256 kbps', ext: 'mp3', mime: 'audio/mpeg', opts: { bitrate: 256 } },
+  wav: { label: 'WAV, 16-bit', ext: 'wav', mime: 'audio/wav', opts: { bitDepth: 16 } },
+  flac: { label: 'FLAC, lossless', ext: 'flac', mime: 'audio/flac', opts: {} },
   ogg: { label: 'OGG Vorbis', ext: 'ogg', mime: 'audio/ogg', opts: { quality: 6 } },
   opus: { label: 'Opus', ext: 'opus', mime: 'audio/ogg; codecs=opus', opts: { bitrate: 128 } },
   aac: { label: 'AAC', ext: 'aac', mime: 'audio/aac', opts: { bitrate: 192 } },
-  webm: { label: 'WebM · Opus', ext: 'webm', mime: 'audio/webm; codecs=opus', opts: { bitrate: 128 } },
-  aiff: { label: 'AIFF · 16-bit', ext: 'aiff', mime: 'audio/aiff', opts: { bitDepth: 16 } },
-  caf: { label: 'CAF · 16-bit', ext: 'caf', mime: 'audio/x-caf', opts: { bitDepth: 16 } },
+  webm: { label: 'WebM, Opus', ext: 'webm', mime: 'audio/webm; codecs=opus', opts: { bitrate: 128 } },
+  aiff: { label: 'AIFF, 16-bit', ext: 'aiff', mime: 'audio/aiff', opts: { bitDepth: 16 } },
+  caf: { label: 'CAF, 16-bit', ext: 'caf', mime: 'audio/x-caf', opts: { bitDepth: 16 } },
   qoa: { label: 'QOA', ext: 'qoa', mime: 'audio/qoa', opts: {} },
   // `enc` names the @audio/encode format when it differs from the key (ALAC is the m4a container with another codec)
-  m4a: { label: 'M4A · AAC', ext: 'm4a', mime: 'audio/mp4; codecs=mp4a.40.2', opts: { codec: 'aac', bitrate: 192 } },
-  alac: { label: 'ALAC · lossless M4A', ext: 'm4a', mime: 'audio/mp4; codecs=alac', enc: 'm4a', opts: { codec: 'alac' } },
-  wv: { label: 'WavPack · lossless', ext: 'wv', mime: 'audio/wavpack', opts: {} },
+  m4a: { label: 'M4A, AAC', ext: 'm4a', mime: 'audio/mp4; codecs=mp4a.40.2', opts: { codec: 'aac', bitrate: 192 } },
+  alac: { label: 'ALAC, lossless M4A', ext: 'm4a', mime: 'audio/mp4; codecs=alac', enc: 'm4a', opts: { codec: 'alac' } },
+  wv: { label: 'WavPack, lossless', ext: 'wv', mime: 'audio/wavpack', opts: {} },
 }
 
 let decodeP, encodeP, micP, metaP
@@ -220,7 +220,7 @@ export function tool(cfg) {
       if (id !== run) return
       audio = a
       const tags = [a.meta?.title, a.meta?.artist].filter(Boolean).join(' — ')
-      meta.textContent = `${fmtSize(f.size)} · ${fmtTime(a.duration)} · ${chLabel(a.channels)} · ${a.sampleRate / 1000} kHz${tags ? ' · ' + tags : ''}`
+      meta.textContent = `${fmtSize(f.size)}, ${fmtTime(a.duration)}, ${chLabel(a.channels)}, ${a.sampleRate / 1000} kHz${tags ? ', ' + tags : ''}`
       await process(id)
     } catch (e) {
       if (id !== run) return
@@ -242,7 +242,7 @@ export function tool(cfg) {
         files.replaceChildren(...result.files.map(f => {
           const blob = f.data instanceof Blob ? f.data : new Blob([f.data], { type: f.mime || (typeof f.data === 'string' ? 'text/plain' : 'application/octet-stream') })
           const ext = f.name.split('.').pop().toUpperCase()
-          return el('a', { class: 'btn', download: f.name, href: URL.createObjectURL(blob) }, el('span', { html: save.firstElementChild.innerHTML }), el('span', {}, `${f.label || 'Save ' + ext} · ${fmtSize(blob.size)}`))
+          return el('a', { class: 'btn', download: f.name, href: URL.createObjectURL(blob) }, el('span', { html: save.firstElementChild.innerHTML }), el('span', {}, `${f.label || 'Save ' + ext}, ${fmtSize(blob.size)}`))
         }))
         files.hidden = false
       }
@@ -273,7 +273,7 @@ export function tool(cfg) {
       let base = file.name.replace(/\.[^.]+$/, '') + (result.suffix || '')
       if (!result.suffix && file.name.toLowerCase() === (base + '.' + FORMATS[f].ext).toLowerCase()) base += '-converted'
       save.download = base + '.' + FORMATS[f].ext
-      saveLabel.textContent = `Save ${FORMATS[f].ext.toUpperCase()} · ${fmtSize(blob.size)}`
+      saveLabel.textContent = `Save ${FORMATS[f].ext.toUpperCase()}, ${fmtSize(blob.size)}`
       progress.hidden = true; out.hidden = false
     } catch (e) {
       if (id !== run) return

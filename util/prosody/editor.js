@@ -38,7 +38,7 @@ export function startEditor(version) {
     dirty = true; $('render').disabled = false; $('undo').disabled = !history.length
     $('edited').pause(); $('edited').removeAttribute('src'); $('edited').load()
     $('save').removeAttribute('href'); $('save').setAttribute('aria-disabled', 'true')
-    $('render-state').textContent = 'Edits changed · render to listen and save'
+    $('render-state').textContent = 'Edits changed, render to listen and save'
     if (editedURL && editedURL !== originalURL) URL.revokeObjectURL(editedURL)
     editedURL = null
   }
@@ -64,7 +64,7 @@ export function startEditor(version) {
   const inSelection = k => { const [a, b] = notes()[k], middle = (track.times[a] + track.times[b]) / 2; return picked && middle >= selected[0] && middle <= selected[1] }
   const describe = center => {
     const cents = Math.round((center - Math.round(center)) * 100)
-    return `${noteName(center)}${cents ? ` ${cents > 0 ? '+' : '−'}${Math.abs(cents)}¢` : ''} · ${noteToHz(center).toFixed(1)} Hz`
+    return `${noteName(center)}${cents ? ` ${cents > 0 ? '+' : '−'}${Math.abs(cents)}¢` : ''}, ${noteToHz(center).toFixed(1)} Hz`
   }
   // The duration field follows the selection and timing, never a hover, so typing survives.
   let timed = ''
@@ -72,10 +72,10 @@ export function startEditor(version) {
     const key = selected.join() + anchors.flat().join()
     if (key !== timed) try { const [a, b] = selection(); $('duration').value = (mapTime(anchors, b) - mapTime(anchors, a)).toFixed(3); timed = key } catch {}
     const selectedNotes = picked ? notes().map((_, k) => k).filter(inSelection) : []
-    $('scope').textContent = !picked || (selected[0] <= 0 && selected[1] >= duration) ? '· all' : `· ${selectedNotes.length} ${selectedNotes.length === 1 ? 'note' : 'notes'}`
+    $('scope').textContent = !picked || (selected[0] <= 0 && selected[1] >= duration) ? '(all)' : `(${selectedNotes.length} ${selectedNotes.length === 1 ? 'note' : 'notes'})`
     const k = hover >= 0 ? hover : selectedNotes.length === 1 ? selectedNotes[0] : -1
     const now = k >= 0 ? trace().centre[k] : null, was = k >= 0 ? detected.centre[k] : null
-    $('point-info').textContent = now != null ? describe(now) + (Math.abs(now - was) >= .005 ? ` · was ${describe(was).split(' · ')[0]}` : '')
+    $('point-info').textContent = now != null ? describe(now) + (Math.abs(now - was) >= .005 ? `, was ${describe(was).split(', ')[0]}` : '')
       : picked ? `${selected[0].toFixed(2)}–${selected[1].toFixed(2)} s` : ''
   }
   function act(fn) {
@@ -119,7 +119,7 @@ export function startEditor(version) {
       for (const channel of audio.channelData) for (let i = 0; i < samples.length; i++) samples[i] += channel[i] / audio.channelData.length
       peak = samples.reduce((max, x) => Math.max(max, Math.abs(x)), 0) || 1
       filename = file.name.replace(/\.[^.]+$/, '') || 'speech'
-      $('filename').textContent = file.name + (audio.channelData.length > 1 ? ' · mixed to mono' : '')
+      $('filename').textContent = file.name + (audio.channelData.length > 1 ? ', mixed to mono' : '')
       status('Detecting intonation…'); zone.hide(); $('editor').hidden = false
       worker = new Worker(new URL('./worker.bundle.js?v=' + version, import.meta.url), { type: 'module' })
       worker.onerror = () => { if (id === run) { lock(false); status('The audio worker could not run. Reload the page or choose another file.', true) } }
@@ -134,10 +134,10 @@ export function startEditor(version) {
           const voiced = track.f0.some(Boolean)
           fitPitch(); selected = [0, duration]; picked = false; settle()
           $('undo').disabled = true; readyAudio(data.bytes, true); update(); draw()
-          $('render-state').textContent = 'Original audio · no edits'
+          $('render-state').textContent = 'Original audio, no edits'
           status(voiced ? 'Ready. Select notes or drag them.' : 'No reliable pitch detected. Try a longer voiced recording for intonation.')
         } else {
-          readyAudio(data.bytes); $('render-state').textContent = `Rendered · ${data.duration.toFixed(2)} s`
+          readyAudio(data.bytes); $('render-state').textContent = `Rendered, ${data.duration.toFixed(2)} s`
           status(data.peak > 1 ? 'Rendered. Peaks exceed playback range; lower the level after export if you hear distortion.' : 'Rendered. Compare both versions or save the edited WAV.')
         }
       }
@@ -152,7 +152,7 @@ export function startEditor(version) {
   }
   $('replace').onclick = () => { run++; release(); $('editor').hidden = true; zone.show(); status('Choose another recording.') }
   $('render').onclick = () => { if (!track || busy) return; lock(true); status('Rendering pitch and timing…'); worker.postMessage({ type: 'render', target, anchors, engine: $('engine').value }) }
-  $('engine').onchange = () => { if (!track || busy) return; edited(); $('render-state').textContent = 'Engine changed · render to listen and save' }
+  $('engine').onchange = () => { if (!track || busy) return; edited(); $('render-state').textContent = 'Engine changed, render to listen and save' }
   $('undo').onclick = () => act(() => { settle(); const last = history.pop(); if (last) { ({ target, anchors } = last); invalidate() } })
   $('reset').onclick = () => act(() => change(() => { target = track.f0.slice(); anchors = [[0, 0], [duration, duration]] }))
   $('pitch-reset').onclick = () => act(() => { const [a, b] = selection(); change(() => { target = restore(track, target, a, b) }) })

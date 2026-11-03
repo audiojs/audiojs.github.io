@@ -25,9 +25,9 @@ export default {
         <option value="ar">Arabic</option>
       </select></label>
       <label>Model <select name="model">
-        <option value="onnx-community/whisper-tiny">Tiny · fastest · 91 MB</option>
-        <option value="onnx-community/whisper-base" selected>Base · better · 136 MB</option>
-        <option value="onnx-community/whisper-small">Small · best · 285 MB</option>
+        <option value="onnx-community/whisper-tiny">Tiny, fastest, 91 MB</option>
+        <option value="onnx-community/whisper-base" selected>Base, better, 136 MB</option>
+        <option value="onnx-community/whisper-small">Small, best, 285 MB</option>
       </select></label>
       <label>Timestamps <select name="timestamps">
         <option value="segment">Per sentence</option>

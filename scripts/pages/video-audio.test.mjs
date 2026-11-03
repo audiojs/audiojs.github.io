@@ -8,8 +8,9 @@
 //                                           -movflags frag_keyframe+empty_moov video-fragmented.mp4  (moof-based, ~11 KB)
 // Run: node scripts/pages/video-audio.test.mjs  (needs ffprobe on PATH)
 import { createServer } from 'http'
-import { readFile, writeFile, mkdtemp, rm } from 'fs/promises'
-import { extname, normalize, resolve, sep, join } from 'path'
+import { site } from '../serve.mjs'
+import { writeFile, mkdtemp, rm } from 'fs/promises'
+import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { tmpdir } from 'os'
 import { execFileSync } from 'child_process'
@@ -21,15 +22,8 @@ const F = {
   audio: join(root, 'scripts/fixtures/plain.wav'),
   fragmented: join(root, 'scripts/fixtures/video-fragmented.mp4'),
 }
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' }
-const server = createServer(async (req, res) => {
-  let rel = normalize(req.url.split('?')[0]).replace(/^\//, '')
-  if (rel === '' || rel.endsWith('/')) rel += 'index.html'
-  const path = resolve(root, rel)
-  if (!path.startsWith(root + sep)) { res.writeHead(403); return res.end() }
-  try { res.writeHead(200, { 'content-type': types[extname(path)] || 'application/octet-stream' }); res.end(await readFile(path)) }
-  catch { res.writeHead(404); res.end('404') }
-})
+// the site as npm run dev serves it (scripts/serve.mjs): /audio/ too, where every page's tokens, Geist and mark come from
+const server = createServer(site)
 await new Promise(r => server.listen(0, r))
 const base = `http://127.0.0.1:${server.address().port}`
 let pass = 0, fail = 0
@@ -79,7 +73,7 @@ const dominantFreq = (d, fs, candidates) => candidates.map(f => [f, goertzel(d, 
 const rms = d => Math.sqrt(d.reduce((s, x) => s + x * x, 0) / d.length)
 
 await page.goto(`${base}/util/video-audio/`)
-ok(await page.title() === 'Remove or replace video audio: free, in your browser · audiojs', 'title matches')
+ok(await page.title() === 'Remove or replace video audio: free, in your browser – audiojs', 'title matches')
 
 // ── 1. remove mode (default) ──────────────────────────────────────────────────────────────
 await page.setInputFiles('#file', F.video)

@@ -55,7 +55,7 @@ export default {
     const progress = $('progress'), status = $('status'), bar = $('bar')
     const report = $('report'), out = $('out'), player = $('player'), save = $('save'), saveLabel = $('saveLabel')
     const hasAAC = typeof AudioEncoder !== 'undefined'
-    const CODEC_LABEL = { aac: 'AAC <small>· 192 kbps</small>', opus: 'Opus <small>· 192 kbps</small>', alac: 'ALAC <small>· lossless</small>', flac: 'FLAC <small>· lossless</small>' }
+    const CODEC_LABEL = { aac: 'AAC, <small>192 kbps</small>', opus: 'Opus, <small>192 kbps</small>', alac: 'ALAC, <small>lossless</small>', flac: 'FLAC, <small>lossless</small>' }
     const applyCodecDefault = () => { form.codec.value = hasAAC ? 'aac' : 'flac' }
     applyCodecDefault()
 
@@ -153,7 +153,7 @@ export default {
         return
       }
       if (vg !== vgen) return
-      meta.textContent = fmtSize(file.size) + ' · ' + fmtTime(info.duration) + (info.videoCodec ? ' · ' + info.videoCodec : '')
+      meta.textContent = fmtSize(file.size) + ', ' + fmtTime(info.duration) + (info.videoCodec ? ', ' + info.videoCodec : '')
       maybeRun()
     }
 
@@ -214,9 +214,9 @@ export default {
         const filename = mode === 'replace' ? base + '-' + audioFile.name.replace(/\\.[^.]+$/, '') + '.mp4' : base + '-noaudio.mp4'
         saveBlob(save, blob, filename)
         player.src = save.href
-        saveLabel.textContent = 'Save MP4 · ' + fmtSize(blob.size)
+        saveLabel.textContent = 'Save MP4, ' + fmtSize(blob.size)
         renderReport([
-          { k: 'Video', v: fmtTime(info.duration) + (info.videoCodec ? ' <small>· ' + info.videoCodec + '</small>' : ''), note: 'Video stream copied byte-for-byte — no re-encode.' },
+          { k: 'Video', v: fmtTime(info.duration) + (info.videoCodec ? ', <small>' + info.videoCodec + '</small>' : ''), note: 'Video stream copied byte-for-byte — no re-encode.' },
           mode === 'replace' ? { k: 'Audio', v: audioLabel, note: 'Replaced. ' + fitNote } : { k: 'Audio', v: 'Removed' },
           { k: 'File size', v: fmtSize(videoFile.size) + ' → ' + fmtSize(blob.size) },
         ])

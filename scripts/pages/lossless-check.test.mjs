@@ -2,21 +2,11 @@
 // Server + STUB pattern copied from scripts/util-e2e.mjs (that file is never imported/edited by page tests).
 // Usage: node scripts/pages/lossless-check.test.mjs
 import { createServer } from 'http'
-import { readFile } from 'fs/promises'
-import { extname, normalize, resolve, sep } from 'path'
-import { fileURLToPath } from 'url'
+import { site } from '../serve.mjs'
 import * as pw from 'playwright'
 
-const root = fileURLToPath(new URL('../..', import.meta.url)).replace(/\/+$/, '')
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' }
-const server = createServer(async (req, res) => {
-  let rel = normalize(req.url.split('?')[0]).replace(/^\//, '')
-  if (rel === '' || rel.endsWith('/')) rel += 'index.html'
-  const path = resolve(root, rel)
-  if (!path.startsWith(root + sep)) { res.writeHead(403); return res.end() }
-  try { res.writeHead(200, { 'content-type': types[extname(path)] || 'application/octet-stream' }); res.end(await readFile(path)) }
-  catch { res.writeHead(404); res.end('404') }
-})
+// the site as npm run dev serves it (scripts/serve.mjs): /audio/ too, where every page's tokens, Geist and mark come from
+const server = createServer(site)
 await new Promise(r => server.listen(0, r))
 const base = `http://127.0.0.1:${server.address().port}`
 let pass = 0, fail = 0

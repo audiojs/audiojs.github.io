@@ -168,7 +168,7 @@ demo(close, ({ as, curve, phase }) => {
   ctx.stroke()
   if (as === 'stems') samples.forEach((v, i) => { ctx.beginPath(); ctx.arc((i + .5) * dx, y(v), 3 * dpr, 0, 2 * Math.PI); ctx.fill() })
   const peak = Math.max(...samples.map(Math.abs)), db = v => (20 * Math.log10(v)).toFixed(1)
-  $('#peaks').textContent = `sample peak ${db(peak)} dB · true peak 0.0 dB`
+  $('#peaks').textContent = `sample peak ${db(peak)} dB, true peak 0.0 dB`
 })
 
 // ── 6. Amplitude or decibels ────────────────────────────────────

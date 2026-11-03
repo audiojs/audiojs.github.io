@@ -9,14 +9,14 @@ export default async function process(a, o, ui) {
   let plan = null
   const channelData = []
   for (let c = 0; c < a.channelData.length; c++) {
-ui.status((o.method ? 'Applying ' + o.method : 'Classifying and cleaning') + (a.channelData.length > 1 ? ' · channel ' + (c + 1) : '') + '…')
+ui.status((o.method ? 'Applying ' + o.method : 'Classifying and cleaning') + (a.channelData.length > 1 ? ', channel ' + (c + 1) : '') + '…')
 await new Promise(r => setTimeout(r, 20))
 const src = a.channelData[c].slice()
 if (o.method) channelData.push(m[o.method](src, { fs }))
 else { const r = m.denoise(src, { fs, returnPlan: true }); plan ??= r.plan; channelData.push(r.out) }
   }
   const method = o.method || plan?.method || 'wiener'
-  const scores = plan?.scores ? Object.entries(plan.scores).filter(([k, v]) => typeof v === 'number' && k !== 'humFreq').map(([k, v]) => k + ' ' + v.toFixed(1)).join(' · ') : ''
+  const scores = plan?.scores ? Object.entries(plan.scores).filter(([k, v]) => typeof v === 'number' && k !== 'humFreq').map(([k, v]) => k + ' ' + v.toFixed(1)).join(', ') : ''
   return {
 report: [{ k: o.method ? 'Method' : 'Method chosen by the classifier', v: method, note: (WHY[method] || '') + (scores ? '. Detector scores: ' + scores : '') }],
 audio: { channelData, sampleRate: fs }, suffix: '-' + method

@@ -47,7 +47,7 @@ export default {
       if (about === 'selection') {
         const [a, b] = m.selection, range = `${+a.toFixed(2)}, ${+b.toFixed(2)}`, act = (label, call, clear) => h('button', { type: 'button', class: 'text-button', onclick: () => { app.say(call); if (clear) app.set({ selection: null }) } }, label)
         title.textContent = 'Selection'
-        body.replaceChildren(h('div', { class: 'facts-block' }, h('p', { class: 'big' }, `${clock(a)}–${clock(b)}`), h('p', {}, `${(b - a).toFixed(3)} s · both channels`)),
+        body.replaceChildren(h('div', { class: 'facts-block' }, h('p', { class: 'big' }, `${clock(a)}–${clock(b)}`), h('p', {}, `${(b - a).toFixed(3)} s, both channels`)),
           h('p', { class: 'menu-group' }, 'Edit'), h('div', { class: 'actions' }, act('Cut', `.remove(${range})`, true), act('Keep only', `.crop(${range})`, true), act('−3 dB', `.gain(-3, ${range})`), act('+3 dB', `.gain(3, ${range})`)),
           h('p', { class: 'menu-group' }, 'Apply'), h('div', { class: 'actions' }, act('Fade in', `.fade(${range}, 'in')`), act('Fade out', `.fade(${range}, 'out')`), act('Denoise', `.denoise(${range})`), act('Reverse', `.reverse(${range})`)))
         return

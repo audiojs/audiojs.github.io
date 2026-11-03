@@ -64,7 +64,7 @@ function drawPlayer() {
   ctx.fillRect(Math.round(at(audio.currentTime) - dpr), y - 12 * dpr, 2 * dpr, 24 * dpr)
   ctx.font = `${11 * dpr}px ${MONO}`
   ctx.fillStyle = css(T.ink2)
-  ctx.fillText(`${audio.paused ? 'paused' : 'playing'} · ${audio.currentTime.toFixed(1)} / ${isFinite(d) ? d.toFixed(1) : '?'} s · ${audio.playbackRate}× · volume ${audio.volume.toFixed(2)}`, x0, 20 * dpr)
+  ctx.fillText(`${audio.paused ? 'paused' : 'playing'}, ${audio.currentTime.toFixed(1)} / ${isFinite(d) ? d.toFixed(1) : '?'} s, ${audio.playbackRate}×, volume ${audio.volume.toFixed(2)}`, x0, 20 * dpr)
   time.textContent = `${clock(audio.currentTime)} / ${clock(d)}`
   seek.setAttribute('aria-valuetext', time.textContent)
 }
